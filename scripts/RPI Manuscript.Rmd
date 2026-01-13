@@ -608,7 +608,7 @@ AET.AllZones.RPI.Crop <- crop(AET.AllZones.RPI.Mask, AET.AllZones)
 AET.AllZones.RPI.Mean <- mean(AET.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("plot")
+tmap_mode("view")
 tm_shape(AET.AllZones.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "AET.AllZones Mean RPI", reverse = TRUE)) +
@@ -671,7 +671,7 @@ Tsavo.AllZones.RPI.Crop <- crop(Tsavo.AllZones.RPI.Mask, Tsavo.AllZones)
 Tsavo.AllZones.RPI.Mean <- mean(Tsavo.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("plot")
+tmap_mode("view")
 tm_shape(Tsavo.AllZones.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Tsavo.AllZones Mean RPI", reverse = TRUE)) +
@@ -765,6 +765,10 @@ Combined.RPI.Maps.Before.Filtering
 #  tm = Combined.RPI.Maps.Before.Filtering,
 #  filename = "Mean_RPI_Maps_Static.png" # Using .png or .pdf for a static image
 #)
+```
+
+```{r}
+# Check for combined plot from line 5225
 ```
 
 ```{r}
@@ -5215,6 +5219,82 @@ ggsave(
 
 ```{r}
 #### START OF REFINED EDITS FOR MANUSCRIPT ####
+```
+
+```{r}
+# Stack all mean RPI rasters from line 771
+
+Mean.RPI.List <- list(
+  Amboseli.RPI.Mean,
+  TsavoEast.RPI.Mean,
+  TsavoWest.RPI.Mean,
+  AET.Conservancies.RPI.Mean,
+  AET.Buffers.RPI.Mean,
+  AET.AllZones.RPI.Mean,
+  Tsavo.Ranches.RPI.Mean,
+  Tsavo.SettledAreas.RPI.Mean,
+  Tsavo.AllZones.RPI.Mean
+)
+```
+
+```{r}
+# Checking for same CRS, Resolution & Alignment of Rasters above
+
+sapply(Mean.RPI.List, crs)
+sapply(Mean.RPI.List, res)
+```
+
+```{r}
+# Mosaic them into one raster
+
+Mean.RPI.Composite <- do.call(mosaic, c(Mean.RPI.List, fun = "mean"))
+
+## using "mean" so that if areas slightly overlap (buffers, all zones), this avoids hard overwrites
+```
+
+```{r}
+# Combining all polygons into one object for borders by binding all vector layers together
+
+make_zone <- function(x, name) {
+  st_sf(
+    zone = name,
+    geometry = st_geometry(x),
+    crs = st_crs(x)
+  )
+}
+
+All.Zones.Composite <- rbind(
+  make_zone(Amboseli, "Amboseli NP"),
+  make_zone(TsavoEast, "Tsavo East NP"),
+  make_zone(TsavoWest, "Tsavo West NP"),
+  make_zone(AET.Conservancies, "AET Conservancies"),
+  make_zone(AET.Buffers, "AET Buffers"),
+  make_zone(AET.AllZones, "AET All Zones"),
+  make_zone(Tsavo.Ranches, "Tsavo Ranches"),
+  make_zone(Tsavo.SettledAreas, "Tsavo Settled Areas"),
+  make_zone(Tsavo.AllZones, "Tsavo All Zones")
+)
+
+```
+
+```{r}
+# Plotting the composite map 
+
+tmap_mode("view") 
+
+tm_shape(Mean.RPI.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(values = "viridis"),
+    col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 2) +
+  tm_title("Spatial Distribution of Mean RPI Across Study Areas") +
+  tm_layout(legend.outside = TRUE)
+```
+
+```{r}
+
 ```
 
 ```{r}
