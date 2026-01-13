@@ -5434,11 +5434,108 @@ tm_shape(Mean.RPI.Filtered.Composite) +
 ```
 
 ```{r}
+# Version 1!
 
+# Make sure All.Zones.Composite has the correct zone names matching your color palette
+All.Zones.Composite <- rbind(
+  make_zone(Amboseli, "Amboseli Park"),
+  make_zone(TsavoEast, "Tsavo East"),
+  make_zone(TsavoWest, "Tsavo West"),
+  make_zone(AET.Conservancies, "AET Conservancies"),
+  make_zone(AET.Buffers, "AET Buffers"),
+  make_zone(Tsavo.Ranches, "Tsavo Ranches"),
+  make_zone(Tsavo.SettledAreas, "Tsavo Settled Areas")
+)
+
+# Reminder of the colour palette
+area_colors_simulation <- c(
+  "Amboseli Park" = "#440154FF",
+  "Tsavo East" = "#472D7BFF",
+  "Tsavo West" = "#3B528BFF",
+  "Tsavo Ranches" = "#2C728EFF",
+  "Tsavo Settled Areas" = "#21908CFF",
+  "Tsavo All Zones" = "#27AD81FF",
+  "AET Conservancies" = "#5DC863FF",
+  "AET Buffers" = "#AADC32FF",
+  "AET All Zones" = "#FDE725FF"
+)
+
+# Create the map with colored zones and white borders
+tmap_mode("view")
+
+Study.Areas.Map.Composite.Coloured <- tm_shape(All.Zones.Composite) +
+  tm_polygons(
+    col = "zone",
+    palette = area_colors_simulation,
+    border.col = "white",
+    lwd = 2,
+    legend.show = TRUE,
+    title = "Study Areas"
+  ) +
+  tm_layout(
+    title = "Study Areas Distribution",
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    frame = FALSE
+  )
+
+Study.Areas.Map.Composite.Coloured
 ```
 
 ```{r}
+# Combining the Study Area Colour Map, the RPI filtered R^2>0.1 map and the Ridgeline Mean RPI map
 
+tmap_mode("plot")
+
+# Study Areas Map
+Study.Areas.Map.Composite.Coloured <- tm_shape(All.Zones.Composite) +
+  tm_polygons(
+    col = "zone",
+    palette = area_colors_simulation,
+    border.col = "white",
+    lwd = 2,
+    title = "Zones" # LEGEND title
+  ) +
+  tm_layout(
+    main.title = "Study Areas Distribution", # MAP title
+    main.title.size = 1.2,
+    legend.position = c(0.02, 0.2),
+    frame = FALSE
+  )
+
+# Convert tmap to ggplot object
+Study.Areas.Map.Composite.Coloured.GG <- ggplotify::as.ggplot(tmap_grob(Study.Areas.Map.Composite.Coloured))
+
+# Ridgeline plot (already created)
+Ridgeline.Plot.NoLegend <- RPI.Ridgeline.Simulation.Plot + theme(legend.position = "none")
+
+
+# Combine for publication: Map on top, Ridgeline below
+StudyArea.RidgelinePlot.CombinedFigure <- (Study.Areas.Map.Composite.Coloured.GG | Ridgeline.Plot.NoLegend) +
+  plot_layout(
+    heights = c(0.5, 0.15)  
+  ) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Across Study Areas",
+    tag_levels = "A",  # Panel tags A (map) and B (ridgeline) automatically
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+# Display the combined figure
+StudyArea.RidgelinePlot.CombinedFigure
+
+#Saving the figure
+ggsave(
+  filename = "RPI_Composite_Figure.png", 
+  plot = StudyArea.RidgelinePlot.CombinedFigure,
+  width = 16,           # Width in inches
+  height = 8,           # Height in inches
+  dpi = 300,            # High resolution for publication
+  bg = "white"          # Ensures the background isn't transparent
+)
 ```
 
 ```{r}
