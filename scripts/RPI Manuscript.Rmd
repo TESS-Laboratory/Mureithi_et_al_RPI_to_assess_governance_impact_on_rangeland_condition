@@ -2269,14 +2269,14 @@ RPI.Distribution.Areas.Plot <- ggplot() +
 RPI.Distribution.Areas.Plot
 
 # Saving the plot as a high-res A4 image
-ggsave(
-  filename = "RPI_Distribution_Areas.png", 
-  plot = RPI.Distribution.Areas.Plot,
-  width = 8.27,   # A4 width in inches
-  height = 11.69, # A4 height in inches
-  units = "in",
-  dpi = 300
-)
+#ggsave(
+#  filename = "RPI_Distribution_Areas.png", 
+#  plot = RPI.Distribution.Areas.Plot,
+#  width = 8.27,   # A4 width in inches
+#  height = 11.69, # A4 height in inches
+#  units = "in",
+#  dpi = 300
+#)
 ```
 
 ```{r}
@@ -2916,12 +2916,13 @@ Tsavo.AllZones.Slope.Cells <- dplyr::left_join(Tsavo.AllZones.TheilSen, Tsavo.Al
 Tsavo.AllZones.Slope.Raster[Tsavo.AllZones.Slope.Cells$cell] <- Tsavo.AllZones.Slope.Cells$Slope
 
 # 4. Plot the raster
-tmap_mode("plot")
 tm_shape(Tsavo.AllZones.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Tsavo AllZones Theil–Sen Slope", reverse = TRUE)
-  )
+    col.legend = tm_legend(title = "Tsavo All Zones Theil–Sen Slope", reverse = TRUE)
+  ) +
+  tm_title("Spatial Distribution of RPI Trends — Tsavo All Zones") +
+  tm_layout(legend.outside = TRUE)
 ```
 
 ```{r}
@@ -2941,7 +2942,7 @@ AET.Conservancies.Slope.Cells <- dplyr::left_join(AET.Conservancies.TheilSen, AE
 AET.Conservancies.Slope.Raster[AET.Conservancies.Slope.Cells$cell] <- AET.Conservancies.Slope.Cells$Slope
 
 # 4. Plot the raster
-tmap_mode("plot")
+tmap_mode("view")
 tm_shape(AET.Conservancies.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
@@ -2992,7 +2993,7 @@ AET.AllZones.Slope.Cells <- dplyr::left_join(AET.AllZones.TheilSen, AET.AllZones
 AET.AllZones.Slope.Raster[AET.AllZones.Slope.Cells$cell] <- AET.AllZones.Slope.Cells$Slope
 
 # 4. Plot the raster
-tmap_mode("plot")
+tmap_mode("view")
 tm_shape(AET.AllZones.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
@@ -3237,13 +3238,13 @@ Combined.Trends.Plot <- Combined.Trends.Plot +
 Combined.Trends.Plot
 
 # Save the plot
-ggsave(
-  filename = "Combined_Annual_and_TheilSen_Trends_Improved.png",
-  plot = Combined.Trends.Plot,
-  width = 12,
-  height = 8,
-  dpi = 300
-)
+#ggsave(
+#  filename = "Combined_Annual_and_TheilSen_Trends_Improved.png",
+#  plot = Combined.Trends.Plot,
+#  width = 12,
+#  height = 8,
+#  dpi = 300
+#)
 ```
 
 ```{r}
@@ -3325,112 +3326,7 @@ Combined.Slope.Maps
 ```
 
 ```{r}
-# Increasing IMAGE size above 
-tmap_mode("plot")
-tmap_options(component.autoscale = FALSE)  # Prevent rescaling warnings
-
-
-
-slope_range <- range(c(
-  values(Amboseli.Slope.Raster),
-  values(TsavoEast.Slope.Raster),
-  values(TsavoWest.Slope.Raster),
-  values(Tsavo.Ranches.Slope.Raster),
-  values(Tsavo.SettledAreas.Slope.Raster),
-  values(Tsavo.AllZones.Slope.Raster),
-  values(AET.Conservancies.Slope.Raster),
-  values(AET.Buffers.Slope.Raster),
-  values(AET.AllZones.Slope.Raster)
-), na.rm = TRUE)
-
-# Arrange maps in 1 row × 9 columns with bold titles
-Combined.Slope.Maps <- tmap_arrange(
-  tm_shape(Amboseli.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Amboseli") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(TsavoEast.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Tsavo East") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(TsavoWest.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Tsavo West") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(Tsavo.Ranches.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Tsavo Ranches") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(Tsavo.SettledAreas.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Tsavo Settled Areas") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(Tsavo.AllZones.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("Tsavo All Zones") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(AET.Conservancies.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("AET Conservancies") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(AET.Buffers.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(show = FALSE)
-    ) +
-    tm_title("AET Buffers") +
-    tm_layout(title.fontface = "bold"),
-  
-  tm_shape(AET.AllZones.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0, limits = slope_range),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)  # only this one shows
-    ) +
-    tm_title("AET All Zones") +
-    tm_layout(title.fontface = "bold"),
-  
-  ncol = 3, nrow = 3
-)
-
-# Display
-Combined.Slope.Maps
-
-# Save
-#tmap_save(
-#  tm = Combined.Slope.Maps,
-#  filename = "Theil_Sen_Slope_Maps_BoldTitles.png",
-#  width = 8.27,   # portrait A4 width in inches
-#  height = 11.7,  # portrait A4 height in inches
-#  dpi = 300
-#)
+# Check line for the combination of maps of "Combined Slope Raster - line 3255, & "Distribution of Theil Sen Slope per Area" - line 2656, in MANUSCRIPT section
 ```
 
 ```{r}
@@ -5294,7 +5190,66 @@ tm_shape(Mean.RPI.Composite) +
 ```
 
 ```{r}
+# Combination of Maps mentioned in line 3329
+```
 
+```{r}
+# Creating a list of all slope rasters
+
+Slope.Raster.List <- list(
+  Amboseli.Slope.Raster,
+  TsavoEast.Slope.Raster,
+  TsavoWest.Slope.Raster,
+  AET.Conservancies.Slope.Raster,
+  AET.Buffers.Slope.Raster,
+  AET.AllZones.Slope.Raster,
+  Tsavo.Ranches.Slope.Raster,
+  Tsavo.SettledAreas.Slope.Raster,
+  Tsavo.AllZones.Slope.Raster
+)
+```
+
+```{r}
+# Quick check of the Slope Raster List
+
+sapply(Slope.Raster.List, crs)
+sapply(Slope.Raster.List, res)
+```
+
+```{r}
+# Mosaic the slope rasters into ONE composite surface
+
+Slope.Composite <- do.call(
+  mosaic,
+  c(Slope.Raster.List, fun = "mean")
+)
+
+## used fun = "mean" to avoid hard overwrites in overlapping areas
+```
+
+```{r}
+# Plotting one composite Theil-Sen map
+
+tmap_mode("view")
+
+tm_shape(Slope.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(
+      values = "brewer.pu_or",
+      midpoint = 0
+    ),
+    col.legend = tm_legend(
+      title = "Theil–Sen Slope (RPI yr⁻¹)",
+      reverse = TRUE
+    )
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 1.5) +
+  tm_title("Spatial Distribution of RPI Trends Across Study Areas") +
+  tm_layout(
+    legend.outside = TRUE,
+    frame = FALSE
+  )
 ```
 
 ```{r}
