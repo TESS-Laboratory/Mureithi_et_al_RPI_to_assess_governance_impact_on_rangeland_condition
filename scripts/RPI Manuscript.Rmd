@@ -4857,14 +4857,14 @@ Combined.Figure.Kenya.RPI.Fit
 
 # Saving the combined figure
 
-ggsave(
-  filename = "Combined_Figure_Kenya_RPI_Fit.png",
-  plot = Combined.Figure.Kenya.RPI.Fit,
-  width = 12, 
-  height = 14, 
-  units = "in",
-  dpi = 300
-)
+#ggsave(
+#  filename = "Combined_Figure_Kenya_RPI_Fit.png",
+#  plot = Combined.Figure.Kenya.RPI.Fit,
+#  width = 12, 
+#  height = 14, 
+#  units = "in",
+#  dpi = 300
+#)
 ```
 
 ```{r}
@@ -4930,11 +4930,11 @@ RPI.All.Simulation <- bind_rows(
   AET.AllZones.Simulation
 )
 
-# Order the areas by mean RPI (highest first)
+# Order the areas by mean RPI (highest first, but reverse for ggplot)
 Mean.RPI.Order <- RPI.All.Simulation %>%
   group_by(Area) %>%
   summarise(MeanRPI_Area = mean(RPI, na.rm = TRUE)) %>%
-  arrange(desc(MeanRPI_Area)) %>%
+  arrange(MeanRPI_Area) %>%  # Changed from desc() to ascending order
   pull(Area)
 
 RPI.All.Simulation$Area <- factor(RPI.All.Simulation$Area, levels = Mean.RPI.Order)
@@ -4943,10 +4943,9 @@ RPI.All.Simulation$Area <- factor(RPI.All.Simulation$Area, levels = Mean.RPI.Ord
 RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation, aes(x = RPI, y = Area, fill = Area)) +
   geom_density_ridges(
     quantile_lines = TRUE,
-    quantiles = c(0.25, 0.5, 0.75),
+    quantiles = c(0.5),
     alpha = 0.7, scale = 1.2
   ) +
-  # Replace viridis with manual color scale 
   scale_fill_manual(values = area_colors_simulation) +
   labs(
     title = "Distribution of Mean Relative Productivity Index (RPI) by Area",
@@ -4965,13 +4964,13 @@ RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation, aes(x = RPI, y = Are
 RPI.Ridgeline.Simulation.Plot
 
 # Save the plot as a high-res PNG (A4 size)
-ggsave(
-  filename = "RPI_Distribution_Ridgeline.png",  
-  plot = RPI.Ridgeline.Simulation.Plot,
-  width = 8.27, 
-  height = 11.69, 
-  dpi = 300 
-)
+#ggsave(
+#  filename = "RPI_Distribution_Ridgeline.png",  
+#  plot = RPI.Ridgeline.Simulation.Plot,
+#  width = 8.27, 
+#  height = 11.69, 
+#  dpi = 300 
+#)
 ```
 
 ```{r}
