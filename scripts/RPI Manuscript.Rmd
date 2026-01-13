@@ -5447,9 +5447,11 @@ Mean.RPI.Filtered.Composite.Map <- tm_shape(Mean.RPI.Filtered.Composite) +
   tm_title("Spatial Distribution of Mean RPI Across Study Areas (Filtered)") +
   tm_layout(legend.outside = TRUE)
 
-# 2. Save it using ggsave by wrapping the map in tmap_grob()
+Mean.RPI.Filtered.Composite.Map
+
+#Saving the figure - Wrap the map object in tmap_grob()
 ggsave(
-  filename = "Filtered_RPI_Map.png", 
+  filename = "Filtered_RPI_Composite_Map.png", 
   plot = tmap_grob(Mean.RPI.Filtered.Composite.Map),
   width = 16,           
   height = 8,           
