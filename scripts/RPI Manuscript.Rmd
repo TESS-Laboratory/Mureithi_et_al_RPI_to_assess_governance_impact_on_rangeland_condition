@@ -2708,7 +2708,7 @@ Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)
 Ridgeline.Plot
 
 # Save
-ggsave("Ridgeline_Slopes.png", Ridgeline.Plot, width = 12, height = 8, dpi = 300)
+#ggsave("Ridgeline_Slopes.png", Ridgeline.Plot, width = 12, height = 8, dpi = 300)
 ```
 
 ```{r}
@@ -5250,6 +5250,122 @@ tm_shape(Slope.Composite) +
     legend.outside = TRUE,
     frame = FALSE
   )
+```
+
+```{r}
+if (!require(cowplot)) install.packages("cowplot")
+library(cowplot)
+
+if (!require(ggplotify)) install.packages("ggplotify")
+library(ggplotify)
+
+# convert the tmap grob below into a ggplot-compatible object using as.ggplot() from cowplot.
+```
+
+```{r}
+# Update Ridgeline plot to hide legend
+Ridgeline.Plot.NoLegend <- Ridgeline.Plot +
+  guides(fill = "none")
+
+# Update tmap slope map legend to bottom AND horizontal
+Slope.Map.Composite <- tm_shape(Slope.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
+    col.legend = tm_legend(
+      title = "Theil–Sen Slope (RPI yr⁻¹)", 
+      reverse = TRUE,
+      orientation = "landscape"  # Makes legend horizontal in tmap v4
+    )
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 1.5) +
+  tm_title("Spatial Distribution of RPI Trends Across Study Areas") +
+  tm_layout(
+    legend.position = c("left", "bottom"),
+    frame = FALSE
+  )
+
+# Convert tmap to ggplot
+Slope.Map.Composite.GG <- ggplotify::as.ggplot(tmap_grob(Slope.Map.Composite))
+
+# Combine both with patchwork
+Slope.Map.Ridgeline.Plot.Combined.Figure.1 <- Slope.Map.Composite.GG + Ridgeline.Plot.NoLegend +
+  plot_layout(ncol = 2, widths = c(1.2, 1)) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
+    tag_levels = "A",
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+# Display
+Slope.Map.Ridgeline.Plot.Combined.Figure.1
+
+# Save the combined figure
+ggsave(
+  filename = "Slope_Map_Ridgeline_1_Combined.png",
+  plot = Slope.Map.Ridgeline.Plot.Combined.Figure.1,
+  width = 14,
+  height = 7,
+  dpi = 300,
+  units = "in"
+)
+```
+
+```{r}
+# same plot as above but with a vertical legend for the slope map to see the difference
+
+# Update Ridgeline plot to hide legend
+Ridgeline.Plot.NoLegend <- Ridgeline.Plot +
+  guides(fill = "none")
+
+# Update tmap slope map legend to bottom left (vertical)
+Slope.Map.Composite <- tm_shape(Slope.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
+    col.legend = tm_legend(
+      title = "Theil–Sen Slope (RPI yr⁻¹)", 
+      reverse = TRUE
+      # No orientation parameter = vertical by default
+    )
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 1.5) +
+  tm_title("Spatial Distribution of RPI Trends Across Study Areas") +
+  tm_layout(
+    legend.position = c("left", "bottom"),
+    frame = FALSE
+  )
+
+# Convert tmap to ggplot
+Slope.Map.Composite.GG <- ggplotify::as.ggplot(tmap_grob(Slope.Map.Composite))
+
+# Combine both with patchwork
+Slope.Map.Ridgeline.Plot.Combined.Figure.2 <- Slope.Map.Composite.GG + Ridgeline.Plot.NoLegend +
+  plot_layout(ncol = 2, widths = c(1.2, 1)) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
+    tag_levels = "A",
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+# Display
+Slope.Map.Ridgeline.Plot.Combined.Figure.2
+
+# Save the combined figure
+ggsave(
+  filename = "Slope_Map_Ridgeline_2_Combined.png",
+  plot = Slope.Map.Ridgeline.Plot.Combined.Figure.2,
+  width = 14,
+  height = 7,
+  dpi = 300,
+  units = "in"
+)
 ```
 
 ```{r}
