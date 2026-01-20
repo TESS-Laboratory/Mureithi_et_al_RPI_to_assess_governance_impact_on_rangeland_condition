@@ -5665,3 +5665,181 @@ Combined.RPI.Maps.Final
 #  dpi = 300
 #)
 ```
+
+```{r}
+# Placing the Legend of the Mean.RPI.Static.Map at the bottom left
+
+tmap_mode("plot")
+
+Mean.RPI.Static.Map <- tm_shape(Mean.RPI.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(values = "viridis"),
+    col.legend = tm_legend(
+      title = "Mean RPI",
+      reverse = TRUE
+    )
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 2) +
+  tm_title("Spatial Distribution of Mean RPI Across Study Areas") +
+  tm_layout(
+    legend.position = c("left", "bottom"),  # ✅ bottom-left
+    frame = FALSE
+  )
+
+Mean.RPI.Static.Map
+```
+
+```{r}
+# Combining the Mean RPI Static Map with the StudyArea.RidgelinePlot.CombinedFigure
+
+Mean.RPI.Static.Map.GG <- as.ggplot(tmap_grob(Mean.RPI.Static.Map))
+
+# Study.Areas.Map.Composite.Coloured.GG & Ridgeline.Plot.NoLegend already created above
+
+#Placing equal widths in Patchwork
+
+Bottom.Row <- 
+  Study.Areas.Map.Composite.Coloured.GG | 
+  Ridgeline.Plot.NoLegend +
+  plot_layout(widths = c(1, 1))
+
+# Final Combination with Map on Top and Bottom Row
+
+Final.Combined.Figure.1 <-
+  Mean.RPI.Static.Map.GG / 
+  Bottom.Row +
+  plot_layout(heights = c(1.6, 1)) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Across Study Areas",
+    tag_levels = "A",
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+Final.Combined.Figure.1
+```
+
+```{r}
+# Saving the above image
+
+Final.Combined.Figure.1
+
+ggsave(
+  "RPI_Three_Panel_Figure_v1.png",
+  plot = Final.Combined.Figure.1,
+  width = 16,
+  height = 16,
+  dpi = 300,
+  bg = "white"
+)
+```
+
+```{r}
+## FILTERING OUT THE "ALL.ZONES"
+
+# Define zones to keep
+zones_bottom <- c(
+  "Amboseli Park",
+  "Tsavo East",
+  "Tsavo West",
+  "Tsavo Ranches",
+  "Tsavo Settled Areas",
+  "AET Conservancies",
+  "AET Buffers"
+)
+
+# Filter the All.Zones.Composite to remove "All Zones"
+All.Zones.Composite.Bottom <- All.Zones.Composite %>%
+  dplyr::filter(zone %in% zones_bottom) %>%
+  # Important: make 'zone' a factor with levels in the same order as your palette
+  mutate(zone = factor(zone, levels = names(area_colors_simulation)))
+
+# Study Areas Map (Bottom Panel)
+Study.Areas.Map.Bottom <- Study.Areas.Map.Composite.Coloured
+
+# Convert tmap to ggplot object for patchwork
+Study.Areas.Map.Bottom.GG <- ggplotify::as.ggplot(tmap_grob(Study.Areas.Map.Bottom))
+
+# Filter Ridgeline data to match bottom panel zones
+RPI.Bottom.Panel <- RPI.All.Simulation %>%
+  dplyr::filter(Area %in% zones_bottom)
+
+RPI.Ridgeline.Bottom.NoLegend <- ggplot(
+  RPI.Bottom.Panel,
+  aes(x = RPI, y = Area, fill = Area)
+) +
+  geom_density_ridges(
+    quantile_lines = TRUE,
+    quantiles = 0.5,
+    alpha = 0.7,
+    scale = 1.2
+  ) +
+  scale_fill_manual(
+    values = area_colors_simulation[zones_bottom], # ensures correct colors
+    drop = TRUE
+  ) +
+  labs(
+    title = "Distribution of Mean Relative Productivity Index (RPI) by Area",
+    subtitle = "Based on 23-year pixel-level estimates (simulated from summary stats)",
+    x = "Mean Relative Productivity Index (RPI)",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size = 10),
+    axis.text.x = element_text(size = 11),
+    plot.title = element_text(size = 14, face = "bold")
+  )
+
+# Combine bottom panels (map left, ridgeline right)
+Bottom.Panel.Combined <- Study.Areas.Map.Bottom.GG | RPI.Ridgeline.Bottom.NoLegend +
+  plot_layout(widths = c(1, 1)) +
+  plot_annotation(
+    tag_levels = "B",  # Panel tag B for bottom
+    theme = theme(
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+Bottom.Panel.Combined
+```
+
+```{r}
+# Combining the Bottom Panel created above with Mean RPI Static Map
+
+Final.Combined.Figure.2 <-
+  Mean.RPI.Static.Map.GG / 
+  Bottom.Panel.Combined +
+  plot_layout(heights = c(1.4, 1)) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Across Study Areas",
+    tag_levels = "A",
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+Final.Combined.Figure.2
+```
+
+```{r}
+# Saving the above image
+
+Final.Combined.Figure.2
+
+ggsave(
+  "RPI_Three_Panel_Figure_v2.png",
+  plot = Final.Combined.Figure.2,
+  width = 17,
+  height = 17,
+  dpi = 300,
+  bg = "white"
+)
+```
+
+```{r}
