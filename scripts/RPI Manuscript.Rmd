@@ -5791,13 +5791,13 @@ RPI.Ridgeline.Bottom.NoLegend <- ggplot(
   theme(
     legend.position = "none",
     axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 11),
-    plot.title = element_text(size = 14, face = "bold")
+    axis.text.x = element_text(size = 10),
+    plot.title = element_text(size = 10, face = "bold")
   )
 
 # Combine bottom panels (map left, ridgeline right)
 Bottom.Panel.Combined <- Study.Areas.Map.Bottom.GG | RPI.Ridgeline.Bottom.NoLegend +
-  plot_layout(widths = c(1, 1)) +
+  plot_layout(widths = c(2, 1)) +
   plot_annotation(
     tag_levels = "B",  # Panel tag B for bottom
     theme = theme(
@@ -5814,7 +5814,7 @@ Bottom.Panel.Combined
 Final.Combined.Figure.2 <-
   Mean.RPI.Static.Map.GG / 
   Bottom.Panel.Combined +
-  plot_layout(heights = c(1.4, 1)) +
+  plot_layout(heights = c(1.1, 1.9)) +
   plot_annotation(
     title = "Spatial and Statistical Patterns of RPI Across Study Areas",
     tag_levels = "A",
@@ -5839,6 +5839,151 @@ ggsave(
   height = 17,
   dpi = 300,
   bg = "white"
+)
+```
+
+```{r}
+# Removing the "...All.Zones" from the Theil-Sen Slopes Ridgeline plot
+
+  # Indicating the areas to remove
+areas_to_remove <- c(
+  "AET.AllZones",
+  "Tsavo.AllZones"
+)
+
+  # Filtering the All.Pixel.Slopes data frame
+All.Pixel.Slopes.No.AllZones <- All.Pixel.Slopes %>%
+  dplyr::filter(!Area %in% areas_to_remove)
+
+  # Reordering Area factor levels based on mean slope values (excluding All Zones)
+Mean.Slope.Order.No.AllZones <- All.Pixel.Slopes.No.AllZones %>%
+  group_by(Area) %>%
+  summarise(MeanSlopeArea = mean(Slope, na.rm = TRUE)) %>%
+  arrange(desc(MeanSlopeArea)) %>%
+  pull(Area)
+
+  # Re-factoring Area with the new order
+All.Pixel.Slopes.No.AllZones$Area <-
+  factor(All.Pixel.Slopes.No.AllZones$Area,
+         levels = Mean.Slope.Order.No.AllZones)
+
+  # Updated Ridgeline plot without All Zones
+Ridgeline.Plot.No.AllZones <- ggplot(
+  All.Pixel.Slopes.No.AllZones,
+  aes(x = Slope, y = Area, fill = Area)
+) +
+  geom_density_ridges(
+    quantile_lines = TRUE,
+    quantiles = 0.5,          # median line
+    alpha = 0.9,
+    scale = 3,
+    rel_min_height = 0.01,
+    color = "black"
+  ) +
+  geom_vline(
+    xintercept = 0,
+    linetype = "dashed",
+    color = "red",
+    size = 1
+  ) +
+  scale_fill_manual(
+    values = areas_colours_names,
+    name = "Study Area",
+    drop = TRUE              # ✅ drops AllZones from legend
+  ) +
+  labs(
+    title = "Distribution of Theil–Sen Slopes per Area",
+    x = "Slope",
+    y = "Area"
+  ) +
+  theme_ridges(font_size = 14, grid = TRUE) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.position = "none"
+  )
+
+Ridgeline.Plot.No.AllZones
+```
+
+```{r}
+# Combining the Spatial Distribution of RPI map with the Study Areas Distribution map and the Distribution of Theil-Sen Slopes ridgeline plot
+
+Bottom.Row.2 <- 
+  Study.Areas.Map.Bottom.GG | 
+  Ridgeline.Plot.No.AllZones
+
+Final.Three.Panel.Figure.1 <-
+  Slope.Map.Composite.GG / 
+  Bottom.Row.2 +
+  plot_layout(
+    heights = c(1.4, 1)   
+  ) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
+    tag_levels = "A",     
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+
+Final.Three.Panel.Figure.1
+```
+
+```{r}
+# Balancing the Panel Widths in the figure above
+
+Slope.Map.Composite <- tm_shape(Slope.Composite) +
+  tm_raster(
+    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
+    col.legend = tm_legend(
+      title = "Theil–Sen Slope (RPI yr⁻¹)",
+      reverse = TRUE
+    )
+  ) +
+  tm_shape(All.Zones.Composite) +
+  tm_borders(col = "white", lwd = 1.5) +
+  tm_title("Spatial Distribution of RPI Trends Across Study Areas") +
+  tm_layout(
+    legend.position = c("left", "bottom"),
+    frame = FALSE,
+    inner.margins = c(0.08, 0.02, 0.08, 0.02) 
+    # ↑ bottom, left margins enlarged
+  )
+
+Slope.Map.Composite.GG <- ggplotify::as.ggplot(tmap_grob(Slope.Map.Composite))
+
+# Final three-panel figure: top vs bottom = 5:5
+Final.Three.Panel.Figure.2 <-
+  Slope.Map.Composite.GG / 
+  Bottom.Row.2 +
+  plot_layout(
+    heights = c(1, 1) 
+  ) +
+  plot_annotation(
+    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
+    tag_levels = "A",
+    theme = theme(
+      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+      plot.tag = element_text(size = 16, face = "bold")
+    )
+  )
+
+Final.Three.Panel.Figure.2
+```
+
+```{r}
+# Saving the final three-panel figure above
+
+# Save the combined three-panel figure
+ggsave(
+  filename = "Final_Three_Panel_Figure_2.png",  
+  plot = Final.Three.Panel.Figure.2,            
+  width = 17,                                 
+  height = 17,                                
+  dpi = 300,                                 
+  bg = "white"                                
 )
 ```
 
