@@ -5713,89 +5713,6 @@ Final.Combined.Figure.1
 ```
 
 ```{r}
-# Saving the above image
-
-Final.Combined.Figure.1
-
-#ggsave(
-#  "RPI_Three_Panel_Figure_v1.png",
-#  plot = Final.Combined.Figure.1,
-#  width = 16,
-#  height = 16,
-#  dpi = 300,
-#  bg = "white"
-#)
-```
-
-```{r}
-## FILTERING OUT THE "ALL.ZONES"
-
-# Define zones to keep
-zones_bottom <- c(
-  "Amboseli Park",
-  "Tsavo East",
-  "Tsavo West",
-  "Tsavo Ranches",
-  "Tsavo Settled Areas",
-  "AET Conservancies",
-  "AET Buffers"
-)
-
-# Filter the All.Zones.Composite to remove "All Zones"
-All.Zones.Composite.Bottom <- All.Zones.Composite %>%
-  dplyr::filter(zone %in% zones_bottom) %>%
-  # Important: make 'zone' a factor with levels in the same order as your palette
-  mutate(zone = factor(zone, levels = names(area_colors_simulation)))
-
-# Study Areas Map (Bottom Panel)
-Study.Areas.Map.Bottom <- Study.Areas.Map.Composite.Coloured
-
-# Convert tmap to ggplot object for patchwork
-Study.Areas.Map.Bottom.GG <- ggplotify::as.ggplot(tmap_grob(Study.Areas.Map.Bottom))
-
-# Filter Ridgeline data to match bottom panel zones
-RPI.Bottom.Panel <- RPI.All.Simulation %>%
-  dplyr::filter(Area %in% zones_bottom)
-
-RPI.Ridgeline.Bottom.NoLegend <- ggplot(
-  RPI.Bottom.Panel,
-  aes(x = RPI, y = Area, fill = Area)
-) +
-  geom_density_ridges(
-    quantile_lines = TRUE,
-    quantiles = 0.5,
-    alpha = 0.7,
-    scale = 1.2
-  ) +
-  scale_fill_manual(
-    values = area_colors_simulation[zones_bottom],
-    drop = TRUE
-  ) +
-  labs(
-    x = "Mean Relative Productivity Index (RPI)",
-    y = NULL
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 10)
-  )
-
-# Combine bottom panels (map left, ridgeline right)
-Bottom.Panel.Combined <- Study.Areas.Map.Bottom.GG | RPI.Ridgeline.Bottom.NoLegend +
-  plot_layout(widths = c(2, 1)) +
-  plot_annotation(
-    tag_levels = "B",  # Panel tag B for bottom
-    theme = theme(
-      plot.tag = element_text(size = 16, face = "bold")
-    )
-  )
-
-Bottom.Panel.Combined
-```
-
-```{r}
 Mean.RPI.Static.Map
 
 tmap_save(Mean.RPI.Static.Map, filename = "Mean_RPI_Static_Map.png", width = 8, height = 6, units = "in", dpi = 300)
@@ -5839,6 +5756,8 @@ Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot
 # Save multipanel figure
 ggsave("Multipanel_Figure_cowplot.png", plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot,
        width = 12, height = 10, units = "in", dpi = 300)
+
+###   RESULTED IN ERRORS, OPTED FOR VERSION 2 BELOW USING PATCHWORK INSTEAD!
 ```
 
 ```{r}
@@ -5879,40 +5798,6 @@ Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork
 # Save multipanel figure
 ggsave("Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png", plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork,
        width = 12, height = 10, units = "in", dpi = 300)
-```
-
-```{r}
-# Combining the Bottom Panel created above with Mean RPI Static Map
-
-Final.Combined.Figure.2 <-
-  Mean.RPI.Static.Map.GG / 
-  Bottom.Panel.Combined +
-  plot_layout(heights = c(1.1, 1.9)) +
-  plot_annotation(
-    title = "Spatial and Statistical Patterns of RPI Across Study Areas",
-    tag_levels = "A",
-    theme = theme(
-      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-      plot.tag = element_text(size = 16, face = "bold")
-    )
-  )
-
-Final.Combined.Figure.2
-```
-
-```{r}
-# Saving the above image
-
-Final.Combined.Figure.2
-
-#ggsave(
-#  "RPI_Three_Panel_Figure_v2.png",
-#  plot = Final.Combined.Figure.2,
-#  width = 17,
-#  height = 17,
-#  dpi = 300,
-#  bg = "white"
-#)
 ```
 
 ```{r}
@@ -5965,7 +5850,6 @@ Ridgeline.Plot.No.AllZones <- ggplot(
     drop = TRUE              # ✅ drops AllZones from legend
   ) +
   labs(
-    title = "Distribution of Theil–Sen Slopes per Area",
     x = "Slope",
     y = "Area"
   ) +
@@ -5976,90 +5860,65 @@ Ridgeline.Plot.No.AllZones <- ggplot(
   )
 
 Ridgeline.Plot.No.AllZones
+
+# Save as PNG 
+ggsave( filename = "Ridgeline_Plot_No_AllZones.png", plot = Ridgeline.Plot.No.AllZones, width = 8, height = 6, units = "in", dpi = 300 )
 ```
 
 ```{r}
-# Combining the Spatial Distribution of RPI map with the Study Areas Distribution map and the Distribution of Theil-Sen Slopes ridgeline plot
-
-Bottom.Row.2 <- 
-  Study.Areas.Map.Bottom.GG | 
-  Ridgeline.Plot.No.AllZones
-
-Final.Three.Panel.Figure.1 <-
-  Slope.Map.Composite.GG / 
-  Bottom.Row.2 +
-  plot_layout(
-    heights = c(1.4, 1)   
-  ) +
-  plot_annotation(
-    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
-    tag_levels = "A",     
-    theme = theme(
-      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-      plot.tag = element_text(size = 16, face = "bold")
-    )
-  )
-
-
-Final.Three.Panel.Figure.1
-```
-
-```{r}
-# Balancing the Panel Widths in the figure above
-
 Slope.Map.Composite <- tm_shape(Slope.Composite) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
     col.legend = tm_legend(
       title = "Theil–Sen Slope (RPI yr⁻¹)",
       reverse = TRUE
-    )
+      )
   ) +
   tm_shape(All.Zones.Composite) +
   tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Spatial Distribution of RPI Trends Across Study Areas") +
   tm_layout(
     legend.position = c("left", "bottom"),
-    frame = FALSE,
-    inner.margins = c(0.08, 0.02, 0.08, 0.02) 
-    # ↑ bottom, left margins enlarged
+    frame = FALSE
   )
 
-Slope.Map.Composite.GG <- ggplotify::as.ggplot(tmap_grob(Slope.Map.Composite))
+Slope.Map.Composite
 
-# Final three-panel figure: top vs bottom = 5:5
-Final.Three.Panel.Figure.2 <-
-  Slope.Map.Composite.GG / 
-  Bottom.Row.2 +
-  plot_layout(
-    heights = c(1, 1) 
-  ) +
-  plot_annotation(
-    title = "Spatial and Statistical Patterns of RPI Trends Across Study Areas",
-    tag_levels = "A",
-    theme = theme(
-      plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-      plot.tag = element_text(size = 16, face = "bold")
-    )
-  )
-
-Final.Three.Panel.Figure.2
+# Save as PNG 
+tmap_save( Slope.Map.Composite, filename = "Slope_Map_Composite.png", width = 8, height = 6, units = "in", dpi = 300 )
 ```
 
 ```{r}
-# Saving the final three-panel figure above
+# Read images
+Slope.Map.Composite.Image.1 <- image_read("Slope_Map_Composite.png")
 
-# Save the combined three-panel figure
-#ggsave(
-#  filename = "Final_Three_Panel_Figure_2.png",  
-#  plot = Final.Three.Panel.Figure.2,            
-#  width = 17,                                 
-#  height = 17,                                
-#  dpi = 300,                                 
-#  bg = "white"                                
-#)
+Ridgeline.Plot.No.AllZones.Image.1 <- image_read("Ridgeline_Plot_No_AllZones.png")
+
+# Convert to raster grobs
+grob.Slope.Map.Composite.Image.1 <- rasterGrob(as.raster(Slope.Map.Composite.Image.1))
+
+grob.Ridgeline.Plot.No.AllZones.Image.1 <- rasterGrob(as.raster(Ridgeline.Plot.No.AllZones.Image.1))
+
+# Wrap each raster in ggplot
+ppA.Slope.Map.Composite.Image.1 <- ggplot() + annotation_custom(grob.Slope.Map.Composite.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+
+ppC.Ridgeline.Plot.No.AllZones.Image.1 <- ggplot() + annotation_custom(grob.Ridgeline.Plot.No.AllZones.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+
+# --- Arrange with patchwork and labels ---
+Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork <- ppA.Slope.Map.Composite.Image.1 / (ppB.Study.Areas.Map.Composite.Image.2 + ppC.Ridgeline.Plot.No.AllZones.Image.1) +
+  plot_annotation(tag_levels = 'A') &
+  theme(
+    plot.tag = element_text(size = 12, face = 'bold'),
+    panel.spacing = unit(0.2, "cm"),
+    plot.background = element_blank()
+  )
+
+
+Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork
+
+# --- Save multipanel figure ---
+ggsave("Slope.StudyAreas.Ridgeline.Patchwork.png",
+       plot = Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork,
+       width = 12, height = 10, units = "in", dpi = 300)
 ```
-
-
 
 ```{r}
