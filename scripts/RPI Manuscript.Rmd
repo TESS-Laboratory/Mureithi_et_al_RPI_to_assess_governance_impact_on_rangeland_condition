@@ -5913,7 +5913,7 @@ ppA.Slope.Map.Composite.Image.1 <- ggplot() + annotation_custom(grob.Slope.Map.C
 
 ppC.Ridgeline.Plot.No.AllZones.Image.1 <- ggplot() + annotation_custom(grob.Ridgeline.Plot.No.AllZones.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
-# --- Arrange with patchwork and labels ---
+# Arrange with patchwork and labels
 Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork <- ppA.Slope.Map.Composite.Image.1 / (ppB.Study.Areas.Map.Composite.Image.2 + ppC.Ridgeline.Plot.No.AllZones.Image.1) +
   plot_annotation(tag_levels = 'A') &
   theme(
@@ -5925,7 +5925,7 @@ Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork <- ppA.Sl
 
 Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork
 
-# --- Save multipanel figure ---
+# Save multipanel figure
 ggsave("Slope.StudyAreas.Ridgeline.Patchwork.png",
        plot = Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork,
        width = 12, height = 10, units = "in", dpi = 300)
