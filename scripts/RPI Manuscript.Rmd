@@ -5820,11 +5820,11 @@ ggsave( filename = "RPI_Ridgeline_Bottom_NoLegend.png", plot = RPI.Ridgeline.Bot
 ## VERSION 1 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
 
 # Read saved images above
-Mean.RPI.Static.Map.Image <- ggplotify::as.ggplot(png::readPNG("Mean_RPI_Static_Map.png"))
+Mean.RPI.Static.Map.Image.1 <- ggplotify::as.ggplot(png::readPNG("Mean_RPI_Static_Map.png"))
 
-Study.Areas.Map.Composite.Image <- ggplotify::as.ggplot(png::readPNG("Study_Areas_Map_Composite_Coloured.png"))
+Study.Areas.Map.Composite.Image.1 <- ggplotify::as.ggplot(png::readPNG("Study_Areas_Map_Composite_Coloured.png"))
 
-RPI.Ridgeline.Map.Image <- ggplotify::as.ggplot(png::readPNG("RPI_Ridgeline_Bottom_NoLegend.png"))
+RPI.Ridgeline.Map.Image.1 <- ggplotify::as.ggplot(png::readPNG("RPI_Ridgeline_Bottom_NoLegend.png"))
 
 # Arrange panels with labels
 Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot <- cowplot::plot_grid(
@@ -5845,22 +5845,28 @@ ggsave("Multipanel_Figure_cowplot.png", plot = Mean.RPI.Static.Study.Areas.Compo
 ## VERSION 2 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
 
 # Read images
-imgA <- image_read("Mean_RPI_Static_Map.png")
-imgB <- image_read("Study_Areas_Map_Composite_Coloured.png")
-imgC <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
+Mean.RPI.Static.Map.Image.2 <- image_read("Mean_RPI_Static_Map.png")
+
+Study.Areas.Map.Composite.Image.2 <- image_read("Study_Areas_Map_Composite_Coloured.png")
+
+RPI.Ridgeline.Map.Image.2 <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
 
 # Convert to raster grobs
-gA <- rasterGrob(as.raster(imgA))
-gB <- rasterGrob(as.raster(imgB))
-gC <- rasterGrob(as.raster(imgC))
+grob.Mean.RPI.Static.Map.Image.2 <- rasterGrob(as.raster(Mean.RPI.Static.Map.Image.2))
+
+grob.Study.Areas.Map.Composite.Image.2 <- rasterGrob(as.raster(Study.Areas.Map.Composite.Image.2))
+
+grob.RPI.Ridgeline.Map.Image.2 <- rasterGrob(as.raster(RPI.Ridgeline.Map.Image.2))
 
 # Wrap each raster in ggplot
-ppA <- ggplot() + annotation_custom(gA, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
-ppB <- ggplot() + annotation_custom(gB, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
-ppC <- ggplot() + annotation_custom(gC, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppA.Mean.RPI.Static.Map.Image.2 <- ggplot() + annotation_custom(grob.Mean.RPI.Static.Map.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+
+ppB.Study.Areas.Map.Composite.Image.2 <- ggplot() + annotation_custom(grob.Study.Areas.Map.Composite.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+
+ppC.RPI.Ridgeline.Map.Image.2 <- ggplot() + annotation_custom(grob.RPI.Ridgeline.Map.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
 # Arrange with patchwork and labels
-multi_panel_patchwork <- ppA / (ppB + ppC) +
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork <- ppA.Mean.RPI.Static.Map.Image.2 / (ppB.Study.Areas.Map.Composite.Image.2 + ppC.RPI.Ridgeline.Map.Image.2) +
   plot_annotation(tag_levels = 'A') &
   theme(
     plot.tag = element_text(size = 12, face = 'bold'),
@@ -5868,10 +5874,11 @@ multi_panel_patchwork <- ppA / (ppB + ppC) +
     plot.background = element_blank()
   )
 
-# Save multipanel figure
-ggsave("Multipanel_Figure_patchwork.png", plot = multi_panel_patchwork,
-       width = 12, height = 10, units = "in", dpi = 300)
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork
 
+# Save multipanel figure
+ggsave("Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png", plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork,
+       width = 12, height = 10, units = "in", dpi = 300)
 ```
 
 ```{r}
