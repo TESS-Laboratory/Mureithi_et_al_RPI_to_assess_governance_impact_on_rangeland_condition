@@ -5801,6 +5801,16 @@ ggsave("Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png", 
 ```
 
 ```{r}
+# enlarging the size of the image above in saved format
+
+ggsave(
+  "Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png",
+  plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork,
+  width = 21, height = 22, units = "cm", dpi = 300
+)
+```
+
+```{r}
 # Removing the "...All.Zones" from the Theil-Sen Slopes Ridgeline plot
 
   # Indicating the areas to remove
@@ -5922,3 +5932,9 @@ ggsave("Slope.StudyAreas.Ridgeline.Patchwork.png",
 ```
 
 ```{r}
+# increasing size of image above in saved for ease of viewing
+
+ggsave( "Slope.StudyAreas.Ridgeline.Patchwork.png", plot = Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork, width = 21, height = 22, units = "cm", dpi = 300 )
+```
+
+
