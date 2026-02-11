@@ -14,7 +14,7 @@ output: html_document
 
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -42,6 +42,8 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # truncnorm -> for generating random numbers from a truncated normal distribution
 # cowplot -> for arranging multiple ggplot objects and converting other plot types into ggplot-compatible objects 
 # ggplotify -> for converting non-ggplot objects (like base R plots or tmap grobs) into ggplot objects
+# png -> for basic reading and writing of PNG files into raw pixel arrays
+# magick -> for professional-grade image processing, editing, and format conversion
 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
@@ -5500,11 +5502,8 @@ Study.Areas.Map.Composite.Coloured <- tm_shape(All.Zones.Composite) +
     palette = area_colors_simulation,
     border.col = "white",
     lwd = 2,
-    legend.show = TRUE,
-    title = "Study Areas"
-  ) +
+    legend.show = TRUE) +
   tm_layout(
-    title = "Study Areas Distribution",
     legend.outside = TRUE,
     legend.outside.position = "right",
     frame = FALSE
@@ -5818,10 +5817,60 @@ ggsave( filename = "RPI_Ridgeline_Bottom_NoLegend.png", plot = RPI.Ridgeline.Bot
 ```
 
 ```{r}
+## VERSION 1 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
 
+# Read saved images above
+Mean.RPI.Static.Map.Image <- ggplotify::as.ggplot(png::readPNG("Mean_RPI_Static_Map.png"))
+
+Study.Areas.Map.Composite.Image <- ggplotify::as.ggplot(png::readPNG("Study_Areas_Map_Composite_Coloured.png"))
+
+RPI.Ridgeline.Map.Image <- ggplotify::as.ggplot(png::readPNG("RPI_Ridgeline_Bottom_NoLegend.png"))
+
+# Arrange panels with labels
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot <- cowplot::plot_grid(
+  Mean.RPI.Static.Map.Image,
+  cowplot::plot_grid(
+    Study.Areas.Map.Composite.Image, RPI.Ridgeline.Map.Image, 
+    ncol = 2, labels = c("B", "C")), ncol = 1, rel_heights = c(1, 1),
+  labels = c("A", ""))
+
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot
+
+# Save multipanel figure
+ggsave("Multipanel_Figure_cowplot.png", plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot,
+       width = 12, height = 10, units = "in", dpi = 300)
 ```
 
 ```{r}
+## VERSION 2 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
+
+# Read images
+imgA <- image_read("Mean_RPI_Static_Map.png")
+imgB <- image_read("Study_Areas_Map_Composite_Coloured.png")
+imgC <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
+
+# Convert to raster grobs
+gA <- rasterGrob(as.raster(imgA))
+gB <- rasterGrob(as.raster(imgB))
+gC <- rasterGrob(as.raster(imgC))
+
+# Wrap each raster in ggplot
+ppA <- ggplot() + annotation_custom(gA, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppB <- ggplot() + annotation_custom(gB, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppC <- ggplot() + annotation_custom(gC, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+
+# Arrange with patchwork and labels
+multi_panel_patchwork <- ppA / (ppB + ppC) +
+  plot_annotation(tag_levels = 'A') &
+  theme(
+    plot.tag = element_text(size = 12, face = 'bold'),
+    panel.spacing = unit(0.2, "cm"),
+    plot.background = element_blank()
+  )
+
+# Save multipanel figure
+ggsave("Multipanel_Figure_patchwork.png", plot = multi_panel_patchwork,
+       width = 12, height = 10, units = "in", dpi = 300)
 
 ```
 
