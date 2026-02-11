@@ -14,7 +14,7 @@ output: html_document
 
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -40,6 +40,8 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # patchwork -> for combining multiple plots into one figure
 # ggridges -> for creating ridge plots (joy plots)
 # truncnorm -> for generating random numbers from a truncated normal distribution
+# cowplot -> for arranging multiple ggplot objects and converting other plot types into ggplot-compatible objects 
+# ggplotify -> for converting non-ggplot objects (like base R plots or tmap grobs) into ggplot objects
 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
@@ -2653,7 +2655,7 @@ Mean.Slope.Plot
 ```
 
 ```{r}
-# Defining the custom color palette
+# Re-defining the custom color palette
 areas_colours_names <- c(
   "Amboseli" = "#440154FF",
   "AET.Buffers" = "#AADC32FF",
@@ -5270,16 +5272,6 @@ tm_shape(Slope.Composite) +
 ```
 
 ```{r}
-if (!require(cowplot)) install.packages("cowplot")
-library(cowplot)
-
-if (!require(ggplotify)) install.packages("ggplotify")
-library(ggplotify)
-
-# convert the tmap grob below into a ggplot-compatible object using as.ggplot() from cowplot.
-```
-
-```{r}
 # Update Ridgeline plot to hide legend
 Ridgeline.Plot.NoLegend <- Ridgeline.Plot +
   guides(fill = "none")
@@ -5681,7 +5673,6 @@ Mean.RPI.Static.Map <- tm_shape(Mean.RPI.Composite) +
   ) +
   tm_shape(All.Zones.Composite) +
   tm_borders(col = "white", lwd = 2) +
-  tm_title("Spatial Distribution of Mean RPI Across Study Areas") +
   tm_layout(
     legend.position = c("left", "bottom"),  # ✅ bottom-left
     frame = FALSE
@@ -5727,14 +5718,14 @@ Final.Combined.Figure.1
 
 Final.Combined.Figure.1
 
-ggsave(
-  "RPI_Three_Panel_Figure_v1.png",
-  plot = Final.Combined.Figure.1,
-  width = 16,
-  height = 16,
-  dpi = 300,
-  bg = "white"
-)
+#ggsave(
+#  "RPI_Three_Panel_Figure_v1.png",
+#  plot = Final.Combined.Figure.1,
+#  width = 16,
+#  height = 16,
+#  dpi = 300,
+#  bg = "white"
+#)
 ```
 
 ```{r}
@@ -5778,12 +5769,10 @@ RPI.Ridgeline.Bottom.NoLegend <- ggplot(
     scale = 1.2
   ) +
   scale_fill_manual(
-    values = area_colors_simulation[zones_bottom], # ensures correct colors
+    values = area_colors_simulation[zones_bottom],
     drop = TRUE
   ) +
   labs(
-    title = "Distribution of Mean Relative Productivity Index (RPI) by Area",
-    subtitle = "Based on 23-year pixel-level estimates (simulated from summary stats)",
     x = "Mean Relative Productivity Index (RPI)",
     y = NULL
   ) +
@@ -5791,8 +5780,7 @@ RPI.Ridgeline.Bottom.NoLegend <- ggplot(
   theme(
     legend.position = "none",
     axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 10),
-    plot.title = element_text(size = 10, face = "bold")
+    axis.text.x = element_text(size = 10)
   )
 
 # Combine bottom panels (map left, ridgeline right)
@@ -5806,6 +5794,35 @@ Bottom.Panel.Combined <- Study.Areas.Map.Bottom.GG | RPI.Ridgeline.Bottom.NoLege
   )
 
 Bottom.Panel.Combined
+```
+
+```{r}
+Mean.RPI.Static.Map
+
+tmap_save(Mean.RPI.Static.Map, filename = "Mean_RPI_Static_Map.png", width = 8, height = 6, units = "in", dpi = 300)
+```
+
+```{r}
+tmap_mode("plot") 
+Study.Areas.Map.Composite.Coloured
+
+tmap_save( Study.Areas.Map.Composite.Coloured, 
+           filename = "Study_Areas_Map_Composite_Coloured.png", 
+           width = 8, height = 6, units = "in", dpi = 300 )
+```
+
+```{r}
+RPI.Ridgeline.Bottom.NoLegend
+
+ggsave( filename = "RPI_Ridgeline_Bottom_NoLegend.png", plot = RPI.Ridgeline.Bottom.NoLegend, width = 8, height = 6, units = "in", dpi = 300 )
+```
+
+```{r}
+
+```
+
+```{r}
+
 ```
 
 ```{r}
@@ -5832,14 +5849,14 @@ Final.Combined.Figure.2
 
 Final.Combined.Figure.2
 
-ggsave(
-  "RPI_Three_Panel_Figure_v2.png",
-  plot = Final.Combined.Figure.2,
-  width = 17,
-  height = 17,
-  dpi = 300,
-  bg = "white"
-)
+#ggsave(
+#  "RPI_Three_Panel_Figure_v2.png",
+#  plot = Final.Combined.Figure.2,
+#  width = 17,
+#  height = 17,
+#  dpi = 300,
+#  bg = "white"
+#)
 ```
 
 ```{r}
@@ -5977,14 +5994,16 @@ Final.Three.Panel.Figure.2
 # Saving the final three-panel figure above
 
 # Save the combined three-panel figure
-ggsave(
-  filename = "Final_Three_Panel_Figure_2.png",  
-  plot = Final.Three.Panel.Figure.2,            
-  width = 17,                                 
-  height = 17,                                
-  dpi = 300,                                 
-  bg = "white"                                
-)
+#ggsave(
+#  filename = "Final_Three_Panel_Figure_2.png",  
+#  plot = Final.Three.Panel.Figure.2,            
+#  width = 17,                                 
+#  height = 17,                                
+#  dpi = 300,                                 
+#  bg = "white"                                
+#)
 ```
+
+
 
 ```{r}
