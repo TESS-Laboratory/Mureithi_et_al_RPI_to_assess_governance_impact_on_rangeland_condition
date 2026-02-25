@@ -5806,7 +5806,7 @@ Mean.RPI.Static.Map.Image.1 <- image_read("Mean_RPI_Static_Map.png")
 
 Study.Areas.Map.Composite.Image.1 <- image_read("Study_Areas_Map_Composite_Coloured.png")
 
-RPI.Ridgeline.Map.Image.1 <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
+RPI.Ridgeline.Map.Image.1 <- image_read("RPI_Ridgeline_No_AllZones.png")
 
 # Convert to raster grobs
 grob.Mean.RPI.Static.Map.Image.1 <- rasterGrob(as.raster(Mean.RPI.Static.Map.Image.1))
@@ -5839,12 +5839,61 @@ ggsave("Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png", 
 ```
 
 ```{r}
-# enlarging the size of the image above in saved format
+# VERSION 2 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
 
+# Removing the white spaces in the image above
+
+# OPTIONAL BELOW: Trim whitespace from source PNGs~ (Run once if your original PNGs contain margins)
+image_read("Mean_RPI_Static_Map.png") |>
+  image_trim() |>
+  image_write("Mean_RPI_Static_Map_trim.png")
+
+image_read("Study_Areas_Map_Composite_Coloured.png") |>
+  image_trim() |>
+  image_write("Study_Areas_Map_Composite_Coloured_trim.png")
+
+image_read("RPI_Ridgeline_No_AllZones.png") |>
+  image_trim() |>
+  image_write("RPI_Ridgeline_No_AllZones_trim.png")
+
+# Wrap images properly (NO rasterGrob needed)
+ppA <- ggdraw() + 
+  draw_image("Mean_RPI_Static_Map_trim.png")
+
+ppB <- ggdraw() + 
+  draw_image("Study_Areas_Map_Composite_Coloured_trim.png")
+
+ppC <- ggdraw() + 
+  draw_image("RPI_Ridgeline_No_AllZones_trim.png")
+
+# Patchwork Layout
+# Top: Mean RPI
+# Bottom: Study Areas | Ridgeline
+
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.2 <-
+  ppA /
+  (ppB + ppC) +
+  plot_layout(
+    heights = c(1.25, 1)  # Adjust if top needs more/less space
+  ) +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    plot.tag = element_text(size = 18, face = "bold"),
+    panel.spacing = unit(0, "cm"),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.2
+
+# Save A4 Portrait (Publication Ready)
 ggsave(
-  "Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.png",
-  plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork,
-  width = 21, height = 22, units = "cm", dpi = 300
+  filename = "Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.2.png",
+  plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork.2,
+  width = 8.27,      # A4 width (inches)
+  height = 11.69,    # A4 height (inches)
+  units = "in",
+  dpi = 600,
+  bg = "white"
 )
 ```
 
