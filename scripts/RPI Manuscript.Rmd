@@ -14,7 +14,7 @@ output: html_document
 
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext, grid)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -5732,16 +5732,25 @@ tmap_save( Study.Areas.Map.Composite.Coloured,
 #RPI.Ridgeline.Simulation.Plot
 #RPI.Ridgeline.Bottom.NoLegend {previous code}
 
-# Areas to bold
-areas_to_bold <- c()
-
-# Create label vector with markdown formatting
-Area.Labels <- Mean.RPI.Order.No.AllZones
-Area.Labels.Formatted <- ifelse(
-  Area.Labels %in% areas_to_bold,
-  paste0("<b>", Area.Labels, "</b>"),
-  Area.Labels
+# Remove All Zones
+areas_to_remove <- c(
+  "Tsavo All Zones",
+  "AET All Zones"
 )
+
+RPI.All.Simulation.No.AllZones <- RPI.All.Simulation %>%
+  dplyr::filter(!Area %in% areas_to_remove)
+
+# Reorder factor levels
+Mean.RPI.Order.No.AllZones <- RPI.All.Simulation.No.AllZones %>%
+  group_by(Area) %>%
+  summarise(MeanRPI_Area = mean(RPI, na.rm = TRUE)) %>%
+  arrange(MeanRPI_Area) %>%
+  pull(Area)
+
+RPI.All.Simulation.No.AllZones$Area <-
+  factor(RPI.All.Simulation.No.AllZones$Area,
+         levels = Mean.RPI.Order.No.AllZones)
 
 # Updated Ridgeline Plot
 RPI.Ridgeline.Simulation.No.AllZones <- ggplot(
@@ -5759,9 +5768,6 @@ RPI.Ridgeline.Simulation.No.AllZones <- ggplot(
     values = area_colors_simulation[Mean.RPI.Order.No.AllZones],
     drop = TRUE
   ) +
-  scale_y_discrete(
-    labels = Area.Labels.Formatted
-  ) +
   labs(
     x = "Mean Relative Productivity Index (RPI)",
     y = "Study Area"
@@ -5769,70 +5775,55 @@ RPI.Ridgeline.Simulation.No.AllZones <- ggplot(
   theme_minimal() +
   theme(
     legend.position = "none",
+
+    # Bold axis titles
     axis.title.x = element_text(size = 13, face = "bold"),
     axis.title.y = element_text(size = 13, face = "bold"),
 
-    # Enable markdown rendering for bold labels
-    axis.text.y = element_markdown(size = 11),
+    # 🔑 Bold ALL y-axis labels
+    axis.text.y = element_text(size = 11, face = "bold"),
     axis.text.x = element_text(size = 11)
   )
 
 RPI.Ridgeline.Simulation.No.AllZones
+
+# Saving the plot
+ggsave(
+  filename = "RPI_Ridgeline_No_AllZones.png",
+  plot = RPI.Ridgeline.Simulation.No.AllZones,
+  width = 8,
+  height = 6,
+  units = "in",
+  dpi = 300
+)
 ```
 
 ```{r}
 ## VERSION 1 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
 
-# Read saved images above
-Mean.RPI.Static.Map.Image.1 <- ggplotify::as.ggplot(png::readPNG("Mean_RPI_Static_Map.png"))
-
-Study.Areas.Map.Composite.Image.1 <- ggplotify::as.ggplot(png::readPNG("Study_Areas_Map_Composite_Coloured.png"))
-
-RPI.Ridgeline.Map.Image.1 <- ggplotify::as.ggplot(png::readPNG("RPI_Ridgeline_Bottom_NoLegend.png"))
-
-# Arrange panels with labels
-Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot <- cowplot::plot_grid(
-  Mean.RPI.Static.Map.Image,
-  cowplot::plot_grid(
-    Study.Areas.Map.Composite.Image, RPI.Ridgeline.Map.Image, 
-    ncol = 2, labels = c("B", "C")), ncol = 1, rel_heights = c(1, 1),
-  labels = c("A", ""))
-
-Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot
-
-# Save multipanel figure
-ggsave("Multipanel_Figure_cowplot.png", plot = Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Cowplot,
-       width = 12, height = 10, units = "in", dpi = 300)
-
-###   RESULTED IN ERRORS, OPTED FOR VERSION 2 BELOW USING PATCHWORK INSTEAD!
-```
-
-```{r}
-## VERSION 2 for saving the 3 images (Mean RPI Static Map | Study.Areas.Map.Composite.Coloured | RPI.Ridgeline.Bottom.No.Legend)
-
 # Read images
-Mean.RPI.Static.Map.Image.2 <- image_read("Mean_RPI_Static_Map.png")
+Mean.RPI.Static.Map.Image.1 <- image_read("Mean_RPI_Static_Map.png")
 
-Study.Areas.Map.Composite.Image.2 <- image_read("Study_Areas_Map_Composite_Coloured.png")
+Study.Areas.Map.Composite.Image.1 <- image_read("Study_Areas_Map_Composite_Coloured.png")
 
-RPI.Ridgeline.Map.Image.2 <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
+RPI.Ridgeline.Map.Image.1 <- image_read("RPI_Ridgeline_Bottom_NoLegend.png")
 
 # Convert to raster grobs
-grob.Mean.RPI.Static.Map.Image.2 <- rasterGrob(as.raster(Mean.RPI.Static.Map.Image.2))
+grob.Mean.RPI.Static.Map.Image.1 <- rasterGrob(as.raster(Mean.RPI.Static.Map.Image.1))
 
-grob.Study.Areas.Map.Composite.Image.2 <- rasterGrob(as.raster(Study.Areas.Map.Composite.Image.2))
+grob.Study.Areas.Map.Composite.Image.1 <- rasterGrob(as.raster(Study.Areas.Map.Composite.Image.1))
 
-grob.RPI.Ridgeline.Map.Image.2 <- rasterGrob(as.raster(RPI.Ridgeline.Map.Image.2))
+grob.RPI.Ridgeline.Map.Image.1 <- rasterGrob(as.raster(RPI.Ridgeline.Map.Image.1))
 
 # Wrap each raster in ggplot
-ppA.Mean.RPI.Static.Map.Image.2 <- ggplot() + annotation_custom(grob.Mean.RPI.Static.Map.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppA.Mean.RPI.Static.Map.Image.1 <- ggplot() + annotation_custom(grob.Mean.RPI.Static.Map.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
-ppB.Study.Areas.Map.Composite.Image.2 <- ggplot() + annotation_custom(grob.Study.Areas.Map.Composite.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppB.Study.Areas.Map.Composite.Image.1 <- ggplot() + annotation_custom(grob.Study.Areas.Map.Composite.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
-ppC.RPI.Ridgeline.Map.Image.2 <- ggplot() + annotation_custom(grob.RPI.Ridgeline.Map.Image.2, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
+ppC.RPI.Ridgeline.Map.Image.1 <- ggplot() + annotation_custom(grob.RPI.Ridgeline.Map.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
 # Arrange with patchwork and labels
-Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork <- ppA.Mean.RPI.Static.Map.Image.2 / (ppB.Study.Areas.Map.Composite.Image.2 + ppC.RPI.Ridgeline.Map.Image.2) +
+Mean.RPI.Static.Study.Areas.Composite.RPI.Ridgeline.Map.Patchwork <- ppA.Mean.RPI.Static.Map.Image.1 / (ppB.Study.Areas.Map.Composite.Image.1 + ppC.RPI.Ridgeline.Map.Image.1) +
   plot_annotation(tag_levels = 'A') &
   theme(
     plot.tag = element_text(size = 12, face = 'bold'),
@@ -5889,7 +5880,7 @@ Ridgeline.Plot.No.AllZones <- ggplot(
 ) +
   geom_density_ridges(
     quantile_lines = TRUE,
-    quantiles = 0.5,          # median line
+    quantiles = 0.5,
     alpha = 0.9,
     scale = 3,
     rel_min_height = 0.01,
@@ -5904,7 +5895,7 @@ Ridgeline.Plot.No.AllZones <- ggplot(
   scale_fill_manual(
     values = areas_colours_names,
     name = "Study Area",
-    drop = TRUE              # ✅ drops AllZones from legend
+    drop = TRUE
   ) +
   labs(
     x = "Slope",
@@ -5913,6 +5904,9 @@ Ridgeline.Plot.No.AllZones <- ggplot(
   theme_ridges(font_size = 14, grid = TRUE) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
+    
+    # Bold y-axis labels
+    axis.text.y = element_text(face = "bold"),
     legend.position = "none"
   )
 
@@ -5961,7 +5955,7 @@ ppA.Slope.Map.Composite.Image.1 <- ggplot() + annotation_custom(grob.Slope.Map.C
 ppC.Ridgeline.Plot.No.AllZones.Image.1 <- ggplot() + annotation_custom(grob.Ridgeline.Plot.No.AllZones.Image.1, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) + theme_void()
 
 # Arrange with patchwork and labels
-Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork <- ppA.Slope.Map.Composite.Image.1 / (ppB.Study.Areas.Map.Composite.Image.2 + ppC.Ridgeline.Plot.No.AllZones.Image.1) +
+Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork <- ppA.Slope.Map.Composite.Image.1 / (ppB.Study.Areas.Map.Composite.Image.1 + ppC.Ridgeline.Plot.No.AllZones.Image.1) +
   plot_annotation(tag_levels = 'A') &
   theme(
     plot.tag = element_text(size = 12, face = 'bold'),
