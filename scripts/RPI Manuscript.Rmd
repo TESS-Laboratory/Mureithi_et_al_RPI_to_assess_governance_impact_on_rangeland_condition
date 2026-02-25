@@ -14,7 +14,7 @@ output: html_document
 
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -44,6 +44,7 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # ggplotify -> for converting non-ggplot objects (like base R plots or tmap grobs) into ggplot objects
 # png -> for basic reading and writing of PNG files into raw pixel arrays
 # magick -> for professional-grade image processing, editing, and format conversion
+# ggtext → enhanced text rendering in ggplot2 using Markdown/HTML (e.g., bold, italics, styled labels)
 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
@@ -5728,9 +5729,55 @@ tmap_save( Study.Areas.Map.Composite.Coloured,
 ```
 
 ```{r}
-RPI.Ridgeline.Bottom.NoLegend
+#RPI.Ridgeline.Simulation.Plot
+#RPI.Ridgeline.Bottom.NoLegend {previous code}
 
-ggsave( filename = "RPI_Ridgeline_Bottom_NoLegend.png", plot = RPI.Ridgeline.Bottom.NoLegend, width = 8, height = 6, units = "in", dpi = 300 )
+# Areas to bold
+areas_to_bold <- c()
+
+# Create label vector with markdown formatting
+Area.Labels <- Mean.RPI.Order.No.AllZones
+Area.Labels.Formatted <- ifelse(
+  Area.Labels %in% areas_to_bold,
+  paste0("<b>", Area.Labels, "</b>"),
+  Area.Labels
+)
+
+# Updated Ridgeline Plot
+RPI.Ridgeline.Simulation.No.AllZones <- ggplot(
+  RPI.All.Simulation.No.AllZones,
+  aes(x = RPI, y = Area, fill = Area)
+) +
+  geom_density_ridges(
+    quantile_lines = TRUE,
+    quantiles = 0.5,
+    alpha = 0.8,
+    scale = 1.2,
+    color = "black"
+  ) +
+  scale_fill_manual(
+    values = area_colors_simulation[Mean.RPI.Order.No.AllZones],
+    drop = TRUE
+  ) +
+  scale_y_discrete(
+    labels = Area.Labels.Formatted
+  ) +
+  labs(
+    x = "Mean Relative Productivity Index (RPI)",
+    y = "Study Area"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.title.x = element_text(size = 13, face = "bold"),
+    axis.title.y = element_text(size = 13, face = "bold"),
+
+    # Enable markdown rendering for bold labels
+    axis.text.y = element_markdown(size = 11),
+    axis.text.x = element_text(size = 11)
+  )
+
+RPI.Ridgeline.Simulation.No.AllZones
 ```
 
 ```{r}
