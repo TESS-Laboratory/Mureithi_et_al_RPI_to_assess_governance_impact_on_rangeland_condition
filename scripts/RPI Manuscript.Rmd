@@ -5988,7 +5988,9 @@ tmap_save( Slope.Map.Composite, filename = "Slope_Map_Composite.png", width = 8,
 ```
 
 ```{r}
-# Read images
+# VERSION 1 for saving the 3 images (Slope_Map_Composite | Study_Areas_Map_Composite_Coloured | Ridgeline_Plot_No_AllZones)
+
+# Reading the images
 Slope.Map.Composite.Image.1 <- image_read("Slope_Map_Composite.png")
 
 Ridgeline.Plot.No.AllZones.Image.1 <- image_read("Ridgeline_Plot_No_AllZones.png")
@@ -6022,9 +6024,62 @@ ggsave("Slope.StudyAreas.Ridgeline.Patchwork.png",
 ```
 
 ```{r}
-# increasing size of image above in saved for ease of viewing
+# VERSION 2 for saving the 3 images (Slope_Map_Composite | Study_Areas_Map_Composite_Coloured | Ridgeline_Plot_No_AllZones)
 
-ggsave( "Slope.StudyAreas.Ridgeline.Patchwork.png", plot = Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork, width = 21, height = 22, units = "cm", dpi = 300 )
+
+# Trimming whitespace (run once only when needed)
+
+
+image_read("Slope_Map_Composite.png") |>
+  image_trim() |>
+  image_write("Slope_Map_Composite_trim.png")
+
+image_read("Study_Areas_Map_Composite_Coloured.png") |>
+  image_trim() |>
+  image_write("Study_Areas_Map_Composite_Coloured_trim.png")
+
+image_read("Ridgeline_Plot_No_AllZones.png") |>
+  image_trim() |>
+  image_write("Ridgeline_Plot_No_AllZones_trim.png")
+
+# Wrap images using ggdraw (NO rasterGrob)
+ppA <- ggdraw() + 
+  draw_image("Slope_Map_Composite_trim.png")
+
+ppB <- ggdraw() + 
+  draw_image("Study_Areas_Map_Composite_Coloured_trim.png")
+
+ppC <- ggdraw() + 
+  draw_image("Ridgeline_Plot_No_AllZones_trim.png")
+
+# Patchwork Layout
+# Top: Slope Map
+# Bottom: Study Areas | Ridgeline
+Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork.2 <-
+  ppA /
+  (ppB + ppC) +
+  plot_layout(
+    heights = c(1.25, 1)   # adjust if slope map needs more space
+  ) +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    plot.tag = element_text(size = 18, face = "bold"),
+    panel.spacing = unit(0, "cm"),
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork.2
+
+# Save A4 Portrait (Publication Ready)
+ggsave(
+  filename = "Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork.2.png",
+  plot = Slope.Map.Composite.Study.Areas.Map.Composite.Ridgeline.Plot.Patchwork.2,
+  width = 8.27,
+  height = 11.69,
+  units = "in",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 
