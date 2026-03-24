@@ -12,7 +12,7 @@ output: html_document
 ```{r}
 # Load libraries
 
-if (!require("pacman")) install.packages("pacman")
+# if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext, grid)
 
@@ -94,32 +94,6 @@ if (Sys.info()[["sysname"]] == "Windows") {
 ```
 
 ```{r}
-# World Map Import
-Global.Country.Boundaries <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/global_country_boundaries_simplified_wgs84.shp")
-```
-
-```{r}
-# Plot of World Map
-
-Global.Country.Boundaries.Map <-
-  ggplot() +
-  geom_sf(data = Global.Country.Boundaries) +
-  labs(title = "World Country Map") +
-  theme_minimal() # Replaced theme_beautiful() with a standard theme
-
-Global.Country.Boundaries.Map
-
-# Saving plot
-#ggsave(
-#  filename = "World_Country_Map.png", # Choose a file name and format
-#  plot = World.Country.Map,
-#  width = 10,
-#  height = 6,
-#  dpi = 300
-#)
-```
-
-```{r}
 # Africa Country Boundary import
 
 Africa.Country.Boundaries <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/africa_country_boundaries_simplified_wgs84.shp")
@@ -150,43 +124,75 @@ Kenya.Regional.Admin.Boundary <- st_read("C:/Workspace/Mureithi_RPI_Conservation
 ```{r}
 # Focusing on Kenya's Terrestrial Protected Areas
 
-Kenya.Terrestrial.PAs <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_terrestrial_protected_areas_wgs84.shp")
+Kenya.ProtectedAreas <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_terrestrial_protected_areas_wgs84.shp")
 ```
 
 ```{r}
 # Plotting Kenya's Terrestrial PAs
+unique(Kenya.ProtectedAreas$DESIG)
+ProtectedArea.Palette <- c(
+  "National Park" = "#1b9e77",
+  "National Reserve" = "#d95f02",
+  "Forest Reserve" = "#66a61e",
+  "Marine National Park" = "#1f78b4",
+  "Marine National Reserve" = "#a6cee3",
+  "Community Conservancy" = "#e7298a",
+  "Community Nature Reserve" = "#7570b3",
+  "Community Wildlife Sanctuary" = "#e6ab02",
+  "Conservancy" = "#a6761d",
+  "Group Ranch" = "#666666",
+  "Private Nature Reserve" = "#8dd3c7",
+  "Private Protected Area" = "#fb8072",
+  "Private Ranch" = "#b3de69",
+  "Wildlife Sanctuary" = "#fccde5",
+  "National Sanctuary" = "#bc80bd",
+  "Ramsar Site, Wetland of International Importance" = "#80b1d3",
+  "World Heritage Site (natural or mixed)" = "#fdb462",
+  "Not Reported" = "grey80"
+)
 
-Kenya.Terrestrial.PAs.Map <-
+tmap_mode("plot")
+
+Kenya.ProtectedAreas.Map <-
   tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_borders(col = "grey70", lwd = 0.5) +
-  tm_shape(Kenya.Terrestrial.PAs) +
-  # Reverting to 'col' for the constant fill color, as 'fill' seems to be for mapped variables (I am struggling to understand tmap v3 and tmap v4) - 'alpha' is still used for constant transparency.
-  tm_fill(
-    col = "lightgrey",   
-    alpha = 1,           
-    legend.show = TRUE,
-    legend.title = "Kenya's Terrestrial Protected Areas") +
-  tm_borders(col = "black", lwd = 1) +
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "black", lwd = 1.2) +
-  tm_layout(
-    title.size = 1,
-    legend.text.size = 0.8,
-    legend.title.size = 0.9,
-    legend.position = c("right", "bottom"),
-    frame = FALSE,
-    text.fontfamily = "Helvetica") +
-  tm_title("Kenya's Terrestrial Protected Areas")
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
 
-Kenya.Terrestrial.PAs.Map
+  tm_shape(Kenya.ProtectedAreas) +
+  tm_polygons(
+    fill = "DESIG",
+    col = NA,
+    fill.scale = tm_scale_categorical(values = ProtectedArea.Palette),
+    fill.legend = tm_legend(title = "Designation")
+  ) +
 
-#tmap_save(
-#  tm = Kenya.Terrestrial.PAs.Map,
-#  filename = "Kenya_Terrestrial_Protected_Areas_Map.png", # Choose a file name
-#  width = 8,  # width in inches
-#  height = 6, # height in inches
-#  dpi = 300   # resolution
-#)
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("") + 
+tm_layout(
+  frame = FALSE,
+  legend.outside = TRUE,
+  legend.outside.position = "right",
+  legend.text.size = 0.6,
+  legend.title.size = 0.8
+)
+
+Kenya.ProtectedAreas.Map
+
+# Saving the map
+tmap_save(
+  Kenya.ProtectedAreas.Map,
+  "Figure_S1_Kenya_Protected_Areas.tiff",
+  width = 8,
+  height = 6,
+  units = "in",
+  dpi = 600,
+  compression = "lzw"
+)
 ```
 
 ```{r}
@@ -209,24 +215,30 @@ tmap_mode("plot")
 Kenya.Rangeland.Map <-
   tm_shape(Kenya.Regional.Admin.Boundary) +
   tm_borders(col = "grey70", lwd = 0.5) +
+
   tm_shape(Kenya.Rangeland.Counties) +
-  # Reverting to 'col' for the constant fill color, as 'fill' seems to be for mapped variables (I am struggling to understand tmap v3 and tmap v4) - 'alpha' is still used for constant transparency.
-  tm_fill(
-    col = "lightgrey",   
-    alpha = 1,           
-    legend.show = TRUE,
-    legend.title = "Rangeland Counties") +
-  tm_borders(col = "black", lwd = 1) +
+  tm_polygons(
+    fill = "lightgrey",
+    col = "black",
+    lwd = 0.6
+  ) +
+
   tm_shape(Kenya.Admin.Boundary) +
   tm_borders(col = "black", lwd = 1.2) +
+
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("Kenya's Rangeland Counties") +
+
   tm_layout(
-    title.size = 1,
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
     legend.text.size = 0.8,
     legend.title.size = 0.9,
-    legend.position = c("right", "bottom"),
-    frame = FALSE,
-    text.fontfamily = "Helvetica") +
-  tm_title("Kenya's Rangeland Counties")
+    text.fontfamily = "Helvetica"
+  )
 
 Kenya.Rangeland.Map
 
