@@ -2610,6 +2610,10 @@ RPI.Distribution.Areas.Plot
 ```
 
 ```{r}
+# Calculation of Theil-Sen
+```
+
+```{r}
 ## Theil-Sen across Amboseli NP
 
 # Sorting data by "Year" & "ID"
