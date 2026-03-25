@@ -14,7 +14,7 @@ output: html_document
 
 # if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -44,6 +44,7 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # truncnorm -> for generating random numbers from a truncated normal distribution
 # cowplot -> for arranging multiple ggplot objects and converting other plot types into ggplot-compatible objects 
 # ggplotify -> for converting non-ggplot objects (like base R plots or tmap grobs) into ggplot objects
+# ggspatial → for extending ggplot2 with spatial features, adding basemaps, scale bars, and north arrows to maps built with geom_sf() and raster data
 # png -> for basic reading and writing of PNG files into raw pixel arrays
 # magick -> for professional-grade image processing, editing, and format conversion
 # ggtext → enhanced text rendering in ggplot2 using Markdown/HTML (e.g., bold, italics, styled labels)
@@ -129,18 +130,22 @@ Africa.Map <-
     col = "black",
     lwd = 0.6) +
 
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom")) +
+  tm_compass(
+    position = c("left", "top"),
+    size = 1.5
+  ) +
+  
+  tm_scalebar(
+    position = c("left", "bottom"),
+    text.size = 0.7) +
 
   tm_title("") +
 
   tm_layout(
     frame = FALSE,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    legend.text.size = 0.8,
-    legend.title.size = 0.9,
-    text.fontfamily = "Helvetica"
+    asp = 0,
+    legend.show = FALSE,
+    outer.margins = c(0.02, 0.02, 0.05, 0.02)
   )
 
 Africa.Map
@@ -378,7 +383,7 @@ Kenya.GAE.TCA.Map <-
   tm_compass(position = c("left", "bottom")) +
   tm_scalebar(position = c("left", "bottom")) +
 
-  tm_title("National Parks and Reserves - GAE/TCA") +
+  tm_title("") +
 
   tm_layout(
     frame = FALSE,
@@ -410,31 +415,7 @@ AET.Buffers <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/A
 ```
 
 ```{r}
-# Visualising the Community Conservancy Lands surrounding Amboseli NP
-
-ggplot()+
-  geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
-  geom_sf(data = Amboseli, aes(fill = NAME), color = "black", linewidth = 0.3) +
-  geom_sf(data = AET.Conservancies, aes(fill = consv_name), color = "black", linewidth = 0.1) +
-  labs(title = "Community & Group Lands surrounding Amboseli NP") +
-  theme_beautiful()
-```
-
-```{r}
-# Visualising the Community & Group Rangelands/Grazelands/Buffers surrounding Amboseli NP
-
-ggplot()+
-  geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
-  geom_sf(data = Amboseli, aes(fill = NAME), color = "black", linewidth = 0.3) +
-  geom_sf(data = AET.Buffers, aes(fill = consv_name), color = "black", linewidth = 0.1) +
-  labs(title = "Bufferzones, Corridors & Grazelands surrounding Amboseli NP") +
-  theme_beautiful()
-```
-
-```{r}
 # Visualising the Conservancies & Community Lands within AET
-
-library(ggspatial)
 
 ggplot() +
   geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
@@ -533,8 +514,6 @@ Tsavo.SettledAreas <- st_transform(Tsavo.SettledAreas, crs(RPI))
 ```{r}
 # Visualising the Community Conservancies & Group Ranches within TCA
 
-library(ggspatial)
-
 ggplot() +
   geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
   geom_sf(data = Tsavo.Ranches, aes(fill = "Tsavo Ranches"), alpha = 0.5) +
@@ -620,45 +599,71 @@ TCA.AllZones.Map
 
 ```{r}
 # CONNECTIVITY MAP OF THE ECOREGIONS
-tmap_mode("view")
+tmap_mode("plot")
 
 Connectivity.Map <- 
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
+  
   tm_shape(Tsavo.AllZones) +
   tm_polygons(
     fill = "ZoneType",
     fill.scale = tm_scale_categorical(values = c(
-      "Ranches" = "orange",
-      "Settled Areas" = "maroon"
+      "Ranches" = "#2C728EFF",          # Tsavo Ranches
+      "Settled Areas" = "#21908CFF"     # Tsavo Settled Areas
     )),
     fill.legend = tm_legend(title = "Tsavo Surroundings"),
-    col = "black", lwd = 0.4
+    col = "grey30", lwd = 0.3
   ) +
   
   tm_shape(AET.AllZones) +
   tm_polygons(
     fill = "ZoneType",
     fill.scale = tm_scale_categorical(values = c(
-      "Buffer" = "forestgreen",
-      "Conservancy" = "limegreen"
+      "Buffer" = "#AADC32FF",
+      "Conservancy" = "#5DC863FF"
     )),
-    fill.legend = tm_legend(title = "AET Areas"),
-    col = "black", lwd = 0.4
+    fill.legend = tm_legend(title = "Amboseli Surroundings"),
+    col = "grey20", lwd = 0.4
   ) +
   
   tm_shape(GAE.TCA) +
   tm_polygons(
     fill = "Area",
-    fill.scale = tm_scale_categorical(values = "brewer.set3"),
-    fill.legend = tm_legend(title = "Protected Area"),
-    col = "black", lwd = 0.5
+    fill.scale = tm_scale_categorical(values = c(
+      "Amboseli" = "#440154FF",
+      "Tsavo East" = "#472D7BFF",
+      "Tsavo West" = "#3B528BFF",
+      "Chyulu Hills" = "#2A788EFF",     # complementary blue
+      "Ngai Ndethia" = "#22A884FF",     # mid green-blue
+      "South Kitui" = "#7AD151FF"       # lighter green
+    )),
+    fill.legend = tm_legend(title = "Protected Areas"),
+    col = "black", lwd = 0.8
   ) +
   
+  tm_title("") +
+  
+  tm_compass(
+    position = c("left", "top"),
+    size = 1.5
+  ) +
+  
+  tm_scalebar(
+    position = c("left", "bottom"),
+    text.size = 0.7) +
+  
   tm_layout(
-    title = "Connectivity of GAE and TCA Landscape",
-    title.size = 1.2,
+    frame = FALSE,
+    legend.show = FALSE,
+    asp = 0,
     legend.outside = TRUE,
-    legend.text.size = 0.9,
-    legend.title.size = 1
+    legend.outside.position = "right",
+    outer.margins = c(0.02, 0.02, 0.05, 0.02)
   )
 
 Connectivity.Map
@@ -670,6 +675,130 @@ Connectivity.Map
 #  width = 10,
 #  height = 8,
 #  dpi = 300
+#)
+```
+
+```{r}
+# Focusing in on study areas
+
+Connectivity.Focus.Map <- 
+  
+  tm_shape(GAE.TCA) +
+  tm_polygons(
+    fill = "Area",
+    fill.scale = tm_scale_categorical(values = c(
+      "Amboseli" = "#440154FF",
+      "Tsavo East" = "#472D7BFF",
+      "Tsavo West" = "#3B528BFF",
+      "Chyulu Hills" = "#2A788EFF",     # complementary blue
+      "Ngai Ndethia" = "#22A884FF",     # mid green-blue
+      "South Kitui" = "#7AD151FF"       # lighter green
+    )),
+    fill.legend = tm_legend(title = "Protected Areas"),
+    col = "black", lwd = 0.8
+  ) +
+  
+  tm_shape(Tsavo.AllZones) +
+  tm_polygons(
+    fill = "ZoneType",
+    fill.scale = tm_scale_categorical(values = c(
+      "Ranches" = "#2C728EFF",          # Tsavo Ranches
+      "Settled Areas" = "#21908CFF"     # Tsavo Settled Areas
+    )),
+    fill.legend = tm_legend(title = "Tsavo Surroundings"),
+    col = "grey30", lwd = 0.3
+  ) +
+  
+  tm_shape(AET.AllZones) +
+  tm_polygons(
+    fill = "ZoneType",
+    fill.scale = tm_scale_categorical(values = c(
+      "Buffer" = "#AADC32FF",
+      "Conservancy" = "#5DC863FF"
+    )),
+    fill.legend = tm_legend(title = "Amboseli Surroundings"),
+    col = "grey20", lwd = 0.4
+  ) +
+  
+  tm_title("") +
+  tm_compass(
+    position = c("left", "top"),
+    size = 1.5
+  ) +
+  
+  tm_scalebar(
+    position = c("left", "bottom"),
+    text.size = 0.7) +
+  
+  tm_layout(
+    frame = FALSE,
+    asp = 0,
+    legend.show = TRUE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    outer.margins = c(0.02, 0.02, 0.05, 0.02)
+  )
+
+Connectivity.Focus.Map
+```
+
+```{r}
+# Combining Africa Map, Connectivity Map & Connectivity Focus Map into one figure (Figure 1 edit)
+
+# Saving each map to avoid the Grob|Patchwork inconsistency
+tmap_save(
+  Africa.Map,
+  "Africa_Map.png",
+  dpi = 600,
+  width = 8,
+  height = 6
+)
+
+tmap_save(
+  Connectivity.Map,
+  "Connectivity_Map.png",
+  dpi = 600,
+  width = 8,
+  height = 6
+)
+
+tmap_save(
+  Connectivity.Focus.Map,
+  "Connectivity_Focus_Map.png",
+  dpi = 600,
+  width = 8,
+  height = 6
+)
+
+# Reading the saved images 
+library(patchwork) 
+library(png) 
+library(grid) 
+
+Africa.img <- grid::rasterGrob(png::readPNG("Africa_Map.png")) 
+Conn.img <- grid::rasterGrob(png::readPNG("Connectivity_Map.png")) 
+ConnFocus.img <- grid::rasterGrob(png::readPNG("Connectivity_Focus_Map.png")) 
+
+# Creating an empty panel for attaching an image 
+empty_panel <- grid::grobTree( grid::rectGrob(gp = grid::gpar(col = "grey70", fill = NA)), grid::textGrob("To be added", gp = grid::gpar(col = "grey50")) ) 
+
+# Assembling everything together 
+Africa.Kenya.Connectivity.Final.Figure <- 
+  (wrap_elements(Africa.img) | wrap_elements(Conn.img)) / 
+  (wrap_elements(ConnFocus.img) | wrap_elements(empty_panel)) + 
+  plot_layout(widths = c(2, 2), heights = c(3, 3)) + 
+  plot_annotation(tag_levels = "A") 
+
+Africa.Kenya.Connectivity.Final.Figure
+
+# Saving the Final Figure
+#ggsave(
+#  "Final_Figure.tiff",
+#  plot = Africa.Kenya.Connectivity.Final.Figure,
+#  width = 16,
+#  height = 12,
+#  dpi = 600,
+#  compression = "lzw"
 #)
 ```
 
