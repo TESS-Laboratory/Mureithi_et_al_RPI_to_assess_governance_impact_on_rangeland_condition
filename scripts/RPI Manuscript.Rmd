@@ -750,56 +750,82 @@ tmap_save(
   Africa.Map,
   "Africa_Map.png",
   dpi = 600,
-  width = 8,
-  height = 6
+  width = 10,
+  height = 8
 )
 
 tmap_save(
   Connectivity.Map,
   "Connectivity_Map.png",
   dpi = 600,
-  width = 8,
-  height = 6
+  width = 10,
+  height = 8
 )
 
 tmap_save(
   Connectivity.Focus.Map,
   "Connectivity_Focus_Map.png",
   dpi = 600,
-  width = 8,
-  height = 6
+  width = 10,
+  height = 8
 )
 
 # Reading the saved images 
-library(patchwork) 
-library(png) 
-library(grid) 
+Africa.img <- rasterGrob(
+  readPNG("Africa_Map.png"),
+  interpolate = TRUE,
+  width = unit(1, "npc"),
+  height = unit(1, "npc")
+)
 
-Africa.img <- grid::rasterGrob(png::readPNG("Africa_Map.png")) 
-Conn.img <- grid::rasterGrob(png::readPNG("Connectivity_Map.png")) 
-ConnFocus.img <- grid::rasterGrob(png::readPNG("Connectivity_Focus_Map.png")) 
+Conn.img <- rasterGrob(
+  readPNG("Connectivity_Map.png"),
+  interpolate = TRUE,
+  width = unit(1, "npc"),
+  height = unit(1, "npc")
+)
+
+ConnFocus.img <- rasterGrob(
+  readPNG("Connectivity_Focus_Map.png"),
+  interpolate = TRUE,
+  width = unit(1, "npc"),
+  height = unit(1, "npc")
+)
 
 # Creating an empty panel for attaching an image 
 empty_panel <- grid::grobTree( grid::rectGrob(gp = grid::gpar(col = "grey70", fill = NA)), grid::textGrob("To be added", gp = grid::gpar(col = "grey50")) ) 
 
 # Assembling everything together 
-Africa.Kenya.Connectivity.Final.Figure <- 
-  (wrap_elements(Africa.img) | wrap_elements(Conn.img)) / 
-  (wrap_elements(ConnFocus.img) | wrap_elements(empty_panel)) + 
-  plot_layout(widths = c(2, 2), heights = c(3, 3)) + 
-  plot_annotation(tag_levels = "A") 
+Africa.Kenya.Connectivity.Final.Figure <-
+  (wrap_elements(Africa.img) | wrap_elements(Conn.img)) /
+  (wrap_elements(ConnFocus.img) | wrap_elements(empty_panel)) +
+  
+  plot_layout(
+    widths = c(1, 1),
+    heights = c(1, 1),
+    guides = "collect"
+  ) +
+  
+  plot_annotation(tag_levels = "A") &
+  
+  theme(
+    plot.margin = margin(0, 0, 0, 0),
+    panel.spacing = unit(0, "null")
+  )
 
 Africa.Kenya.Connectivity.Final.Figure
+```
 
-# Saving the Final Figure
-#ggsave(
-#  "Final_Figure.tiff",
-#  plot = Africa.Kenya.Connectivity.Final.Figure,
-#  width = 16,
-#  height = 12,
-#  dpi = 600,
-#  compression = "lzw"
-#)
+```{r}
+# Saving the Final Figure "Africa.Kenya.Connectivity.Final.Figure"
+ggsave(
+  "Final_Figure_A4.png",
+  Africa.Kenya.Connectivity.Final.Figure,
+  width = 11.69,
+  height = 8.27,
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
