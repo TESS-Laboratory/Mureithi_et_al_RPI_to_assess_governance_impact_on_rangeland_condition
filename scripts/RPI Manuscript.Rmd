@@ -3000,6 +3000,18 @@ areas_colours_names <- c(
   "Tsavo.AllZones" = "#27AD81FF"
 )
 
+area_labels <- c(
+  "Amboseli" = "Amboseli NP",
+  "AET.Buffers" = "Amboseli Community/Group Ranches",
+  "AET.AllZones" = "Amboseli All Zones",
+  "AET.Conservancies" = "Amboseli Conservancies",
+  "TsavoWest" = "Tsavo West NP",
+  "TsavoEast" = "Tsavo East NP",
+  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo.SettledAreas" = "Tsavo Settled Areas",
+  "Tsavo.AllZones" = "Tsavo All Zones"
+)
+
 # Combining all correctly labeled data frames
 All.Pixel.Slopes <- bind_rows(
   Amboseli.TheilSen, TsavoEast.TheilSen,  
@@ -3027,16 +3039,25 @@ Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)
     color = "black"
   ) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
-  scale_fill_manual(values = areas_colours_names, name = "Study Area") +
+  
+  scale_fill_manual(
+    values = areas_colours_names,   
+    labels = area_labels,           
+    name = "Study Area"
+  ) +
+  
+  scale_y_discrete(labels = area_labels) +  
+  
   labs(
     title = "Distribution of Theil–Sen Slopes per Area",
     x = "Slope",
     y = "Area"
   ) +
+  
   theme_ridges(font_size = 14, grid = TRUE) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "bottom"
+    legend.position = "none"
   )
 
 Ridgeline.Plot
