@@ -14,7 +14,7 @@ output: html_document
 
 # if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -53,6 +53,7 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
 # shinyjs → for adding JavaScript functionality (like hiding elements, disabling buttons, running scripts) inside Shiny apps without writing raw JavaScript
+# rstatix -> for tidy post-hoc tests
 ```
 
 ```{r}
@@ -3075,32 +3076,31 @@ Ridgeline.Plot
 
 All.Pixel.Slopes.Plot <- ggplot(All.Pixel.Slopes, aes(x = Area, y = Slope, fill = Area)) +
   
-  # Adding a horizontal line at y=0 for trend reference
   geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
   
-  # Plotting the violin and boxplot for distribution
   geom_violin(trim = FALSE, alpha = 0.7) +
   geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
   
-  # Adding the mean as a black point
   stat_summary(fun = mean, geom = "point", shape = 21, size = 3, fill = "black") +
   
-  # Creating a panel for each area using facet_wrap
-  facet_wrap(~ Area, ncol = 3, scales = "free_y") +
+  facet_wrap(
+    ~ Area,
+    ncol = 3,
+    scales = "free_y",
+    labeller = labeller(Area = area_labels)   # 👈 THIS is the key
+  ) +
   
-  # Adding labels and a clean theme
   labs(
     title = "Distribution of RPI Trends (Theil–Sen Slopes) by Area",
     x = "Area",
     y = "Slope"
   ) +
   
-  # Applying a clean theme and customize elements
   theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold"),
     strip.text = element_text(face = "bold"),
-    legend.position = "none", # Remove the redundant legend
+    legend.position = "none",
     axis.text.x = element_blank()
   )
 
@@ -3224,8 +3224,8 @@ Tsavo.Ranches.Slope.Raster[Tsavo.Ranches.Slope.Cells$cell] <- Tsavo.Ranches.Slop
 tm_shape(Tsavo.Ranches.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Tsavo Ranches Theil–Sen Slope", reverse = TRUE)) +
-  tm_title("Spatial Distribution of RPI Trends — Tsavo Ranches") +
+    col.legend = tm_legend(title = "Tsavo Conservancies/Ranches Theil–Sen Slope", reverse = TRUE)) +
+  tm_title("Spatial Distribution of RPI Trends — Tsavo Conservancies/Ranches") +
   tm_layout(legend.outside = TRUE)
 ```
 
@@ -3301,8 +3301,8 @@ tmap_mode("view")
 tm_shape(AET.Conservancies.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "AET.Conservancies Theil–Sen Slope", reverse = TRUE)) +
-  tm_title("Spatial Distribution of RPI Trends — AET Conservancies") +
+    col.legend = tm_legend(title = "Amboseli Conservancies Theil–Sen Slope", reverse = TRUE)) +
+  tm_title("Spatial Distribution of RPI Trends — Amboseli Conservancies") +
   tm_layout(legend.outside = TRUE)
 ```
 
@@ -3326,8 +3326,8 @@ AET.Buffers.Slope.Raster[AET.Buffers.Slope.Cells$cell] <- AET.Buffers.Slope.Cell
 tm_shape(AET.Buffers.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "AET.Buffers Theil–Sen Slope", reverse= TRUE)) +
-  tm_title("Spatial Distribution of RPI Trends — AET Buffers") +
+    col.legend = tm_legend(title = "Amboseli Community/Group Ranches Theil–Sen Slope", reverse= TRUE)) +
+  tm_title("Spatial Distribution of RPI Trends — Amboseli Community/Group Ranches") +
   tm_layout(legend.outside = TRUE)
 ```
 
@@ -3352,13 +3352,13 @@ tmap_mode("view")
 tm_shape(AET.AllZones.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "AET AllZones Theil–Sen Slope", reverse = TRUE)
+    col.legend = tm_legend(title = "Amboseli All Zones Theil–Sen Slope", reverse = TRUE)
   ) +
   tm_shape(Amboseli.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Amboseli Theil–Sen Slope", reverse = TRUE)) +
-  tm_title("Spatial Distribution of Theil-Sen Slope — Amboseli & Surrounding Lands") +
+    col.legend = tm_legend(title = "Amboseli All Zones Theil–Sen Slope", reverse = TRUE)) +
+  tm_title("Spatial Distribution of Theil-Sen Slope — Amboseli All Zones") +
   tm_layout(legend.outside = TRUE)
 ```
 
@@ -3430,7 +3430,10 @@ print(Governance.Summary)
 ```{r}
 ## Stats 1: Kruskal-Wallis Test
 
-kruskal.test(Slope ~ ProtectionType, data = All.Pixel.Slopes)
+# Run Kruskal-Wallis across all areas
+Kruskal.Wallis.Results <- kruskal.test(Slope ~ Area, data = All.Pixel.Slopes)
+print(Kruskal.Wallis.Results)
+
 ```
 
 ```{r}
@@ -3440,9 +3443,9 @@ kruskal.test(Slope ~ ProtectionType, data = All.Pixel.Slopes)
 
 # Null hypothesis (H₀): All governance types have the same distribution of slopes.
 
-# Result: χ² = 13345, df = 3, p < 2.2e-16.
+# Result: χ² = 24,950, df = 8, p < 2.2e‑16.
 
-# = This means that the  distributions of slope values differ significantly across governance types. So at least one type is performing differently.
+# = The distributions of slope values differ significantly across the nine areas. At least one area is performing differently from the others.
 ```
 
 ```{r}
@@ -3454,19 +3457,7 @@ pairwise.wilcox.test(All.Pixel.Slopes$Slope, All.Pixel.Slopes$ProtectionType, p.
 ```{r}
 ## Results explanation
 
-# CommunityLand vs MixedUse: p < 2e-16 → significantly different.
-
-# CommunityLand vs NationalPark: p < 2e-16 → very different.
-
-# CommunityLand vs Ranches: p < 2e-16 → very different.
-
-# MixedUse vs NationalPark: p < 2e-16 → very different.
-
-# MixedUse vs Ranches: p < 2e-16 → very different.
-
-# NationalPark vs Ranches: p < 2e-16 → very different.
-
-# = This means that every governance type is statistically distinct from every other, even after conservative Bonferroni correction
+# = each protection type has a distinct slope distribution, and the differences are strong enough that they remain significant even after correcting for multiple comparisons.
 ```
 
 ```{r}
