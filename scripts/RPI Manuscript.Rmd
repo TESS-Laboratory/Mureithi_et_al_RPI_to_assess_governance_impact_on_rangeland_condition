@@ -14,7 +14,7 @@ output: html_document
 
 # if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext, grid)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -27,6 +27,8 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # terra -> for handling and processing raster data
 # tidyterra -> for using tidyverse tools on terra objects
 # tmap -> for creating thematic maps
+# plotly → for creating interactive, web-based plots and dashboards that allow zooming, hovering, and dynamic exploration of data
+# kableExtra → for enhancing tables created with knitr::kable(), adding styling, formatting, and LaTeX/HTML features for publication-quality tables
 
 # VISUALISATION#
 # viridis -> for perceptually uniform color palettes
@@ -45,9 +47,11 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # png -> for basic reading and writing of PNG files into raw pixel arrays
 # magick -> for professional-grade image processing, editing, and format conversion
 # ggtext → enhanced text rendering in ggplot2 using Markdown/HTML (e.g., bold, italics, styled labels)
+# colorblindcheck → for checking and simulating how plots and color palettes appear to people with different types of color vision deficiencies
 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
+# shinyjs → for adding JavaScript functionality (like hiding elements, disabling buttons, running scripts) inside Shiny apps without writing raw JavaScript
 ```
 
 ```{r}
@@ -106,19 +110,72 @@ Kenya.Admin.Boundary <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governan
 ```
 
 ```{r}
-# Plotting Kenya
-
-ggplot() +
-  geom_sf(data = Kenya.Admin.Boundary, aes(fill = "Kenya"), colour = "black") +
-  scale_fill_manual(name = "Region",values = c("Kenya" = "lightgreen"))+
-  labs(title = "Kenya Administrative Boundary") +
-  theme_beautiful()
-```
-
-```{r}
 #Focusing on Boundaries within Kenya
 
 Kenya.Regional.Admin.Boundary <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_regional_admin1_boundary_wgs84.shp")
+```
+
+```{r}
+# Plotting Africa
+tmap_mode("plot")
+
+Africa.Map <-
+  tm_shape(Africa.Country.Boundaries) +
+  tm_borders(col = "black", fill = "lightgrey", lwd = 1) +
+
+  tm_shape(Kenya.Admin.Boundary) +
+  tm_polygons(
+    fill = "forestgreen",
+    col = "black",
+    lwd = 0.6) +
+
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("") +
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.text.size = 0.8,
+    legend.title.size = 0.9,
+    text.fontfamily = "Helvetica"
+  )
+
+Africa.Map
+```
+
+```{r}
+# Plotting Kenya
+tmap_mode("plot")
+
+Kenya.Admin.Map <-
+  tm_shape(Kenya.Admin.Boundary) +
+  tm_borders(col = "grey70", lwd = 0.5) +
+
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "forestgreen",
+    col = "black",
+    lwd = 0.6
+  ) +
+
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("") +
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.text.size = 0.8,
+    legend.title.size = 0.9,
+    text.fontfamily = "Helvetica"
+  )
+
+Kenya.Admin.Map
 ```
 
 ```{r}
@@ -299,17 +356,40 @@ GAE.TCA <- bind_rows(
 
 ```{r}
 # Mapping
-Kenya.PAs.Map <-
+tmap_mode("plot")
+
+Kenya.GAE.TCA.Map <-
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
+
   tm_shape(GAE.TCA) +
   tm_polygons(
     fill = "Area",
-    fill.scale = tm_scale_categorical(values = "brewer.set3"),
+    fill.scale = tm_scale_categorical(values = "Set3"),
     fill.legend = tm_legend(title = "Protected Area"),
-    col = "black", lwd = 0.5
+    col = "black",
+    lwd = 0.8
   ) +
-  tm_title("National Parks and Reserves - GAE/TCA")
 
-Kenya.PAs.Map
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("National Parks and Reserves - GAE/TCA") +
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.text.size = 0.8,
+    legend.title.size = 0.9,
+    text.fontfamily = "Helvetica"
+  )
+
+Kenya.GAE.TCA.Map
 
 # Saving the map
 #tmap_save(
@@ -352,28 +432,78 @@ ggplot()+
 ```
 
 ```{r}
+# Visualising the Conservancies & Community Lands within AET
+
+library(ggspatial)
+
+ggplot() +
+  geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
+  geom_sf(data = AET.Buffers, aes(fill = "Amboseli Community Lands"), alpha = 0.5) +
+  geom_sf(data = AET.Conservancies, aes(fill = "Amboseli Conservancies"), alpha = 0.5) +
+  geom_sf(data = Amboseli, aes(fill = "Amboseli NP"), alpha = 0.5) +
+  scale_fill_manual(
+    name = "Land Use Types",
+    values = c(
+      "Amboseli Community Lands" = "orange",
+      "Amboseli Conservancies" = "maroon",
+      "Amboseli NP" = "darkgreen"
+    )
+  ) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(location = "tl") +
+  theme_beautiful() +
+  theme(legend.position = "right")
+```
+
+```{r}
 ## Visualising AET.Conservancies and AET.Buffers in one map to show Connectivity
 
 # Adding a category column to both layers
-AET.Conservancies <- AET.Conservancies %>%
-  mutate(ZoneType = "Conservancy")
+#AET.Conservancies <- AET.Conservancies %>%
+#  mutate(ZoneType = "Conservancy")
 
-AET.Buffers <- AET.Buffers %>%
-  mutate(ZoneType = "Buffer")
+#AET.Buffers <- AET.Buffers %>%
+#  mutate(ZoneType = "Buffer")
 
 # Combining both layers into one
-AET.AllZones <- bind_rows(AET.Conservancies, AET.Buffers)
+#AET.AllZones <- bind_rows(AET.Conservancies, AET.Buffers)
 
 # Plotting the combined AET zones
+tmap_mode("plot")
+
 AET.AllZones.Map <- 
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
+
   tm_shape(AET.AllZones) +
   tm_polygons(
     fill = "ZoneType",
-    fill.scale = tm_scale_categorical(values = c("Buffer" = "forestgreen", "Conservancy" = "limegreen")),
-    fill.legend = tm_legend(title = "AET Areas"),
-    col = "black", lwd = 0.4
+    fill.scale = tm_scale_categorical(values = c(
+      "Buffer" = "forestgreen",
+      "Conservancy" = "limegreen"
+    )),
+    fill.legend = tm_legend(title = "AET Zones"),
+    col = "black",
+    lwd = 0.6
   ) +
-  tm_title("Connectivity of AET Conservancies and Buffers")
+
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("AET: Conservancies and Buffers") +
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.text.size = 0.8,
+    legend.title.size = 0.9,
+    text.fontfamily = "Helvetica"
+  )
 
 AET.AllZones.Map
 
@@ -403,16 +533,25 @@ Tsavo.SettledAreas <- st_transform(Tsavo.SettledAreas, crs(RPI))
 ```{r}
 # Visualising the Community Conservancies & Group Ranches within TCA
 
+library(ggspatial)
+
 ggplot() +
   geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
   geom_sf(data = Tsavo.Ranches, aes(fill = "Tsavo Ranches"), alpha = 0.5) +
-  geom_sf(data = Tsavo.SettledAreas, aes(fill = "Tsavo Settled Areas"), alpha = 0.5) + geom_sf(data = TsavoEast, aes(fill = "Tsavo East"), alpha = 0.5) +
+  geom_sf(data = Tsavo.SettledAreas, aes(fill = "Tsavo Settled Areas"), alpha = 0.5) +
+  geom_sf(data = TsavoEast, aes(fill = "Tsavo East"), alpha = 0.5) +
   geom_sf(data = TsavoWest, aes(fill = "Tsavo West"), alpha = 0.5) +
   scale_fill_manual(
-    name = "Land Use Types", values = c("Tsavo Ranches" = "orange",
-                                        "Tsavo Settled Areas" = "maroon",
-                                        "Tsavo East" = "darkgreen",
-                                        "Tsavo West" = "forestgreen")) +
+    name = "Land Use Types",
+    values = c(
+      "Tsavo Ranches" = "orange",
+      "Tsavo Settled Areas" = "maroon",
+      "Tsavo East" = "darkgreen",
+      "Tsavo West" = "forestgreen"
+    )
+  ) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(location = "tl") +
   theme_beautiful() +
   theme(legend.position = "right")
 ```
@@ -431,7 +570,16 @@ Tsavo.SettledAreas <- Tsavo.SettledAreas %>%
 Tsavo.AllZones <- bind_rows(Tsavo.Ranches, Tsavo.SettledAreas)
 
 # Plotting the combined Tsavo zones
+tmap_mode("plot")
+
 TCA.AllZones.Map <- 
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
+
   tm_shape(Tsavo.AllZones) +
   tm_polygons(
     fill = "ZoneType",
@@ -439,10 +587,24 @@ TCA.AllZones.Map <-
       "Ranches" = "orange",
       "Settled Areas" = "maroon"
     )),
-    fill.legend = tm_legend(title = "Tsavo Surroundings"),
-    col = "black", lwd = 0.4
+    fill.legend = tm_legend(title = "Tsavo Zones"),
+    col = "black",
+    lwd = 0.6
   ) +
-  tm_title("Connectivity of Tsavo Ranches and Settled Areas")
+
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("left", "bottom")) +
+
+  tm_title("Tsavo: Ranches and Settled Areas") +
+
+  tm_layout(
+    frame = FALSE,
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.text.size = 0.8,
+    legend.title.size = 0.9,
+    text.fontfamily = "Helvetica"
+  )
 
 TCA.AllZones.Map
 
