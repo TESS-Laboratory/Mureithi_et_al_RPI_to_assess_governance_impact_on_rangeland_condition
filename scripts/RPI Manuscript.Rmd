@@ -4386,7 +4386,7 @@ tmap_arrange(
     tm_raster(col.legend = tm_legend(title = "Tsavo West Mean RPI (R² ≥ 0.3)")), 
   
   tm_shape(AET.AllZones.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "AET All Zones Mean RPI (R² ≥ 0.3)")), 
+    tm_raster(col.legend = tm_legend(title = "Amboseli All Zones Mean RPI (R² ≥ 0.3)")), 
   
   tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.3) +
     tm_raster(col.legend = tm_legend(title = "Tsavo All Zones Mean RPI (R² ≥ 0.3)")), 
@@ -4618,7 +4618,7 @@ AET.Buffers.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(AET.Buffers.Values.RPI.
   geom_hex(bins = 40) +  # increase bins for more granularity
   scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
   labs(
-    title = "RPI vs R²: Amboseli surrounding Grazelands",
+    title = "RPI vs R²: Amboseli surrounding Community lands",
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
@@ -4914,9 +4914,9 @@ Combined.RPI.Maps.After.Filtering <- tmap_arrange(
   Map.Tsavo.Ranches.RPI + tm_shape(Tsavo.Ranches) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo Ranches"),
   Map.Tsavo.SettledAreas.RPI + tm_shape(Tsavo.SettledAreas) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo Settled Areas"),
   Map.Tsavo.AllZones.RPI + tm_shape(Tsavo.AllZones) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo All Zones"),
-  Map.AET.Conservancies.RPI + tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) + tm_title("AET Conservancies"),
-  Map.AET.Buffers.RPI + tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) + tm_title("AET Buffers"),
-  Map.AET.AllZones.RPI + tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) + tm_title("AET All Zones"),
+  Map.AET.Conservancies.RPI + tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli Conservancies"),
+  Map.AET.Buffers.RPI + tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli Communitylands"),
+  Map.AET.AllZones.RPI + tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli All Zones"),
   ncol = 3, nrow = 3
 )
 
@@ -4932,10 +4932,6 @@ Combined.RPI.Maps.After.Filtering
 #  units = "in",
 #  dpi = 300   # Standard resolution for printing
 #)
-```
-
-```{r}
-# check line 5377 below in the Manuscript section for Combined RPI map that has been filtered by 0.1
 ```
 
 ```{r}
@@ -4983,19 +4979,19 @@ Map.AET.Conservancies.RPI.Mean.Filtered.1 <- tm_shape(AET.Conservancies.RPI.Mean
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
   tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("AET Conservancies")
+  tm_title("Amboseli Conservancies")
 
 Map.AET.Buffers.RPI.Mean.Filtered.1 <- tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
   tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("AET Buffers")
+  tm_title("Amboseli Community Lands")
 
 Map.AET.AllZones.RPI.Mean.Filtered.1 <- tm_shape(AET.AllZones.RPI.Mean.Filtered.1) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
   tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("AET All Zones")
+  tm_title("Amboseli All Zones")
 
 # Combining into grid
 tmap_arrange(Map.Amboseli.RPI.Mean.Filtered.1, 
@@ -5115,7 +5111,7 @@ Amboseli.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(Amboseli.Values.RPI.Rsquar
   geom_hex(bins = 40) +  # increase bins for more granularity
   scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
   labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli",
+    title = "RPI vs R² (R² ≥ 0.1): Amboseli NP",
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
@@ -5132,7 +5128,7 @@ TsavoEast.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(TsavoEast.Values.RPI.Rsqu
   geom_hex(bins = 40) +  # increase bins for more granularity
   scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
   labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo East",
+    title = "RPI vs R² (R² ≥ 0.1): Tsavo East NP",
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
@@ -5149,7 +5145,7 @@ TsavoWest.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(TsavoWest.Values.RPI.Rsqu
   geom_hex(bins = 40) +  # increase bins for more granularity
   scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
   labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo West",
+    title = "RPI vs R² (R² ≥ 0.1): Tsavo West NP",
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
@@ -5234,7 +5230,7 @@ AET.Buffers.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(AET.Buffers.Values.RPI.
   geom_hex(bins = 40) +  # increase bins for more granularity
   scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
   labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli surrounding Grazelands",
+    title = "RPI vs R² (R² ≥ 0.1): Amboseli surrounding Community Lands",
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
@@ -5276,6 +5272,18 @@ All.RPI.Rsquare.Filtered.1.Plots
 #  width = 15, # Set a sufficient width for readability
 #  height = 12, # Set a sufficient height
 #  dpi = 300 # Set a high resolution (300 dpi is a common standard for print)
+#)
+```
+
+```{r}
+# Saving the above image
+#ggsave(
+#  "FigureS6Manuscript_RPI_Rsquare_Filtered_A4_landscape.tiff",
+#  plot = All.RPI.Rsquare.Filtered.1.Plots,
+#  width = 11.69,
+#  height = 8.27,
+#  dpi = 600,
+#  compression = "lzw"
 #)
 ```
 
