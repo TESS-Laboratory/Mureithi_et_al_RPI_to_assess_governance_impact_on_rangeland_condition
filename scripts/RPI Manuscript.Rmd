@@ -441,14 +441,14 @@ ggplot() +
 ## Visualising AET.Conservancies and AET.Buffers in one map to show Connectivity
 
 # Adding a category column to both layers
-#AET.Conservancies <- AET.Conservancies %>%
-#  mutate(ZoneType = "Conservancy")
+AET.Conservancies <- AET.Conservancies %>%
+  mutate(ZoneType = "Conservancy")
 
-#AET.Buffers <- AET.Buffers %>%
-#  mutate(ZoneType = "Buffer")
+AET.Buffers <- AET.Buffers %>%
+  mutate(ZoneType = "Buffer")
 
 # Combining both layers into one
-#AET.AllZones <- bind_rows(AET.Conservancies, AET.Buffers)
+AET.AllZones <- bind_rows(AET.Conservancies, AET.Buffers)
 
 # Plotting the combined AET zones
 tmap_mode("plot")
@@ -3594,7 +3594,100 @@ Combined.Trends.Plot
 ```
 
 ```{r}
-# This plot provides a detailed view of the annual mean RPI trends across different study areas by combining two key analyses. Each panel represents a distinct area, with the blue line showing the annual mean RPI over time, allowing for the visualisation of year-to-year fluctuations. The shaded  ribbon around this line indicates the standard deviation, representing the variability in RPI values for each year. Overlaying these yearly trends is a straight  line, which shows the overall Theil–Sen slope. This line represents the robust, long-term trend for each area, visually summarising whether the RPI has been increasing, decreasing, or remaining stable over the entire period. This combined visualisation allows viewers to see not only short-term RPI changes but also the broader, statistically significant direction of change.
+# Tweaking the map above:
+
+area_labels <- c(
+  "Amboseli" = "Amboseli NP",
+  "AET.Buffers" = "Amboseli Community/Group Ranches",
+  "AET.AllZones" = "Amboseli All Zones",
+  "AET.Conservancies" = "Amboseli Conservancies",
+  "TsavoWest" = "Tsavo West NP",
+  "TsavoEast" = "Tsavo East NP",
+  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo.SettledAreas" = "Tsavo Settled Areas",
+  "Tsavo.AllZones" = "Tsavo All Zones"
+)
+
+# Plot
+Combined.Trends.Plot <- ggplot(Combined.Trends, aes(x = Year, y = MeanRPI)) +
+  
+  # 1. Uncertainty FIRST (background layer)
+  geom_ribbon(
+    aes(ymin = MeanRPI - SD, ymax = MeanRPI + SD, fill = Area),
+    alpha = 0.15
+  ) +
+  
+  # 2. Annual trend (solid, cleaner than dashed)
+  geom_line(aes(color = Area), linewidth = 0.8) +
+  
+  # 3. Points (smaller, less dominant)
+  geom_point(aes(color = Area), size = 1.5) +
+  
+  # 4. Theil–Sen trend (make it DISTINCT)
+  geom_smooth(
+    aes(group = Area),
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE,
+    colour = "black",      
+    linewidth = 1
+  ) +
+  
+  # 5. Facets with CLEAN labels
+  facet_wrap(
+    ~ Area,
+    ncol = 3,
+    scales = "fixed",
+    labeller = labeller(Area = area_labels)
+  ) +
+  
+  # 6. Palette
+  scale_color_manual(values = areas_colours_names) +
+  scale_fill_manual(values = areas_colours_names) +
+  
+  # 7. Labels
+  labs(
+    title = "",
+    x = "Year",
+    y = "Mean RPI"
+  ) +
+  
+  # 8. Theme
+  theme_classic() +
+  theme(
+    legend.position = "none",
+    
+    # Facet titles
+    strip.text = element_text(size = 10, face = "bold"),
+    
+    # Axis
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 11),
+    
+    # Title
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
+    
+    # Panel spacing (VERY important)
+    panel.spacing = unit(1, "lines")
+  )
+
+# Panel tags
+Combined.Trends.Plot <- Combined.Trends.Plot +
+  plot_annotation(tag_levels = "A")
+
+Combined.Trends.Plot
+```
+
+```{r}
+# Save the tweaked plot
+ggsave(
+  filename = "Figure4Manuscript_AnnualRPI_TheilSenSlope.png",
+  plot = Combined.Trends.Plot,
+  width = 11.69,
+  height = 8.27,
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
