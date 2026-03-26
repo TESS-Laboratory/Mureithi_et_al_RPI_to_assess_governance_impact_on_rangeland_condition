@@ -3680,14 +3680,14 @@ Combined.Trends.Plot
 
 ```{r}
 # Save the tweaked plot
-ggsave(
-  filename = "Figure4Manuscript_AnnualRPI_TheilSenSlope.png",
-  plot = Combined.Trends.Plot,
-  width = 11.69,
-  height = 8.27,
-  dpi = 600,
-  bg = "white"
-)
+#ggsave(
+#  filename = "Figure4Manuscript_AnnualRPI_TheilSenSlope.png",
+#  plot = Combined.Trends.Plot,
+#  width = 11.69,
+#  height = 8.27,
+#  dpi = 600,
+#  bg = "white"
+#)
 ```
 
 ```{r}
@@ -3699,31 +3699,31 @@ Combined.Slope.Maps <- tmap_arrange(
     tm_raster(
       col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
       col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Amboseli"),
+    tm_title("Amboseli NP"),
   
   tm_shape(TsavoEast.Slope.Raster) +
     tm_raster(
       col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
       col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo East"),
+    tm_title("Tsavo East NP"),
   
   tm_shape(TsavoWest.Slope.Raster) +
     tm_raster(
       col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
       col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo West"), 
+    tm_title("Tsavo West NP"), 
   
   tm_shape(AET.Conservancies.Slope.Raster) +
     tm_raster(
       col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
       col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("AET Conservancies"), 
+    tm_title("Amboseli Conservancies"), 
   
   tm_shape(AET.Buffers.Slope.Raster) +
     tm_raster(
       col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
       col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("AET Buffers"), 
+    tm_title("Amboseli Community/Group Ranches"), 
   
   tm_shape(AET.AllZones.Slope.Raster) +
     tm_raster(
@@ -3884,6 +3884,97 @@ Combined.Temporal.Performance.Plot
 #  width = 8.27,
 #  height = 11.69,
 #  dpi = 300
+#)
+```
+
+```{r}
+# Tweaking the above map
+library(ggplot2)
+library(patchwork)
+library(scico)
+library(tidyterra)
+
+# Kenya border
+Kenya.Border <- geom_sf(
+  data = Kenya.Admin.Boundary,
+  fill = NA,
+  color = "black",
+  linewidth = 0.4
+)
+
+# MAE
+Plot.MAE <- ggplot() +
+  geom_spatraster(data = Temporal.Performance.Kenya$mae) +
+  scale_fill_scico(
+    palette = "lajolla",
+    name = "MAE",
+    na.value = "grey90"
+  ) +
+  Kenya.Border +
+  coord_sf(expand = FALSE) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "right",
+    panel.grid = element_blank(),
+    plot.title = element_blank()
+  )
+
+# RMSE
+Plot.RMSE <- ggplot() +
+  geom_spatraster(data = Temporal.Performance.Kenya$rmse) +
+  scale_fill_scico(
+    palette = "batlow",
+    name = "RMSE",
+    na.value = "grey90"
+  ) +
+  Kenya.Border +
+  coord_sf(expand = FALSE) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "right",
+    panel.grid = element_blank(),
+    plot.title = element_blank()
+  )
+
+# R²
+Plot.Rsqd <- ggplot() +
+  geom_spatraster(data = Temporal.Performance.Kenya$rsq) +
+  scale_fill_scico(
+    palette = "bam",
+    name = expression(R^2),
+    limits = c(0, 1),
+    na.value = "grey90"
+  ) +
+  Kenya.Border +
+  coord_sf(expand = FALSE) +
+  theme_minimal(base_size = 13) +
+  theme(
+    legend.position = "right",
+    panel.grid = element_blank(),
+    plot.title = element_blank()
+  )
+
+# Combine
+Combined.Temporal.Performance.Plot <-
+  (Plot.MAE | Plot.RMSE | Plot.Rsqd) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(
+    legend.position = "right",
+    plot.margin = margin(0, 0, 0, 0)
+  )
+
+Combined.Temporal.Performance.Plot
+```
+
+```{r}
+# Saving the tweaked map
+#ggsave(
+#  "FigureS2Manuscript_TemporalPerformanceKenya.png",
+#  Combined.Temporal.Performance.Plot,
+#  width = 11.69,
+#  height = 8.27,
+#  dpi = 600
 #)
 ```
 
