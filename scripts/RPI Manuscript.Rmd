@@ -5601,9 +5601,6 @@ TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope,
   )
 
 TheilSen.Ridgeline.Plot
-
-# Save
-#ggsave("Ridgeline_Slopes.png", Ridgeline.Plot, width = 12, height = 8, dpi = 300)
 ```
 
 ```{r}
