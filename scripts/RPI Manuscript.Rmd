@@ -5307,7 +5307,7 @@ colnames(Kenya.Values.RPI.Rsquare) <- c("RPI", "RSQ")
 # Creating the improved plot and assign it to a variable
 Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, aes(x = RSQ, y = RPI)) +
   geom_hex(bins = 50) +
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +
+  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density", labels = scales::label_math()) +
   # Using a black dashed line for better visibility
   geom_vline(xintercept = 0.1, linetype = "dashed", color = "black", linewidth = 1) +
   labs(
@@ -5316,12 +5316,12 @@ Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, aes(x = RSQ, y = RPI)
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
-  theme_classic(base_size = 11) + # Use a clean, classic theme
+  theme_classic(base_size = 12) + # Use a clean, classic theme
   theme(
-    plot.title = element_text(face = "plain", size = 12, hjust = 0.5),
-    plot.subtitle = element_text(face = "plain", size = 11, hjust = 0.5),
-    axis.title = element_text(face = "plain", size = 11),
-    legend.title = element_text(face = "plain", size = 10),
+    plot.title = element_text(face = "bold", size = 12, hjust = 0.5),
+    plot.subtitle = element_text(face = "bold", size = 11, hjust = 0.5),
+    axis.title = element_text(face = "bold", size = 11),
+    legend.title = element_text(face = "bold", size = 10),
     legend.text  = element_text(size = 9),
     legend.position = "bottom",
     legend.direction = "vertical"
@@ -5333,13 +5333,13 @@ Kenya.RPI.Rsquare.Plot
 
 ```{r}
 # Save the plot for scientific publication
-ggsave(
-  "Kenya_RPI_vs_Rsq_A4.png",
-  Kenya.RPI.Rsquare.Plot,
-  width = 8.27,
-  height = 11.69,
-  dpi = 600
-)
+#ggsave(
+#  "Kenya_RPI_vs_Rsq_A4.png",
+#  Kenya.RPI.Rsquare.Plot,
+#  width = 8.27,
+#  height = 11.69,
+#  dpi = 600
+#)
 ```
 
 ```{r}
@@ -5349,40 +5349,6 @@ ggsave(
 RSQ.Low.Performance.Mask <- RSQ.Kenya <= 0.1
 
 # Creating the improved plot and assign it to a variable
-Plot.Rsq.Low <- ggplot() +
-  geom_spatraster(data = RSQ.Low.Performance.Mask) +
-  scale_fill_manual(
-    name = "Model Fit",
-    # Using a specific color from a scico palette for a professional look
-    values = c("FALSE" = "grey90", "TRUE" = scico(1, palette = "roma")),
-    labels = c("Good Fit", expression(R^2 <= 0.1))
-  ) +
-  # Using the Kenya border to provide geographical context
-  Kenya.Border +
-  labs(title = expression("Pixels with Poor Model Fit (" ~ R^2 <= 0.1 ~ ")")) +
-  # Using a clean, classic theme common in academic papers
-  theme_classic(base_size = 14) +
-  theme(
-    plot.title = element_text(face = "bold", hjust = 0.5), # Center and bold the title
-    legend.position = "bottom",
-    legend.title = element_text(size = 12, face = "bold"),
-    legend.text = element_text(face = "bold")
-  )
-
-# Displaying the improved plot
-Plot.Rsq.Low
-
-# Saving the plot for scientific publication
-#ggsave(
-#  filename = "Kenya_Rsquare_Low_Performance.png",
-#  plot = Plot.Rsq.Low,
-#  width = 10,
-#  height = 10,
-#  dpi = 300)
-```
-
-```{r}
-# Tweaking the above map
 Kenya.Plot.Rsq.Low <- ggplot() +
   
   # ✅ KEEP THIS SIMPLE (your original was correct)
@@ -5413,15 +5379,15 @@ Kenya.Plot.Rsq.Low <- ggplot() +
     subtitle = "Pixels with R² ≤ 0.1 are excluded from subsequent RPI analyses"
   ) +
   
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 12) +
   theme(
-    plot.title = element_text(face = "plain", hjust = 0.5),
+    plot.title = element_text(face = "bold", hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5),
     
     legend.position = "bottom",
     legend.direction = "vertical",
-    legend.title = element_text(face = "plain"),
-    legend.text = element_text(size = 10),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 12),
     
     # Clean map look (important)
     axis.text = element_blank(),
@@ -5436,45 +5402,13 @@ Kenya.Plot.Rsq.Low
 
 ```{r}
 # Save the plot for scientific publication
-ggsave(
-  "Kenya_Low_model_performance_Pixels.png",
-  Kenya.Plot.Rsq.Low,
-  width = 8.27,
-  height = 11.69,
-  dpi = 600
-)
-```
-
-```{r}
-# Combining the 2 above plots into 1
-# Combine the two plots side-by-side using the `|` operator
-Combined.Figure.Kenya.RPI.Fit <- Kenya.RPI.Rsquare.Plot | Plot.Rsq.Low
-
-# Display the new plot
-Combined.Figure.Kenya.RPI.Fit
-
-# Saving the combined figure
-
 #ggsave(
-#  filename = "Combined_Figure_Kenya_RPI_Fit.png",
-#  plot = Combined.Figure.Kenya.RPI.Fit,
-#  width = 12, 
-#  height = 14, 
-#  units = "in",
-#  dpi = 300
+#  "Kenya_Low_model_performance_Pixels.png",
+#  Kenya.Plot.Rsq.Low,
+#  width = 8.27,
+#  height = 11.69,
+#  dpi = 600
 #)
-```
-
-```{r}
-# Saving the combined figure
-
-ggsave(
-  "Low_R2_Map_A4.png",
-  Plot.Rsq.Low,
-  width = 8.27,
-  height = 11.69,
-  dpi = 600
-)
 ```
 
 ```{r}
