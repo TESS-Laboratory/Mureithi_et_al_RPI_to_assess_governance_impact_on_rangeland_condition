@@ -5323,7 +5323,8 @@ Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, aes(x = RSQ, y = RPI)
     axis.title = element_text(face = "plain", size = 11),
     legend.title = element_text(face = "plain", size = 10),
     legend.text  = element_text(size = 9),
-    legend.position = "bottom"
+    legend.position = "bottom",
+    legend.direction = "vertical"
   )
 
 # Displaying the improved plot
@@ -5332,13 +5333,13 @@ Kenya.RPI.Rsquare.Plot
 
 ```{r}
 # Save the plot for scientific publication
-#ggsave(
-#  "Kenya_RPI_vs_Rsq_A4.png",
-#  Kenya.RPI.Rsquare.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
+ggsave(
+  "Kenya_RPI_vs_Rsq_A4.png",
+  Kenya.RPI.Rsquare.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
@@ -5381,6 +5382,70 @@ Plot.Rsq.Low
 ```
 
 ```{r}
+# Tweaking the above map
+Kenya.Plot.Rsq.Low <- ggplot() +
+  
+  # ✅ KEEP THIS SIMPLE (your original was correct)
+  geom_spatraster(data = RSQ.Low.Performance.Mask) +
+  
+  scale_fill_manual(
+    name = expression("Model performance (" * R^2 * ")"),
+    values = c(
+      "FALSE" = "grey92",              # softer neutral
+      "TRUE"  = "#D55E00"              # strong, publication-friendly red
+    ),
+    labels = c(
+      "FALSE" = expression(R^2 > 0.1),
+      "TRUE"  = expression(R^2 <= 0.1)
+    )
+  ) +
+  
+  # Slightly improved border for clarity
+  geom_sf(
+    data = Kenya.Admin.Boundary,
+    fill = NA,
+    color = "black",
+    linewidth = 0.4
+  ) +
+  
+  labs(
+    title = expression("Low model performance (" * R^2 <= 0.1 * ") is spatially clustered across Kenya"),
+    subtitle = "Pixels with R² ≤ 0.1 are excluded from subsequent RPI analyses"
+  ) +
+  
+  theme_classic(base_size = 11) +
+  theme(
+    plot.title = element_text(face = "plain", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    
+    legend.position = "bottom",
+    legend.direction = "vertical",
+    legend.title = element_text(face = "plain"),
+    legend.text = element_text(size = 10),
+    
+    # Clean map look (important)
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    
+    plot.margin = margin(5, 5, 5, 5)
+  )
+
+Kenya.Plot.Rsq.Low
+```
+
+```{r}
+# Save the plot for scientific publication
+ggsave(
+  "Kenya_Low_model_performance_Pixels.png",
+  Kenya.Plot.Rsq.Low,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
+```
+
+```{r}
 # Combining the 2 above plots into 1
 # Combine the two plots side-by-side using the `|` operator
 Combined.Figure.Kenya.RPI.Fit <- Kenya.RPI.Rsquare.Plot | Plot.Rsq.Low
@@ -5398,6 +5463,18 @@ Combined.Figure.Kenya.RPI.Fit
 #  units = "in",
 #  dpi = 300
 #)
+```
+
+```{r}
+# Saving the combined figure
+
+ggsave(
+  "Low_R2_Map_A4.png",
+  Plot.Rsq.Low,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
