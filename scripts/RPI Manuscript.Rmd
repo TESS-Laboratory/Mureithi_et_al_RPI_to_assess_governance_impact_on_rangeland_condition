@@ -5316,86 +5316,18 @@ Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, aes(x = RSQ, y = RPI)
     x = expression(R^2 ~ "(Model Performance)"),
     y = "Mean RPI"
   ) +
-  theme_classic(base_size = 14) + # Use a clean, classic theme
+  theme_classic(base_size = 11) + # Use a clean, classic theme
   theme(
-    plot.title = element_text(face = "bold"),
-    plot.subtitle = element_text(face = "italic"),
-    axis.title = element_text(face = "bold"),
-    legend.title = element_text(face = "bold"),
+    plot.title = element_text(face = "plain", size = 12, hjust = 0.5),
+    plot.subtitle = element_text(face = "plain", size = 11, hjust = 0.5),
+    axis.title = element_text(face = "plain", size = 11),
+    legend.title = element_text(face = "plain", size = 10),
+    legend.text  = element_text(size = 9),
     legend.position = "bottom"
   )
 
 # Displaying the improved plot
 Kenya.RPI.Rsquare.Plot
-
-# Save the plot for scientific publication
-#ggsave(
-#  filename = "Kenya_RPI_Rsquare_Plot.png",
-#  plot = Kenya.RPI.Rsquare.Plot,
-#  width = 8,
-#  height = 6,
-#  dpi = 300 # Standard resolution for scientific papers
-#)
-```
-
-```{r}
-# Tweaking the above plot
-Tweaked.Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, 
-                                aes(x = RSQ, y = RPI)) +
-  
-  # Hexbin density
-  geom_hex(bins = 60) +
-  
-  # ✅ Use correct viridis option
-  scale_fill_viridis_c(
-    option = "A",          # "A" = magma palette in viridisLite
-    trans = "log10",
-    name = "Pixel density"
-  ) +
-  
-  # Threshold line
-  geom_vline(
-    xintercept = 0.1,
-    linetype = "dashed",
-    color = "black",
-    linewidth = 0.8
-  ) +
-  
-  # ✅ GAM smooth for trend
-  geom_smooth(
-    method = "gam",
-    formula = y ~ s(x, bs = "cs"),
-    color = "white",
-    linewidth = 1,
-    se = FALSE
-  ) +
-  
-  # Annotations
-  annotate("text", x = 0.02, y = 0.9,
-           label = "Low R²\n(Unreliable)",
-           size = 4, hjust = 0) +
-  
-  annotate("text", x = 0.6, y = 0.9,
-           label = "High R²\n(Reliable)",
-           size = 4, hjust = 0) +
-  
-  # Labels + Theme
-  labs(
-    title = "Relationship Between RPI and Model Performance Across Kenya",
-    subtitle = expression("Pixel-level relationship with threshold at " * R^2 == 0.1),
-    x = expression(R^2 ~ "(Model performance)"),
-    y = "Relative Productivity Index (RPI)"
-  ) +
-  
-  theme_classic(base_size = 14) +
-  theme(
-    plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5),
-    axis.title = element_text(face = "bold"),
-    legend.position = "bottom"
-  )
-
-Tweaked.Kenya.RPI.Rsquare.Plot
 ```
 
 ```{r}
