@@ -5530,73 +5530,86 @@ ggsave(
 ```
 
 ```{r}
-# Removing the IQR lines in the above plot "RPI_Distribution_Ridgeline"
-
-# Assigning the plot to an object first
-RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation, aes(x = RPI, y = Area, fill = Area)) +
-  geom_density_ridges(
-    quantile_lines = TRUE,
-    quantiles = 0.5,  # Only median line (changed from c(0.25, 0.5, 0.75))
-    alpha = 0.7,      # Consistent alpha
-    scale = 1.2
-  ) +
-  scale_fill_manual(values = area_colors_simulation) +
-  labs(
-    title = "Distribution of Mean Relative Productivity Index (RPI) by Area",
-    subtitle = "Based on 23-year pixel-level estimates (simulated from summary stats)",
-    x = "Mean Relative Productivity Index (RPI)",
-    y = NULL
-  ) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 11),
-    plot.title = element_text(size = 14, face = "bold")
-  )
-
-RPI.Ridgeline.Simulation.Plot
-
-# Saving the plot as a high-res PNG (A4 size)
-#ggsave(
-#  filename = "RPI_Distribution_Ridgeline.png",  
-#  plot = RPI.Ridgeline.Simulation.Plot,
-#  width = 8.27, 
-#  height = 11.69, 
-#  dpi = 300 
-#)
-```
-
-```{r}
 # Modifying the "Ridgeline_Slopes" plot by adding a Median Line for Visual Consistency
+area_labels1 <- c(
+  "Amboseli" = "Amboseli NP", 
+  "AET.Buffers" = "Amboseli Community/Group Ranches", 
+  "AET.AllZones" = "Amboseli All Zones", 
+  "AET.Conservancies" = "Amboseli Conservancies", 
+  "TsavoWest" = "Tsavo West NP", 
+  "TsavoEast" = "Tsavo East NP", 
+  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches", 
+  "Tsavo.SettledAreas" = "Tsavo Settled Areas", 
+  "Tsavo.AllZones" = "Tsavo All Zones"
+) 
+
+area_colors_simulation <- c(
+  "Amboseli NP" = "#440154FF", 
+  "Amboseli Community/Group Ranches" = "#AADC32FF", 
+  "Amboseli Conservancies" = "#5DC863FF", 
+  "Amboseli All Zones" = "#FDE725FF", 
+  "Tsavo East NP" = "#472D7BFF", 
+  "Tsavo West NP" = "#3B528BFF", 
+  "Tsavo Conservancies/Ranches" = "#2C728EFF", 
+  "Tsavo Settled Areas" = "#21908CFF", 
+  "Tsavo All Zones" = "#27AD81FF"
+)
+
+# Convert Area to Character
+All.Pixel.Slopes <- All.Pixel.Slopes %>%
+  mutate(Area = as.character(Area))
+
+# Recoding with my preferred labels
+All.Pixel.Slopes <- All.Pixel.Slopes %>%
+  mutate(Area = recode(Area, !!!area_labels1))
 
 # Ridgeline plot with median line to match RPI plot style
-Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)) +
+TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)) +
+  
   geom_density_ridges(
     quantile_lines = TRUE,
-    quantiles = 0.5,  # Add median line to match RPI plot
-    alpha = 0.7,      # Match alpha from RPI plot
+    quantiles = 0.5,  
+    alpha = 0.7,      
     scale = 3,  
     rel_min_height = 0.01,
     color = "black"
   ) +
+  
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
-  scale_fill_manual(values = areas_colours_names, name = "Study Area") +
+  
+  # Use the new colors
+  scale_fill_manual(values = area_colors_simulation, name = "Study Area") +
+  
+  # Use new labels for y-axis
+  scale_y_discrete(labels = area_labels1) +
+  
   labs(
     title = "Distribution of Theil–Sen Slopes per Area",
     x = "Slope",
-    y = "Area"
+    y = NULL
   ) +
+  
   theme_ridges(font_size = 14, grid = TRUE) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "bottom"
+    legend.position = "none"
   )
 
-Ridgeline.Plot
+TheilSen.Ridgeline.Plot
 
 # Save
 #ggsave("Ridgeline_Slopes.png", Ridgeline.Plot, width = 12, height = 8, dpi = 300)
+```
+
+```{r}
+# Saving the above plot
+ggsave(
+  "TheilSen_Ridgeline_Plot.png",
+  TheilSen.Ridgeline.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
