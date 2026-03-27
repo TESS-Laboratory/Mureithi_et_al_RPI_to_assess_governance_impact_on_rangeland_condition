@@ -5412,7 +5412,11 @@ Kenya.Plot.Rsq.Low
 ```
 
 ```{r}
-# Tweaking the above
+# MANUSCRIPT REFINEMENTS
+```
+
+```{r}
+# RPI Ridgeline Plot tweaks
 
 Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli")
 TsavoEast.Simulation <- Simulate.RPI(TsavoEast.Summary, "TsavoEast")
@@ -5512,17 +5516,13 @@ RPI.Ridgeline.Simulation.Plot
 
 ```{r}
 # Saving the above plot
-ggsave(
-  "Mean_RPI_Ridgeline_Plot.png",
-  RPI.Ridgeline.Simulation.Plot,
-  width = 8.27,
-  height = 11.69,
-  dpi = 600
-)
-```
-
-```{r}
-# AFTER MSC DISSERTATION SUBMISSION REFINEMENTS - FOR ARTICLE WRITING
+#ggsave(
+#  "Mean_RPI_Ridgeline_Plot.png",
+#  RPI.Ridgeline.Simulation.Plot,
+#  width = 8.27,
+#  height = 11.69,
+#  dpi = 600
+#)
 ```
 
 ```{r}
@@ -5553,15 +5553,19 @@ area_colors_simulation <- c(
 
 # Convert Area to Character
 All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  mutate(Area = as.character(Area))
+  mutate(Area = as.character(Area)) %>%
+  mutate(Area = recode(Area, !!!area_labels.v2))
 
-# Recoding with my preferred labels
+# Removing the "...AllZones"
+areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
+
 All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  mutate(Area = recode(Area, !!!area_labels1))
+  filter(!(Area %in% areas_to_remove))
 
 # Ridgeline plot with median line to match RPI plot style
-TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)) +
-  
+TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, 
+                                                        y = Area, 
+                                                        fill = Area)) +
   geom_density_ridges(
     quantile_lines = TRUE,
     quantiles = 0.5,  
@@ -5570,24 +5574,29 @@ TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fil
     rel_min_height = 0.01,
     color = "black"
   ) +
-  
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
-  
-  # Use the new colors
-  scale_fill_manual(values = area_colors_simulation, name = "Study Area") +
-  
-  # Use new labels for y-axis
-  scale_y_discrete(labels = area_labels1) +
-  
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 1) +
+
+  scale_fill_manual(values = area_colors_simulation) +
   labs(
     title = "",
     x = "Slope",
     y = NULL
   ) +
-  
   theme_ridges(font_size = 14, grid = TRUE) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.x = element_text(angle = 45, 
+                               hjust = 1, 
+                               size = 11, 
+                               face = "bold", 
+                               color = "black"
+                               ),
+    axis.text.y = element_text(size = 10, 
+                               face = "bold", 
+                               color = "black"
+                               ),
+    axis.title.x = element_text(face = "bold", 
+                                size = 12
+                                ),
     legend.position = "none"
   )
 
@@ -5599,13 +5608,13 @@ TheilSen.Ridgeline.Plot
 
 ```{r}
 # Saving the above plot
-#ggsave(
-#  "TheilSen_Ridgeline_Plot.png",
-#  TheilSen.Ridgeline.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
+ggsave(
+  "TheilSen_Ridgeline_Plot.png",
+  TheilSen.Ridgeline.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
