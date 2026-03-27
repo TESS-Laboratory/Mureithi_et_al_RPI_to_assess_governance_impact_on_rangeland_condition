@@ -5761,7 +5761,7 @@ RPI.Filtered1.Unified.Map <-
     ),
     fill.legend = tm_legend(
       title = "Mean RPI",
-      reverse = TRUE,
+      reverse = FALSE,
       frame = FALSE
     )
   ) +
@@ -5814,6 +5814,7 @@ RPI.Filtered1.Unified.Map
 # The last break (2.0) acts as a 'catch-all' for the high values
 RPI.Filtered1.Unified.Map.Breaks <- c(0, 0.2, 0.4, 0.6, 0.8, 1.0, 2.0)
 
+tmap_mode("plot")
 # Update the Map
 RPI.Filtered1.Unified.Map <- 
   tm_shape(Combined.RPI.Filtered.1.Raster) +
@@ -5824,7 +5825,7 @@ RPI.Filtered1.Unified.Map <-
     ),
     col.legend = tm_legend(
       title = "Mean RPI (Filtered by R² ≥ 0.1)",
-      reverse = TRUE,
+      reverse = FALSE,
       # These labels correspond to the spaces between your breaks
       labels = c("0.0 - 0.2", "0.2 - 0.4", "0.4 - 0.6", 
                  "0.6 - 0.8", "0.8 - 1.0", "> 1.0")
@@ -5898,7 +5899,7 @@ TheilSen.Slope.Unified.Map <-
     ),
     col.legend = tm_legend(
       title = "Theil-Sen Slope (RPI/Year)",
-      reverse = TRUE,
+      reverse = FALSE,
       labels = c("Strong Decline", 
                  "Moderate Decline", 
                  "Stable", 
