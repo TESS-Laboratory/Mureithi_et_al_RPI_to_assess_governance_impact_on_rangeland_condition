@@ -5745,6 +5745,7 @@ Combined.Borders <- dplyr::bind_rows(
 )
 
 ### 3. Create the Single Map
+tmap_mode("plot")
 RPI.Filtered1.Unified.Map <- 
   
   tm_shape(Combined.RPI.Filtered.1.Raster) +
