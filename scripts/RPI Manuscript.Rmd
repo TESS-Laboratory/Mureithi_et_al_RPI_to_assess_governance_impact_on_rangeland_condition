@@ -5412,109 +5412,117 @@ Kenya.Plot.Rsq.Low
 ```
 
 ```{r}
-# Function to simulate data based on summary stats
-# Custom color palette
+# Tweaking the above
+#area_colors_simulation <- c(
+#  "Amboseli" = "#440154FF",
+#  "AET.Buffers" = "#AADC32FF",
+#  "AET.Conservancies" = "#5DC863FF",
+#  "AET.AllZones" = "#FDE725FF",
+#  "TsavoEast" = "#472D7BFF",
+#  "TsavoWest" = "#3B528BFF",
+#  "Tsavo.Ranches" = "#2C728EFF",
+#  "Tsavo.SettledAreas" = "#21908CFF",
+#  "Tsavo.AllZones" = "#27AD81FF"
+#)
+
+Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli")
+TsavoEast.Simulation <- Simulate.RPI(TsavoEast.Summary, "TsavoEast")
+TsavoWest.Simulation <- Simulate.RPI(TsavoWest.Summary, "TsavoWest")
+Tsavo.Ranches.Simulation <- Simulate.RPI(Tsavo.Ranches.Summary, "Tsavo.Ranches")
+Tsavo.SettledAreas.Simulation <- Simulate.RPI(Tsavo.SettledAreas.Summary, "Tsavo.SettledAreas")
+Tsavo.AllZones.Simulation <- Simulate.RPI(Tsavo.AllZones.Summary, "Tsavo.AllZones")
+AET.Conservancies.Simulation <- Simulate.RPI(AET.Conservancies.Summary, "AET.Conservancies")
+AET.Buffers.Simulation <- Simulate.RPI(AET.Buffers.Summary, "AET.Buffers")
+AET.AllZones.Simulation <- Simulate.RPI(AET.AllZones.Summary, "AET.AllZones")
+
+area_labels <- c(
+  "Amboseli Park" = "Amboseli NP",
+  "AET Buffers" = "Amboseli Community/Group Ranches",
+  "AET All Zones" = "Amboseli All Zones",
+  "AET Conservancies" = "Amboseli Conservancies",
+  "Tsavo West" = "Tsavo West NP",
+  "Tsavo East" = "Tsavo East NP",
+  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo Settled Areas" = "Tsavo Settled Areas",
+  "Tsavo All Zones" = "Tsavo All Zones"
+)
+
 area_colors_simulation <- c(
-  "Amboseli Park" = "#440154FF",
-  "Tsavo East" = "#472D7BFF",
-  "Tsavo West" = "#3B528BFF",
-  "Tsavo Ranches" = "#2C728EFF",
+  "Amboseli NP" = "#440154FF",
+  "Amboseli Community/Group Ranches" = "#AADC32FF",
+  "Amboseli Conservancies" = "#5DC863FF",
+  "Amboseli All Zones" = "#FDE725FF",
+  "Tsavo East NP" = "#472D7BFF",
+  "Tsavo West NP" = "#3B528BFF",
+  "Tsavo Conservancies/Ranches" = "#2C728EFF",
   "Tsavo Settled Areas" = "#21908CFF",
-  "Tsavo All Zones" = "#27AD81FF",
-  "AET Conservancies" = "#5DC863FF",
-  "AET Buffers" = "#AADC32FF",
-  "AET All Zones" = "#FDE725FF"
+  "Tsavo All Zones" = "#27AD81FF"
 )
 
-# Function to simulate data based on summary stats
-Simulate.RPI <- function(summary_df, area_name, n_pixels = 1000) {
-  summary_df %>%
-    rowwise() %>%
-    mutate(
-      # Simulate pixel-level RPI values from mean & SD
-      SimValues = list(rtruncnorm(
-        n = n_pixels, 
-        a = 0, b = 2,  # RPI is bounded between 0 and 2
-        mean = Mean, sd = SD
-      ))
-    ) %>%
-    unnest(cols = c(SimValues)) %>%
-    mutate(
-      Area = area_name,
-      Year = as.numeric(gsub("rpi\\.", "", Layer))
-    ) %>%
-    select(Area, Year, RPI = SimValues)
-}
+# Re-convert to Character
+RPI.All.Simulation <- RPI.All.Simulation %>%
+  mutate(Area = as.character(Area))
 
-# Simulate data for each area
-Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli Park")
+# Recode the Area Names to match my preferred labels
+RPI.All.Simulation <- RPI.All.Simulation %>%
+  mutate(Area = recode(Area, !!!area_labels))
 
-TsavoEast.Simulation  <- Simulate.RPI(TsavoEast.Summary, "Tsavo East")
-
-TsavoWest.Simulation  <- Simulate.RPI(TsavoWest.Summary, "Tsavo West")
-
-Tsavo.Ranches.Simulation  <- Simulate.RPI(Tsavo.Ranches.Summary, "Tsavo Ranches")
-
-Tsavo.SettledAreas.Simulation  <- Simulate.RPI(Tsavo.SettledAreas.Summary, "Tsavo Settled Areas")
-
-Tsavo.AllZones.Simulation <- Simulate.RPI(Tsavo.AllZones.Summary, "Tsavo All Zones")
-
-AET.Conservancies.Simulation  <- Simulate.RPI(AET.Conservancies.Summary, "AET Conservancies")
-
-AET.Buffers.Simulation  <- Simulate.RPI(AET.Buffers.Summary, "AET Buffers")
-
-AET.AllZones.Simulation <- Simulate.RPI(AET.AllZones.Summary, "AET All Zones")
-
-# Combine all datasets 
-RPI.All.Simulation <- bind_rows(
-  Amboseli.Simulation, TsavoEast.Simulation, 
-  TsavoWest.Simulation, Tsavo.Ranches.Simulation,
-  Tsavo.SettledAreas.Simulation, Tsavo.AllZones.Simulation,
-  AET.Conservancies.Simulation, AET.Buffers.Simulation, 
-  AET.AllZones.Simulation
-)
-
-# Order the areas by mean RPI (highest first, but reverse for ggplot)
+# Reorder the factor levels based on mean RPI (highest first, but reverse for ggplot)
 Mean.RPI.Order <- RPI.All.Simulation %>%
   group_by(Area) %>%
   summarise(MeanRPI_Area = mean(RPI, na.rm = TRUE)) %>%
-  arrange(MeanRPI_Area) %>%  # Changed from desc() to ascending order
+  arrange(MeanRPI_Area) %>%
   pull(Area)
-
 RPI.All.Simulation$Area <- factor(RPI.All.Simulation$Area, levels = Mean.RPI.Order)
 
-# Assign the plot to an object first
-RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation, aes(x = RPI, y = Area, fill = Area)) +
+# Plotting the ridgeline simulation
+RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
+                                        aes(x = RPI, y = Area, fill = Area)) +
+  
   geom_density_ridges(
     quantile_lines = TRUE,
-    quantiles = c(0.5),
-    alpha = 0.7, scale = 1.2
+    quantiles = 0.5,
+    alpha = 0.7,
+    scale = 1.2,
+    color = "black",
+    linewidth = 0.3   # ✅ correct argument (not size)
   ) +
+  
   scale_fill_manual(values = area_colors_simulation) +
+  
   labs(
-    title = "Distribution of Mean Relative Productivity Index (RPI) by Area",
-    subtitle = "Based on 23-year pixel-level estimates (simulated from summary stats)",
-    x = "Mean Relative Productivity Index (RPI)",
+    title = "Distribution of Mean RPI Across Study Areas",
+    subtitle = "",
+    x = "RPI",
     y = NULL
   ) +
-  theme_minimal() +
+  
+  theme_minimal(base_size = 12) +
   theme(
     legend.position = "none",
+    
     axis.text.y = element_text(size = 10),
     axis.text.x = element_text(size = 11),
-    plot.title = element_text(size = 14, face = "bold")
+    
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5),
+    
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
   )
 
 RPI.Ridgeline.Simulation.Plot
+```
 
-# Save the plot as a high-res PNG (A4 size)
-#ggsave(
-#  filename = "RPI_Distribution_Ridgeline.png",  
-#  plot = RPI.Ridgeline.Simulation.Plot,
-#  width = 8.27, 
-#  height = 11.69, 
-#  dpi = 300 
-#)
+```{r}
+# Saving the above plot
+ggsave(
+  "Mean_RPI_Ridgeline_Plot.png",
+  RPI.Ridgeline.Simulation.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
