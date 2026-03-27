@@ -5413,17 +5413,6 @@ Kenya.Plot.Rsq.Low
 
 ```{r}
 # Tweaking the above
-#area_colors_simulation <- c(
-#  "Amboseli" = "#440154FF",
-#  "AET.Buffers" = "#AADC32FF",
-#  "AET.Conservancies" = "#5DC863FF",
-#  "AET.AllZones" = "#FDE725FF",
-#  "TsavoEast" = "#472D7BFF",
-#  "TsavoWest" = "#3B528BFF",
-#  "Tsavo.Ranches" = "#2C728EFF",
-#  "Tsavo.SettledAreas" = "#21908CFF",
-#  "Tsavo.AllZones" = "#27AD81FF"
-#)
 
 Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli")
 TsavoEast.Simulation <- Simulate.RPI(TsavoEast.Summary, "TsavoEast")
@@ -5435,7 +5424,7 @@ AET.Conservancies.Simulation <- Simulate.RPI(AET.Conservancies.Summary, "AET.Con
 AET.Buffers.Simulation <- Simulate.RPI(AET.Buffers.Summary, "AET.Buffers")
 AET.AllZones.Simulation <- Simulate.RPI(AET.AllZones.Summary, "AET.AllZones")
 
-area_labels <- c(
+area_labels.v1 <- c(
   "Amboseli Park" = "Amboseli NP",
   "AET Buffers" = "Amboseli Community/Group Ranches",
   "AET All Zones" = "Amboseli All Zones",
@@ -5465,7 +5454,13 @@ RPI.All.Simulation <- RPI.All.Simulation %>%
 
 # Recode the Area Names to match my preferred labels
 RPI.All.Simulation <- RPI.All.Simulation %>%
-  mutate(Area = recode(Area, !!!area_labels))
+  mutate(Area = recode(Area, !!!area_labels.v1))
+
+# Filter out the "All Zones" categories
+areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
+
+RPI.All.Simulation <- RPI.All.Simulation %>%
+  filter(!(Area %in% areas_to_remove))
 
 # Reorder the factor levels based on mean RPI (highest first, but reverse for ggplot)
 Mean.RPI.Order <- RPI.All.Simulation %>%
@@ -5501,8 +5496,9 @@ RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
   theme(
     legend.position = "none",
     
-    axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 11),
+    axis.text.y = element_text(size = 10, , face = "bold", color = "black"),
+    axis.text.x = element_text(size = 11, , face = "bold", color = "black"),
+    axis.title.x = element_text(face = "bold", size = 12),
     
     plot.title = element_text(face = "bold", hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5),
@@ -5516,13 +5512,13 @@ RPI.Ridgeline.Simulation.Plot
 
 ```{r}
 # Saving the above plot
-#ggsave(
-#  "Mean_RPI_Ridgeline_Plot.png",
-#  RPI.Ridgeline.Simulation.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
+ggsave(
+  "Mean_RPI_Ridgeline_Plot.png",
+  RPI.Ridgeline.Simulation.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
@@ -5531,7 +5527,7 @@ RPI.Ridgeline.Simulation.Plot
 
 ```{r}
 # Modifying the "Ridgeline_Slopes" plot by adding a Median Line for Visual Consistency
-area_labels1 <- c(
+area_labels.v2 <- c(
   "Amboseli" = "Amboseli NP", 
   "AET.Buffers" = "Amboseli Community/Group Ranches", 
   "AET.AllZones" = "Amboseli All Zones", 
@@ -5632,15 +5628,15 @@ All.Zones.Composite <- bind_rows(
   make_zone(Tsavo.SettledAreas, "Tsavo Settled Areas")
 )
 
-#area_labels.noAllZones <- c(
-#  "Amboseli Park" = "Amboseli NP",
-#  "AET Buffers" = "Amboseli Community/Group Ranches",
-#  "AET Conservancies" = "Amboseli Conservancies",
-#  "Tsavo West" = "Tsavo West NP",
-#  "Tsavo East" = "Tsavo East NP",
-#  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
-#  "Tsavo Settled Areas" = "Tsavo Settled Areas"
-#)
+area_labels.noAllZones <- c(
+  "Amboseli Park" = "Amboseli NP",
+  "AET Buffers" = "Amboseli Community/Group Ranches",
+  "AET Conservancies" = "Amboseli Conservancies",
+  "Tsavo West" = "Tsavo West NP",
+  "Tsavo East" = "Tsavo East NP",
+  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo Settled Areas" = "Tsavo Settled Areas"
+)
 
 area_colors_simulation.noAllZones <- c(
   "Amboseli NP" = "#440154FF",
