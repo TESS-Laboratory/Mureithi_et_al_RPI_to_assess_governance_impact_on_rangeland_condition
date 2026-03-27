@@ -5698,6 +5698,87 @@ tmap_save(
 ```
 
 ```{r}
+# Creating a static RPI map
+
+#area_labels.noAllZones <- c(
+#  "Amboseli Park" = "Amboseli NP",
+#  "AET Buffers" = "Amboseli Community/Group Ranches",
+#  "AET Conservancies" = "Amboseli Conservancies",
+#  "Tsavo West" = "Tsavo West NP",
+#  "Tsavo East" = "Tsavo East NP",
+#  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
+#  "Tsavo Settled Areas" = "Tsavo Settled Areas"
+#)
+
+#area_colors_simulation.noAllZones <- c(
+#  "Amboseli NP" = "#440154FF",
+#  "Amboseli Community/Group Ranches" = "#AADC32FF",
+#  "Amboseli Conservancies" = "#5DC863FF",
+#  "Tsavo East NP" = "#472D7BFF",
+#  "Tsavo West NP" = "#3B528BFF",
+#  "Tsavo Conservancies/Ranches" = "#2C728EFF",
+#  "Tsavo Settled Areas" = "#21908CFF"
+#)
+
+### 1. Merge all Rasters into one single object
+# terra::merge handles rasters with different extents and stitches them together
+Combined.RPI.Filtered.1.Raster <- terra::merge(
+  Amboseli.RPI.Mean.Filtered.1,
+  TsavoEast.RPI.Mean.Filtered.1,
+  TsavoWest.RPI.Mean.Filtered.1,
+  Tsavo.Ranches.RPI.Mean.Filtered.1,
+  Tsavo.SettledAreas.RPI.Mean.Filtered.1,
+  AET.Conservancies.RPI.Mean.Filtered.1,
+  AET.Buffers.RPI.Mean.Filtered.1
+)
+
+### 2. Combine all Vector Borders into one single object
+# This allows us to draw all the white outlines at once
+Combined.Borders <- dplyr::bind_rows(
+  Amboseli %>% dplyr::select(geometry),
+  TsavoEast %>% dplyr::select(geometry),
+  TsavoWest %>% dplyr::select(geometry),
+  Tsavo.Ranches %>% dplyr::select(geometry),
+  Tsavo.SettledAreas %>% dplyr::select(geometry),
+  AET.Conservancies %>% dplyr::select(geometry),
+  AET.Buffers %>% dplyr::select(geometry)
+)
+
+### 3. Create the Single Map
+RPI.Filtered1.Unified.Map <- 
+  
+  tm_shape(Combined.RPI.Filtered.1.Raster) +
+  tm_raster(
+    fill.scale = tm_scale_continuous(
+      values = "viridis",
+      trans = "sqrt" 
+    ),
+    fill.legend = tm_legend(
+      title = "Mean RPI",
+      reverse = TRUE
+    )
+  ) +
+
+  tm_shape(Combined.Borders) +
+  tm_borders(col = "white", lwd = 1) +
+
+  tm_shape(Combined.Borders) +
+  
+  tm_borders(col = "white", lwd = 2) +
+  
+  tm_title("Spatial Distribution of Mean RPI Across Study Areas") +
+  
+  tm_layout(legend.outside = TRUE) +
+  
+  tm_scalebar(position = c("left", "bottom")) +
+  
+  tm_compass(position = c("right", "top"))
+
+
+RPI.Filtered1.Unified.Map
+```
+
+```{r}
 # Previous Code edits below!!!
 ```
 
@@ -5758,31 +5839,7 @@ All.Zones.Composite <- rbind(
 ```
 
 ```{r}
-# Plotting the composite map 
 
-tmap_mode("plot") 
-
-# Assigning to a variable
-Mean.RPI.Static.Map <- tm_shape(Mean.RPI.Composite) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"),
-    col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)
-  ) +
-  tm_shape(All.Zones.Composite) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_title("Spatial Distribution of Mean RPI Across Study Areas") +
-  tm_layout(legend.outside = TRUE)
-
-Mean.RPI.Static.Map
-
-# Saving using tmap_save (forcing the static mode)
-#tmap_save(
-#  tm = Mean.RPI.Static.Map,
-#  filename = "Mean_RPI_Static.png",
-#  width = 16,
-#  height = 8,
-#  dpi = 300
-#)
 ```
 
 ```{r}
