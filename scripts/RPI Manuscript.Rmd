@@ -5491,7 +5491,7 @@ RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
   scale_fill_manual(values = area_colors_simulation) +
   
   labs(
-    title = "Distribution of Mean RPI Across Study Areas",
+    title = "",
     subtitle = "",
     x = "RPI",
     y = NULL
@@ -5584,7 +5584,7 @@ TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fil
   scale_y_discrete(labels = area_labels1) +
   
   labs(
-    title = "Distribution of Theil–Sen Slopes per Area",
+    title = "",
     x = "Slope",
     y = NULL
   ) +
