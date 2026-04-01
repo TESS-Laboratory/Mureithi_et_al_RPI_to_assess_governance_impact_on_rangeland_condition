@@ -246,17 +246,19 @@ tm_layout(
 )
 
 Kenya.ProtectedAreas.Map
+```
 
+```{r}
 # Saving the map
-tmap_save(
-  Kenya.ProtectedAreas.Map,
-  "Figure_S1_Kenya_Protected_Areas.tiff",
-  width = 8,
-  height = 6,
-  units = "in",
-  dpi = 600,
-  compression = "lzw"
-)
+#tmap_save(
+#  Kenya.ProtectedAreas.Map,
+#  "Figure_S1_Kenya_Protected_Areas.tiff",
+#  width = 8,
+#  height = 6,
+#  units = "in",
+#  dpi = 600,
+#  compression = "lzw"
+#)
 ```
 
 ```{r}
@@ -748,29 +750,29 @@ Connectivity.Focus.Map
 # Combining Africa Map, Connectivity Map & Connectivity Focus Map into one figure (Figure 1 edit)
 
 # Saving each map to avoid the Grob|Patchwork inconsistency
-tmap_save(
-  Africa.Map,
-  "Africa_Map.png",
-  dpi = 600,
-  width = 10,
-  height = 8
-)
+#tmap_save(
+#  Africa.Map,
+#  "Africa_Map.png",
+#  dpi = 600,
+#  width = 10,
+#  height = 8
+#)
 
-tmap_save(
-  Connectivity.Map,
-  "Connectivity_Map.png",
-  dpi = 600,
-  width = 10,
-  height = 8
-)
+#tmap_save(
+#  Connectivity.Map,
+# "Connectivity_Map.png",
+#  dpi = 600,
+#  width = 10,
+#  height = 8
+#)
 
-tmap_save(
-  Connectivity.Focus.Map,
-  "Connectivity_Focus_Map.png",
-  dpi = 600,
-  width = 10,
-  height = 8
-)
+#tmap_save(
+#  Connectivity.Focus.Map,
+#  "Connectivity_Focus_Map.png",
+#  dpi = 600,
+#  width = 10,
+#  height = 8
+#)
 
 # Reading the saved images 
 Africa.img <- rasterGrob(
@@ -820,14 +822,14 @@ Africa.Kenya.Connectivity.Final.Figure
 
 ```{r}
 # Saving the Final Figure "Africa.Kenya.Connectivity.Final.Figure"
-ggsave(
-  "Final_Figure_A4.png",
-  Africa.Kenya.Connectivity.Final.Figure,
-  width = 11.69,
-  height = 8.27,
-  dpi = 600,
-  bg = "white"
-)
+#ggsave(
+#  "Final_Figure_A4.png",
+#  Africa.Kenya.Connectivity.Final.Figure,
+#  width = 11.69,
+#  height = 8.27,
+#  dpi = 600,
+#  bg = "white"
+#)
 ```
 
 ```{r}
@@ -2527,87 +2529,131 @@ ggplot() +
 ```
 
 ```{r}
-# Combine all data into one dataframe for plotting
-
+# Binding all the above & Removing "All Zones" at source
 All.RPI.Visual.Areas <- bind_rows(
-  Amboseli.RPI.Visual %>% mutate(Area = "Amboseli"),
+  Amboseli.RPI.Visual %>% mutate(Area = "Amboseli Park"),
   TsavoEast.RPI.Visual %>% mutate(Area = "Tsavo East"),
   TsavoWest.RPI.Visual %>% mutate(Area = "Tsavo West"),
   Tsavo.Ranches.RPI.Visual %>% mutate(Area = "Tsavo Ranches"),
   Tsavo.SettledAreas.RPI.Visual %>% mutate(Area = "Tsavo Settled Areas"),
-  Tsavo.AllZones.RPI.Visual %>% mutate(Area = "Tsavo All Zones"),
   AET.Conservancies.RPI.Visual %>% mutate(Area = "AET Conservancies"),
-  AET.Buffers.RPI.Visual %>% mutate(Area = "AET Buffers"),
-  AET.AllZones.RPI.Visual %>% mutate(Area = "AET All Zones")
+  AET.Buffers.RPI.Visual %>% mutate(Area = "AET Buffers")
 )
 
 All.Means <- bind_rows(
-  Amboseli.Mean %>% mutate(Area = "Amboseli"),
+  Amboseli.Mean %>% mutate(Area = "Amboseli Park"),
   TsavoEast.Mean %>% mutate(Area = "Tsavo East"),
   TsavoWest.Mean %>% mutate(Area = "Tsavo West"),
   Tsavo.Ranches.Mean %>% mutate(Area = "Tsavo Ranches"),
   Tsavo.SettledAreas.Mean %>% mutate(Area = "Tsavo Settled Areas"),
-  Tsavo.AllZones.Mean %>% mutate(Area = "Tsavo All Zones"),
   AET.Conservancies.Mean %>% mutate(Area = "AET Conservancies"),
-  AET.Buffers.Mean %>% mutate(Area = "AET Buffers"),
-  AET.AllZones.Mean %>% mutate(Area = "AET All Zones")
+  AET.Buffers.Mean %>% mutate(Area = "AET Buffers")
 )
 
-# Determine a fixed y-axis range
+# Apply new labels and similar colours
+area_labels.noAllZones <- c(
+  "Amboseli Park" = "Amboseli NP",
+  "AET Buffers" = "Amboseli Community/Group Ranches",
+  "AET Conservancies" = "Amboseli Conservancies",
+  "Tsavo West" = "Tsavo West NP",
+  "Tsavo East" = "Tsavo East NP",
+  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo Settled Areas" = "Tsavo Settled Areas"
+)
+
+area_colors_simulation.noAllZones <- c(
+  "Amboseli NP" = "#440154FF",
+  "Amboseli Community/Group Ranches" = "#AADC32FF",
+  "Amboseli Conservancies" = "#5DC863FF",
+  "Tsavo East NP" = "#472D7BFF",
+  "Tsavo West NP" = "#3B528BFF",
+  "Tsavo Conservancies/Ranches" = "#2C728EFF",
+  "Tsavo Settled Areas" = "#21908CFF"
+)
+
+# Recode area names in the dataframe
+All.RPI.Visual.Areas$Area <- recode(All.RPI.Visual.Areas$Area, !!!area_labels.noAllZones)
+All.Means$Area <- recode(All.Means$Area, !!!area_labels.noAllZones)
+
+# Order facets by Area
+area_order <- names(area_colors_simulation.noAllZones)
+All.RPI.Visual.Areas$Area <- factor(All.RPI.Visual.Areas$Area, levels = area_order)
+All.Means$Area <- factor(All.Means$Area, levels = area_order)
+
+# Y-axis limits
 y_limits <- c(0, max(All.RPI.Visual.Areas$RPI_value, na.rm = TRUE))
+
 
 # Plot
 RPI.Distribution.Areas.Plot <- ggplot() +
+  
+  # Violin distributions
   geom_violin(
     data = All.RPI.Visual.Areas,
     aes(x = Year, y = RPI_value, group = Year),
-    fill = "grey85", color = "grey50", alpha = 0.5, width = 0.8
+    fill = "grey85", color = "grey50",
+    alpha = 0.5, width = 0.8
   ) +
+  
+  # Rolling mean lines
   geom_line(
     data = All.Means,
     aes(x = Year, y = RollingMean5, color = Area),
     linewidth = 1.1
   ) +
+  
+  # Rolling mean points
   geom_point(
     data = All.Means,
     aes(x = Year, y = RollingMean5, color = Area),
     size = 2
   ) +
-  scale_color_manual(values = area_colors) +
+  
+  # Colour mapping
+  scale_color_manual(values = area_colors_simulation.noAllZones) +
+  
+  # Labels
   labs(
-    title = "RPI Distribution and 5-Year Rolling Means Across Study Areas",
+    title = "",
     x = "Year",
     y = "RPI Value",
     color = "Study Area"
   ) +
+  
+  # Axes
   scale_y_continuous(limits = y_limits) +
   scale_x_continuous(
     breaks = seq(min(All.RPI.Visual.Areas$Year),
                  max(All.RPI.Visual.Areas$Year), by = 5)
   ) +
+  
+  # Facets
   facet_wrap(~Area, ncol = 3, scales = "fixed") +
+  
+  # Theme
   theme_minimal(base_size = 14) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "bottom",
-    legend.box = "vertical",
+    legend.position = "none",
     legend.background = element_rect(fill = "white", color = "black"),
     legend.key = element_rect(fill = "white", color = NA),
-    panel.grid.minor = element_blank()
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(face = "bold")   
   ) +
-  guides(color = guide_legend(ncol = 3))  # 3-column legend
+  
+  guides(color = guide_legend(ncol = 3))
 
-# Display the plot
 RPI.Distribution.Areas.Plot
+```
 
-# Saving the plot as a high-res A4 image
+```{r}
+# Saving the above plot
 #ggsave(
-#  filename = "RPI_Distribution_Areas.png", 
-#  plot = RPI.Distribution.Areas.Plot,
-#  width = 8.27,   # A4 width in inches
-#  height = 11.69, # A4 height in inches
-#  units = "in",
-#  dpi = 300
+#  "RPI_Distribution_Areas_Plot.png",
+#  RPI.Distribution.Areas.Plot,
+#  width = 8.27,
+#  height = 11.69,
+#  dpi = 600
 #)
 ```
 
@@ -5934,4 +5980,3 @@ TheilSen.Slope.Unified.Map
 #)
 ```
 
-```
