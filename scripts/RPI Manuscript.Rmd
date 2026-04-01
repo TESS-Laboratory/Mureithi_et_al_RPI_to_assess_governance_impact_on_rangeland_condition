@@ -5326,6 +5326,311 @@ All.RPI.Rsquare.Filtered.1.Plots
 ```
 
 ```{r}
+# RPI Summary Statistics after filtering (threshold of 0.1)
+```
+
+```{r}
+# Amboseli NP
+# Extract RPI values (all years)
+Amboseli.RPI.Values.Full <- terra::extract(Amboseli.RPI.Crop, Amboseli, cells = TRUE)
+
+# Remove ID column
+Amboseli.RPI.Values <- Amboseli.RPI.Values.Full[, names(Amboseli.RPI.Crop)]
+
+# Summarise statistics before filtering
+Amboseli.Summary.Raw <- data.frame(
+  Layer  = names(Amboseli.RPI.Crop),
+  Mean   = apply(Amboseli.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(Amboseli.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(Amboseli.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Amboseli.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(Amboseli.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+Amboseli.RPI.Filtered.Stack <- mask(Amboseli.RPI.Crop, RSQ.Mask.Amboseli, maskvalues = FALSE)
+
+# Extract filtered values
+Amboseli.RPI.Values.Filtered.Full <- terra::extract(Amboseli.RPI.Filtered.Stack, Amboseli, cells = TRUE)
+
+Amboseli.RPI.Values.Filtered <- Amboseli.RPI.Values.Filtered.Full[, names(Amboseli.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+Amboseli.Summary.Filtered <- data.frame(
+  Layer  = names(Amboseli.RPI.Filtered.Stack),
+  Mean   = apply(Amboseli.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(Amboseli.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(Amboseli.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Amboseli.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(Amboseli.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+Amboseli.Summary.Filtered
+```
+
+```{r}
+# Amboseli Conservancies
+# Extract RPI values (all years)
+AET.Conservancies.RPI.Values.Full <- terra::extract(AET.Conservancies.RPI.Crop, AET.Conservancies, cells = TRUE)
+
+# Remove ID column
+AET.Conservancies.RPI.Values <- AET.Conservancies.RPI.Values.Full[, names(AET.Conservancies.RPI.Crop)]
+
+# Summarise statistics before filtering
+AET.Conservancies.Summary.Raw <- data.frame(
+  Layer  = names(AET.Conservancies.RPI.Crop),
+  Mean   = apply(AET.Conservancies.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(AET.Conservancies.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(AET.Conservancies.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(AET.Conservancies.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(AET.Conservancies.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+AET.Conservancies.RPI.Filtered.Stack <- mask(AET.Conservancies.RPI.Crop, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
+
+# Extract filtered values
+AET.Conservancies.RPI.Values.Filtered.Full <- terra::extract(AET.Conservancies.RPI.Filtered.Stack, AET.Conservancies, cells = TRUE)
+
+AET.Conservancies.RPI.Values.Filtered <- AET.Conservancies.RPI.Values.Filtered.Full[, names(AET.Conservancies.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+AET.Conservancies.Summary.Filtered <- data.frame(
+  Layer  = names(AET.Conservancies.RPI.Filtered.Stack),
+  Mean   = apply(AET.Conservancies.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(AET.Conservancies.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(AET.Conservancies.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(AET.Conservancies.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(AET.Conservancies.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+AET.Conservancies.Summary.Filtered
+```
+
+```{r}
+# Amboseli Community lands/ Group Ranches
+# Extract RPI values (all years)
+AET.Buffers.RPI.Values.Full <- terra::extract(AET.Buffers.RPI.Crop, AET.Buffers, cells = TRUE)
+
+# Remove ID column
+AET.Buffers.RPI.Values <- AET.Buffers.RPI.Values.Full[, names(AET.Buffers.RPI.Crop)]
+
+# Summarise statistics before filtering
+AET.Buffers.Summary.Raw <- data.frame(
+  Layer  = names(AET.Buffers.RPI.Crop),
+  Mean   = apply(AET.Buffers.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(AET.Buffers.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(AET.Buffers.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(AET.Buffers.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(AET.Buffers.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+AET.Buffers.RPI.Filtered.Stack <- mask(AET.Buffers.RPI.Crop, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
+
+# Extract filtered values
+AET.Buffers.RPI.Values.Filtered.Full <- terra::extract(AET.Buffers.RPI.Filtered.Stack, AET.Buffers, cells = TRUE)
+
+AET.Buffers.RPI.Values.Filtered <- AET.Buffers.RPI.Values.Filtered.Full[, names(AET.Buffers.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+AET.Buffers.Summary.Filtered <- data.frame(
+  Layer  = names(AET.Buffers.RPI.Filtered.Stack),
+  Mean   = apply(AET.Buffers.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(AET.Buffers.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(AET.Buffers.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(AET.Buffers.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(AET.Buffers.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+AET.Buffers.Summary.Filtered
+```
+
+```{r}
+# Tsavo West NP
+# Extract RPI values (all years)
+TsavoWest.RPI.Values.Full <- terra::extract(TsavoWest.RPI.Crop, TsavoWest, cells = TRUE)
+
+# Remove ID column
+TsavoWest.RPI.Values <- TsavoWest.RPI.Values.Full[, names(TsavoWest.RPI.Crop)]
+
+# Summarise statistics before filtering
+TsavoWest.Summary.Raw <- data.frame(
+  Layer  = names(TsavoWest.RPI.Crop),
+  Mean   = apply(TsavoWest.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(TsavoWest.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(TsavoWest.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(TsavoWest.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(TsavoWest.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+TsavoWest.RPI.Filtered.Stack <- mask(TsavoWest.RPI.Crop, RSQ.Mask.TsavoWest, maskvalues = FALSE)
+
+# Extract filtered values
+TsavoWest.RPI.Values.Filtered.Full <- terra::extract(TsavoWest.RPI.Filtered.Stack, TsavoWest, cells = TRUE)
+
+TsavoWest.RPI.Values.Filtered <- TsavoWest.RPI.Values.Filtered.Full[, names(TsavoWest.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+TsavoWest.Summary.Filtered <- data.frame(
+  Layer  = names(TsavoWest.RPI.Filtered.Stack),
+  Mean   = apply(TsavoWest.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(TsavoWest.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(TsavoWest.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(TsavoWest.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(TsavoWest.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+TsavoWest.Summary.Filtered
+```
+
+```{r}
+# Tsavo East NP
+# Extract RPI values (all years)
+TsavoEast.RPI.Values.Full <- terra::extract(TsavoEast.RPI.Crop, TsavoEast, cells = TRUE)
+
+# Remove ID column
+TsavoEast.RPI.Values <- TsavoEast.RPI.Values.Full[, names(TsavoEast.RPI.Crop)]
+
+# Summarise statistics before filtering
+TsavoEast.Summary.Raw <- data.frame(
+  Layer  = names(TsavoEast.RPI.Crop),
+  Mean   = apply(TsavoEast.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(TsavoEast.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(TsavoEast.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(TsavoEast.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(TsavoEast.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+TsavoEast.RPI.Filtered.Stack <- mask(TsavoEast.RPI.Crop, RSQ.Mask.TsavoEast, maskvalues = FALSE)
+
+# Extract filtered values
+TsavoEast.RPI.Values.Filtered.Full <- terra::extract(TsavoEast.RPI.Filtered.Stack, TsavoEast, cells = TRUE)
+
+TsavoEast.RPI.Values.Filtered <- TsavoEast.RPI.Values.Filtered.Full[, names(TsavoEast.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+TsavoEast.Summary.Filtered <- data.frame(
+  Layer  = names(TsavoEast.RPI.Filtered.Stack),
+  Mean   = apply(TsavoEast.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(TsavoEast.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(TsavoEast.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(TsavoEast.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(TsavoEast.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+TsavoEast.Summary.Filtered
+```
+
+```{r}
+# Tsavo Ranches
+# Extract RPI values (all years)
+Tsavo.Ranches.RPI.Values.Full <- terra::extract(Tsavo.Ranches.RPI.Crop, Tsavo.Ranches, cells = TRUE)
+
+# Remove ID column
+Tsavo.Ranches.RPI.Values <- Tsavo.Ranches.RPI.Values.Full[, names(Tsavo.Ranches.RPI.Crop)]
+
+# Summarise statistics before filtering
+Tsavo.Ranches.Summary.Raw <- data.frame(
+  Layer  = names(Tsavo.Ranches.RPI.Crop),
+  Mean   = apply(Tsavo.Ranches.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(Tsavo.Ranches.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(Tsavo.Ranches.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Tsavo.Ranches.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(Tsavo.Ranches.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+Tsavo.Ranches.RPI.Filtered.Stack <- mask(Tsavo.Ranches.RPI.Crop, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
+
+# Extract filtered values
+Tsavo.Ranches.RPI.Values.Filtered.Full <- terra::extract(Tsavo.Ranches.RPI.Filtered.Stack, Tsavo.Ranches, cells = TRUE)
+
+Tsavo.Ranches.RPI.Values.Filtered <- Tsavo.Ranches.RPI.Values.Filtered.Full[, names(Tsavo.Ranches.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+Tsavo.Ranches.Summary.Filtered <- data.frame(
+  Layer  = names(Tsavo.Ranches.RPI.Filtered.Stack),
+  Mean   = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+Tsavo.Ranches.Summary.Filtered
+```
+
+```{r}
+# Tsavo Settled Areas
+# Extract RPI values (all years)
+Tsavo.SettledAreas.RPI.Values.Full <- terra::extract(Tsavo.SettledAreas.RPI.Crop, Tsavo.SettledAreas, cells = TRUE)
+
+# Remove ID column
+Tsavo.SettledAreas.RPI.Values <- Tsavo.SettledAreas.RPI.Values.Full[, names(Tsavo.SettledAreas.RPI.Crop)]
+
+# Summarise statistics before filtering
+Tsavo.SettledAreas.Summary.Raw <- data.frame(
+  Layer  = names(Tsavo.SettledAreas.RPI.Crop),
+  Mean   = apply(Tsavo.SettledAreas.RPI.Values, 2, mean, na.rm = TRUE),
+  SD     = apply(Tsavo.SettledAreas.RPI.Values, 2, sd, na.rm = TRUE),
+  Q25    = apply(Tsavo.SettledAreas.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Tsavo.SettledAreas.RPI.Values, 2, median, na.rm = TRUE),
+  Q75    = apply(Tsavo.SettledAreas.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+# Apply Threshold Filter (R² ≥ 0.1)
+RSQ.Threshold.1 <- 0.1
+# Create mask
+RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold.1
+# Apply mask to ALL yearly layers
+Tsavo.SettledAreas.RPI.Filtered.Stack <- mask(Tsavo.SettledAreas.RPI.Crop, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
+
+# Extract filtered values
+Tsavo.SettledAreas.RPI.Values.Filtered.Full <- terra::extract(Tsavo.SettledAreas.RPI.Filtered.Stack, Tsavo.SettledAreas, cells = TRUE)
+
+Tsavo.SettledAreas.RPI.Values.Filtered <- Tsavo.SettledAreas.RPI.Values.Filtered.Full[, names(Tsavo.SettledAreas.RPI.Filtered.Stack)]
+
+# Summary statistics after filtering
+Tsavo.SettledAreas.Summary.Filtered <- data.frame(
+  Layer  = names(Tsavo.SettledAreas.RPI.Filtered.Stack),
+  Mean   = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
+  SD     = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
+  Q25    = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
+  Median = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, median, na.rm = TRUE),
+  Q75    = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
+)
+
+Tsavo.SettledAreas.Summary.Filtered
+```
+
+```{r}
 # # Clip RPI & R² to Kenya
 ```
 
