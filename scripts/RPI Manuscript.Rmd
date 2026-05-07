@@ -6353,7 +6353,7 @@ RPI.Filtered1.Unified.Map
 ```{r}
 # Tweaking the above map with a different colour scheme
 tmap_mode("plot")
-RPI.Filtered1.Unified.Map <- 
+RPI.Filtered1.Unified.ContinuousLegend.Map <- 
   
   tm_shape(Combined.RPI.Filtered.1.Raster) +
   tm_raster(
@@ -6377,7 +6377,18 @@ RPI.Filtered1.Unified.Map <-
   tm_scalebar(position = c("left", "bottom"))
 
 
-RPI.Filtered1.Unified.Map
+RPI.Filtered1.Unified.ContinuousLegend.Map
+```
+```{r}
+# Saving the above plot
+#tmap_save(
+#  tm = RPI.Filtered1.Unified.ContinuousLegend.Map,
+#  filename = "RPI_Filtered1_Unified_ContinuousLegend_Map.png",
+#  width = 8.27,
+#  height = 11.69,
+#  units = "in",
+#  dpi = 600
+#)
 ```
 
 ```{r}
@@ -6388,7 +6399,7 @@ RPI.Filtered1.Unified.Map.Breaks <- c(0, 0.2, 0.4, 0.6, 0.8, 1.0, 2.0)
 
 tmap_mode("plot")
 # Update the Map
-RPI.Filtered1.Unified.Map <- 
+RPI.Filtered1.Unified.BreakLegend.Map <- 
   tm_shape(Combined.RPI.Filtered.1.Raster) +
   tm_raster(
     col.scale = tm_scale_intervals(
@@ -6414,13 +6425,13 @@ RPI.Filtered1.Unified.Map <-
   tm_compass(position = c("left", "bottom")) + 
   tm_scalebar(position = c("left", "bottom"))
 
-RPI.Filtered1.Unified.Map
+RPI.Filtered1.Unified.BreakLegend.Map
 ```
 
 ```{r}
 # Saving the above plot
 #tmap_save(
-#  tm = RPI.Filtered1.Unified.Map,
+#  tm = RPI.Filtered1.Unified.BreakLegend.Map,
 #  filename = "RPI_Filtered1_Unified_Map.png",
 #  width = 8.27,
 #  height = 11.69,
