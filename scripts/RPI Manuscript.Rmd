@@ -3726,6 +3726,133 @@ Combined.Trends.Plot
 ```
 
 ```{r}
+# Combined Mean RPI Trends with Theil–Sen Slopes
+# Revised Version Incorporating Feedback
+
+area_labels <- c(
+  "Amboseli" = "Amboseli NP",
+  "AET.Buffers" = "Amboseli Community/Group Ranches",
+  "AET.AllZones" = "Amboseli All Zones",
+  "AET.Conservancies" = "Amboseli Conservancies",
+  "TsavoWest" = "Tsavo West NP",
+  "TsavoEast" = "Tsavo East NP",
+  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches",
+  "Tsavo.SettledAreas" = "Tsavo Settled Areas",
+  "Tsavo.AllZones" = "Tsavo All Zones"
+)
+
+areas_colours_names <- c(
+  "Amboseli" = "#440154FF",
+  "AET.Buffers" = "#AADC32FF",
+  "AET.Conservancies" = "#5DC863FF",
+  "AET.AllZones" = "#FDE725FF",
+  "TsavoEast" = "#472D7BFF",
+  "TsavoWest" = "#3B528BFF",
+  "Tsavo.Ranches" = "#2C728EFF",
+  "Tsavo.SettledAreas" = "#21908CFF",
+  "Tsavo.AllZones" = "#27AD81FF"
+)
+
+Combined.Trends <- Annual.RPI.Visual.Trends %>%
+  left_join(
+    All.Trends.Summary %>%
+      dplyr::select(Area, MeanSlope),
+    by = "Area"
+  )
+
+Combined.Trends.Plot <- ggplot(
+  Combined.Trends,
+  aes(x = Year, y = MeanRPI)
+) +
+  
+  # Uncertainty Ribbon
+  geom_ribbon(
+    aes(
+      ymin = MeanRPI - SD,
+      ymax = MeanRPI + SD,
+      fill = Area
+    ),
+    alpha = 0.15
+  ) +
+  
+  # Annual Time-Series (Dashed)
+  geom_line(
+    aes(color = Area),
+    linewidth = 0.9,
+    linetype = "dashed"
+  ) +
+  
+  # Annual Points
+  geom_point(
+    aes(color = Area),
+    size = 1.8
+  ) +
+  
+  # Theil–Sen Trend Line (Colour-Coded Solid)
+  geom_smooth(
+    aes(color = Area),
+    method = "lm",
+    formula = y ~ x,
+    se = FALSE,
+    linewidth = 1.2,
+    linetype = "solid"
+  ) +
+  
+  # Facets
+  facet_wrap(
+    ~ Area,
+    ncol = 3,
+    scales = "fixed",
+    labeller = labeller(Area = area_labels)
+  ) +
+  
+  # Colour Scales
+  scale_color_manual(values = areas_colours_names) +
+  scale_fill_manual(values = areas_colours_names) +
+  
+  # Labels
+  labs(
+    title = "",
+    x = "Year",
+    y = "Mean RPI"
+  ) +
+  
+  # Theme
+  theme_classic() +
+  
+  theme(
+    legend.position = "none",
+    
+    # Facet Labels
+    strip.text = element_text(
+      size = 10,
+      face = "bold"
+    ),
+    
+    # Axis Text
+    axis.text = element_text(size = 9),
+    
+    # Axis Titles
+    axis.title = element_text(size = 11),
+    
+    # Plot Title
+    plot.title = element_text(
+      hjust = 0.5,
+      face = "bold",
+      size = 13
+    ),
+    
+    # Panel Spacing
+    panel.spacing = unit(1, "lines")
+  )
+
+Combined.Trends.Plot <- Combined.Trends.Plot +
+  plot_annotation(tag_levels = "A")
+
+Combined.Trends.Plot
+```
+
+```{r}
 # Save the tweaked plot
 #ggsave(
 #  filename = "Figure4Manuscript_AnnualRPI_TheilSenSlope.png",
