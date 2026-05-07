@@ -6279,6 +6279,7 @@ TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope,
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 1) +
 
   scale_fill_manual(values = area_colors_simulation) +
+  coord_cartesian(xlim = c(-0.03, 0.03)) +
   labs(
     title = "",
     x = "Slope",
@@ -6307,13 +6308,13 @@ TheilSen.Ridgeline.Plot
 
 ```{r}
 # Saving the above plot
-#ggsave(
-#  "TheilSen_Ridgeline_Plot.png",
-#  TheilSen.Ridgeline.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
+ggsave(
+  "TheilSen_Ridgeline_Plot.png",
+  TheilSen.Ridgeline.Plot,
+  width = 8.27,
+  height = 11.69,
+  dpi = 600
+)
 ```
 
 ```{r}
