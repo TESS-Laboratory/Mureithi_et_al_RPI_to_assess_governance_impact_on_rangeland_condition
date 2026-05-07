@@ -5631,6 +5631,179 @@ Tsavo.SettledAreas.Summary.Filtered
 ```
 
 ```{r}
+# Master Function to process the above
+
+process_rpi_area <- function(rpi_stack, rsq_raster, polygon, area_name, threshold = 0.1) {
+  
+  #1. RAW EXTRACTION
+  raw_vals_full <- terra::extract(rpi_stack, polygon, cells = TRUE)
+  raw_vals <- raw_vals_full[, names(rpi_stack)]
+  
+  raw_summary <- data.frame(
+    Area   = area_name,
+    Layer  = names(rpi_stack),
+    Mean   = apply(raw_vals, 2, mean, na.rm = TRUE),
+    SD     = apply(raw_vals, 2, sd, na.rm = TRUE),
+    Q25    = apply(raw_vals, 2, quantile, probs = 0.25, na.rm = TRUE),
+    Median = apply(raw_vals, 2, median, na.rm = TRUE),
+    Q75    = apply(raw_vals, 2, quantile, probs = 0.75, na.rm = TRUE)
+  )
+  
+  #2. CORRECT FILTERING
+  rsq_resampled <- terra::resample(rsq_raster, rpi_stack, method = "bilinear")
+  
+  # Crop first
+  rpi_crop <- terra::crop(rpi_stack, polygon)
+  rsq_crop <- terra::crop(rsq_resampled, polygon)
+  
+  # Mask to polygon
+  rpi_masked <- terra::mask(rpi_crop, polygon)
+  rsq_masked <- terra::mask(rsq_crop, polygon)
+  
+  # Apply threshold
+  rsq_binary <- rsq_masked >= threshold
+  
+  rpi_filtered <- terra::mask(rpi_masked, rsq_binary, maskvalues = FALSE)
+  
+  #3. FILTERED EXTRACTION
+  filt_vals_full <- terra::extract(rpi_filtered, polygon, cells = TRUE)
+  filt_vals <- filt_vals_full[, names(rpi_filtered)]
+  
+  filtered_summary <- data.frame(
+    Area   = area_name,
+    Layer  = names(rpi_filtered),
+    Mean   = apply(filt_vals, 2, mean, na.rm = TRUE),
+    SD     = apply(filt_vals, 2, sd, na.rm = TRUE),
+    Q25    = apply(filt_vals, 2, quantile, probs = 0.25, na.rm = TRUE),
+    Median = apply(filt_vals, 2, median, na.rm = TRUE),
+    Q75    = apply(filt_vals, 2, quantile, probs = 0.75, na.rm = TRUE)
+  )
+  
+  return(list(
+    raw = raw_summary,
+    filtered = filtered_summary
+  ))
+}
+
+# Application to all areas
+
+# Amboseli NP
+Amboseli.results <- process_rpi_area(
+  Amboseli.RPI.Crop,
+  RSQ.Resampled.Amboseli,
+  Amboseli,
+  "Amboseli NP"
+)
+
+# Conservancies
+AET.Conservancies.results <- process_rpi_area(
+  AET.Conservancies.RPI.Crop,
+  RSQ.Resampled.AET.Conservancies,
+  AET.Conservancies,
+  "Amboseli Conservancies"
+)
+
+# Buffers
+AET.Buffers.results <- process_rpi_area(
+  AET.Buffers.RPI.Crop,
+  RSQ.Resampled.AET.Buffers,
+  AET.Buffers,
+  "Amboseli Community/Group Ranches"
+)
+
+# Tsavo West
+TsavoWest.results <- process_rpi_area(
+  TsavoWest.RPI.Crop,
+  RSQ.Resampled.TsavoWest,
+  TsavoWest,
+  "Tsavo West NP"
+)
+
+# Tsavo East
+TsavoEast.results <- process_rpi_area(
+  TsavoEast.RPI.Crop,
+  RSQ.Resampled.TsavoEast,
+  TsavoEast,
+  "Tsavo East NP"
+)
+
+# Tsavo Ranches
+Tsavo.Ranches.results <- process_rpi_area(
+  Tsavo.Ranches.RPI.Crop,
+  RSQ.Resampled.Tsavo.Ranches,
+  Tsavo.Ranches,
+  "Tsavo Conservancies/Ranches"
+)
+
+# Tsavo Settled Areas
+Tsavo.SettledAreas.results <- process_rpi_area(
+  Tsavo.SettledAreas.RPI.Crop,
+  RSQ.Resampled.Tsavo.SettledAreas,
+  Tsavo.SettledAreas,
+  "Tsavo Settled Areas"
+)
+
+# Combination of outputs
+
+# RAW summaries
+All.Summary.Raw <- dplyr::bind_rows(
+  Amboseli.results$raw,
+  AET.Conservancies.results$raw,
+  AET.Buffers.results$raw,
+  TsavoWest.results$raw,
+  TsavoEast.results$raw,
+  Tsavo.Ranches.results$raw,
+  Tsavo.SettledAreas.results$raw
+)
+
+# FILTERED summaries
+All.Summary.Filtered <- dplyr::bind_rows(
+  Amboseli.results$filtered,
+  AET.Conservancies.results$filtered,
+  AET.Buffers.results$filtered,
+  TsavoWest.results$filtered,
+  TsavoEast.results$filtered,
+  Tsavo.Ranches.results$filtered,
+  Tsavo.SettledAreas.results$filtered
+)
+
+# Sanity check
+
+All.Summary.Filtered %>%
+  group_by(Area, Layer) %>%   # group by Area (and Layer if needed)
+  summarise(
+    mean_val   = mean(Mean, na.rm = TRUE),
+    sd_val     = sd(Mean, na.rm = TRUE),
+    q25_val    = quantile(Mean, 0.25, na.rm = TRUE),
+    median_val = median(Mean, na.rm = TRUE),
+    q75_val    = quantile(Mean, 0.75, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+```{r}
+# Define the layers of interest
+layers <- paste0("rpi.", 2000:2022)
+
+# Define a helper function
+extract_area_values <- function(area_name) {
+  All.Summary.Filtered %>%
+    filter(Area == area_name,
+           Layer %in% layers) %>%
+    arrange(Layer)
+}
+
+# Apply to each area
+Amboseli.NP.Values <- extract_area_values("Amboseli NP")
+Amboseli.Conservancies.Values <- extract_area_values("Amboseli Conservancies")
+Amboseli.Community.Values <- extract_area_values("Amboseli Community/Group Ranches")
+Tsavo.West.Values <- extract_area_values("Tsavo West NP")
+Tsavo.East.Values <- extract_area_values("Tsavo East NP")
+Tsavo.Conservancies.Values <- extract_area_values("Tsavo Conservancies/Ranches")
+Tsavo.Settled.Values <- extract_area_values("Tsavo Settled Areas")
+```
+
+```{r}
 # # Clip RPI & R² to Kenya
 ```
 
@@ -5767,6 +5940,31 @@ Kenya.Plot.Rsq.Low
 ```
 
 ```{r}
+# Improved RPI simulation function
+Simulate.RPI <- function(summary.df, area.name, n = 1000) {
+  
+  simulated.list <- lapply(1:nrow(summary.df), function(i) {
+    
+    mean.val <- summary.df$Mean[i]
+    sd.val <- summary.df$SD[i]
+    year.val <- gsub("rpi.", "", summary.df$Layer[i], fixed = TRUE)
+    
+    sim.values <- rnorm(
+      n,
+      mean = mean.val,
+      sd = sd.val
+    )
+    
+    data.frame(
+      Year = year.val,
+      RPI = sim.values,
+      Area = area.name
+    )
+  })
+  
+  bind_rows(simulated.list)
+}
+
 # RPI Ridgeline Plot tweaks
 
 Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli")
@@ -5779,17 +5977,40 @@ AET.Conservancies.Simulation <- Simulate.RPI(AET.Conservancies.Summary, "AET.Con
 AET.Buffers.Simulation <- Simulate.RPI(AET.Buffers.Summary, "AET.Buffers")
 AET.AllZones.Simulation <- Simulate.RPI(AET.AllZones.Summary, "AET.AllZones")
 
-area_labels.v1 <- c(
-  "Amboseli Park" = "Amboseli NP",
-  "AET Buffers" = "Amboseli Community/Group Ranches",
-  "AET All Zones" = "Amboseli All Zones",
-  "AET Conservancies" = "Amboseli Conservancies",
-  "Tsavo West" = "Tsavo West NP",
-  "Tsavo East" = "Tsavo East NP",
-  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
-  "Tsavo Settled Areas" = "Tsavo Settled Areas",
-  "Tsavo All Zones" = "Tsavo All Zones"
+RPI.All.Simulation <- bind_rows(
+  Amboseli.Simulation,
+  TsavoEast.Simulation,
+  TsavoWest.Simulation,
+  Tsavo.Ranches.Simulation,
+  Tsavo.SettledAreas.Simulation,
+  Tsavo.AllZones.Simulation,
+  AET.Conservancies.Simulation,
+  AET.Buffers.Simulation,
+  AET.AllZones.Simulation
 )
+
+area_labels.v2 <- c(
+  "Amboseli" = "Amboseli NP", 
+  "AET.Buffers" = "Amboseli Community/Group Ranches", 
+  "AET.AllZones" = "Amboseli All Zones", 
+  "AET.Conservancies" = "Amboseli Conservancies", 
+  "TsavoWest" = "Tsavo West NP", 
+  "TsavoEast" = "Tsavo East NP", 
+  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches", 
+  "Tsavo.SettledAreas" = "Tsavo Settled Areas", 
+  "Tsavo.AllZones" = "Tsavo All Zones"
+) 
+#area_labels.v1 <- c(
+#  "Amboseli Park" = "Amboseli NP",
+#  "AET Buffers" = "Amboseli Community/Group Ranches",
+#  "AET All Zones" = "Amboseli All Zones",
+#  "AET Conservancies" = "Amboseli Conservancies",
+#  "Tsavo West" = "Tsavo West NP",
+#  "Tsavo East" = "Tsavo East NP",
+#  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
+#  "Tsavo Settled Areas" = "Tsavo Settled Areas",
+#  "Tsavo All Zones" = "Tsavo All Zones"
+#)
 
 area_colors_simulation <- c(
   "Amboseli NP" = "#440154FF",
@@ -5809,7 +6030,7 @@ RPI.All.Simulation <- RPI.All.Simulation %>%
 
 # Recode the Area Names to match my preferred labels
 RPI.All.Simulation <- RPI.All.Simulation %>%
-  mutate(Area = recode(Area, !!!area_labels.v1))
+  mutate(Area = recode(Area, !!!area_labels.v2))
 
 # Filter out the "All Zones" categories
 areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
@@ -5835,10 +6056,13 @@ RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
     alpha = 0.7,
     scale = 1.2,
     color = "black",
-    linewidth = 0.3   # ✅ correct argument (not size)
+    linewidth = 0.3,
+    rel_min_height = 0.001
   ) +
   
   scale_fill_manual(values = area_colors_simulation) +
+  
+  coord_cartesian(xlim = c(-0.2, 1.4)) +
   
   labs(
     title = "",
@@ -5851,8 +6075,8 @@ RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
   theme(
     legend.position = "none",
     
-    axis.text.y = element_text(size = 10, , face = "bold", color = "black"),
-    axis.text.x = element_text(size = 11, , face = "bold", color = "black"),
+    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
+    axis.text.x = element_text(size = 11, face = "bold", color = "black"),
     axis.title.x = element_text(face = "bold", size = 12),
     
     plot.title = element_text(face = "bold", hjust = 0.5),
