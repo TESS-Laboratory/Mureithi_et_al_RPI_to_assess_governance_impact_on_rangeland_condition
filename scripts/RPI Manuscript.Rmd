@@ -6472,7 +6472,7 @@ Slope.Breaks <- c(-0.1, -0.03, -0.01, 0.01, 0.03, 0.1)
 
 tmap_mode("plot")
 
-TheilSen.Slope.Unified.Map <- 
+TheilSen.Slope.Unified.BreakLegend.Map <- 
   tm_shape(Combined.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_intervals(
@@ -6505,13 +6505,13 @@ TheilSen.Slope.Unified.Map <-
   tm_scalebar(position = c("left", "bottom"))
 
 # Print the map
-TheilSen.Slope.Unified.Map
+TheilSen.Slope.Unified.BreakLegend.Map
 ```
 
 ```{r}
 # Saving the above plot
 #tmap_save(
-#  tm = TheilSen.Slope.Unified.Map,
+#  tm = TheilSen.Slope.Unified.BreakLegend.Map,
 #  filename = "TheilSen_Slope_Unified.Map.png",
 #  width = 8.27,
 #  height = 11.69,
@@ -6520,3 +6520,68 @@ TheilSen.Slope.Unified.Map
 #)
 ```
 
+```{r}
+# Continuous Theil–Sen Slope Map (No Interval Breaks) to differentiate with above map
+
+# Optional: Define display limits for the continuous slope scale
+# Helps prevent extreme outliers from dominating the colour stretch
+Slope.Limits <- c(-0.05, 0.05)
+
+# Continuous Theil–Sen Slope Map
+TheilSen.Slope.Unified.ContinuousLegend.Map <- 
+  
+  tm_shape(Combined.Slope.Raster) +
+  
+  tm_raster(
+    col.scale = tm_scale_continuous(
+      values = "brewer.rd_yl_gn",
+      midpoint = 0,
+      limits = Slope.Limits
+    ),
+    
+    col.legend = tm_legend(
+      title = "Theil-Sen Slope\n(RPI/Year)",
+      reverse = FALSE
+    )
+  ) +
+  
+  # Add Study Area Borders
+  tm_shape(Combined.Borders) +
+  tm_borders(
+    col = "black",
+    lwd = 0.8
+  ) +
+  
+  # Layout
+  tm_title("") +
+  
+  tm_layout(
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    frame = FALSE
+  ) +
+  
+  # Map Elements
+  tm_compass(
+    position = c("left", "bottom")
+  ) +
+  
+  tm_scalebar(
+    position = c("left", "bottom")
+  )
+
+# Print Map
+TheilSen.Slope.Unified.ContinuousLegend.Map
+```
+
+```{r}
+# Saving the above plot
+#tmap_save(
+#  tm = TheilSen.Slope.Unified.ContinuousLegend.Map,
+#  filename = "TheilSen_Slope_Unified.ContinuousLegend.Map.png",
+#  width = 8.27,
+#  height = 11.69,
+#  units = "in",
+#  dpi = 600
+#)
+```
