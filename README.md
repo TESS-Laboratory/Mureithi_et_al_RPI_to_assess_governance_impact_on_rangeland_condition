@@ -1,4 +1,4 @@
-# Mureithi_RPI_Conservation_Governance
+# Mureithi_RPI_Rangeland_Governance_Comparison
 
 This repository contains the data and analytical scripts for the research article "Relative Productivity Index reveals contrasting rangeland condition trajectories across governance types in southern Kenya" to be submitted to the African Journal of Range and Forage Science. The article addresses the research question: **"What do spatial patterns and long-term trends in relative vegetation productivity (RPI) reveal about variation in rangeland condition across governance types in the Amboseli-Tsavo ecosystem?"**  
 This work was developed by Isaac Nduta Mureithi under the Oppenheimer Programme in African Landscape Systems (OPALS) ~ Terrestrial Ecosystem Science and Services (TESS) Labs, building upon initial research conducted at the University of Exeter.
