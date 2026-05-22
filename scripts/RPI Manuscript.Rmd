@@ -14,7 +14,7 @@ output: html_document
 
 # if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix, mgcv)
+pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix, mgcv, kableExtra, flextable)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -50,11 +50,14 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 # ggtext → enhanced text rendering in ggplot2 using Markdown/HTML (e.g., bold, italics, styled labels)
 # colorblindcheck → for checking and simulating how plots and color palettes appear to people with different types of color vision deficiencies
 # mgcv -> for fitting generalized additive models (GAMs) to capture non-linear relationships in data, useful for analyzing complex ecological patterns and trends
+# kableExtra -> for enhancing tables created with knitr::kable()
+# flextable → for creating and customising flexible, publication‑quality tables
 
 # STATISTICAL ANALYSIS#
 #trend -> for analysing trends in time-series data = Theil-Sen slope
 # shinyjs → for adding JavaScript functionality (like hiding elements, disabling buttons, running scripts) inside Shiny apps without writing raw JavaScript
 # rstatix -> for tidy post-hoc tests
+
 ```
 
 ```{r}
@@ -6781,4 +6784,73 @@ TheilSen.Slope.Unified.ContinuousLegend.Map
 #  units = "in",
 #  dpi = 600
 #)
+```
+
+```{r}
+# Creating a table indicating RPI values above 1 within the entire study area
+
+# Combine all actual pixel-level RPI data with area labels
+RPI.Actual.All <- bind_rows(
+  Amboseli.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli NP"),
+  AET.Conservancies.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli Conservancies"),
+  AET.Buffers.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli Community/Group Ranches"),
+  TsavoEast.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo East NP"),
+  TsavoWest.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo West NP"),
+  Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo Conservancies/Ranches"),
+  Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo Settled Areas")
+)
+
+# Compute proportion with RPI > 1 per area
+RPI.Above1.Table <- RPI.Actual.All %>%
+  group_by(Area) %>%
+  summarise(
+    Total_Pixels = n(),
+    Pixels_Above_1 = sum(RPI > 1, na.rm = TRUE),
+    Proportion = round(Pixels_Above_1 / Total_Pixels, 4),
+    Percentage = round(Proportion * 100, 2)
+  ) %>%
+  arrange(desc(Percentage))
+
+RPI.Above1.Table
+```
+
+```{r}
+# Making the above table publication worthy
+
+#library(kableExtra)
+
+RPI.Above1.Table %>%
+  select(Area, Total_Pixels, Pixels_Above_1, Percentage) %>%
+  rename(
+    `Study Area` = Area,
+    `Total Pixels` = Total_Pixels,
+    `Pixels with RPI > 1` = Pixels_Above_1,
+    `% with RPI > 1` = Percentage
+  ) %>%
+  kbl(caption = "Proportion of Each Study Area with Mean RPI Greater Than 1") %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  )
+
+RPI.Above1.Table
+
+#library(flextable)
+
+RPI.Above1.Flex <- RPI.Above1.Table %>%
+  select(Area, Total_Pixels, Pixels_Above_1, Percentage) %>%
+  rename(
+    `Study Area` = Area,
+    `Total Pixels` = Total_Pixels,
+    `Pixels with RPI > 1` = Pixels_Above_1,
+    `% with RPI > 1` = Percentage
+  ) %>%
+  flextable() %>%
+  set_caption("Proportion of Each Study Area with Mean RPI Greater Than 1") %>%
+  theme_booktabs() %>%
+  autofit()
+
+# Save as Word document
+save_as_docx(RPI.Above1.Flex, path = "RPI_Above1_Table.docx")
+```
 ```
