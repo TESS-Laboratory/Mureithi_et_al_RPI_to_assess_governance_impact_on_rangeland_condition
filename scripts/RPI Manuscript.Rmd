@@ -6413,6 +6413,65 @@ Specific.Study.Areas.Map.Coloured
 ```
 
 ```{r}
+# Creating a "Specific.Study.Areas.Map.Coloured" within Kenya Administrative Boundary
+
+Main.Study.Area.Map <- 
+  # Regional admin boundary as background context
+  tm_shape(Kenya.Regional.Admin.Boundary) +
+  tm_polygons(
+    fill = "grey90",
+    col = "grey40",
+    lwd = 0.5
+  ) +
+  
+  # Coloured study zones on top
+
+  tm_shape(All.Zones.Composite) +
+  tm_polygons(
+    fill = "zone",
+    fill.scale = tm_scale(
+      values = area_colors_simulation.noAllZones
+    ),
+    fill.legend = tm_legend(
+      title = "Study Area"
+    ),
+    col = "white",
+    lwd = 0.5
+  ) +
+  
+  tm_title("") +
+  
+  tm_compass(
+    position = c("left", "bottom"),
+    size = 1.5
+  ) +
+  
+  tm_scalebar(
+    position = c("left", "bottom"),
+    text.size = 0.5
+  ) +
+  
+  tm_layout(
+    legend.outside = TRUE,
+    frame = FALSE
+  )
+
+Main.Study.Area.Map
+```
+
+```{r}
+# Saving the above plot
+#tmap_save(
+#  tm = Main.Study.Area.Map,
+#  filename = "Main.Study.Area.Map.Plot.png",
+#  width = 8.27,
+#  height = 11.69,
+#  units = "in",
+#  dpi = 600
+#)
+```
+
+```{r}
 # Creating a static RPI map
 
 #area_labels.noAllZones <- c(
