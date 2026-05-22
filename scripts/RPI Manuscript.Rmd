@@ -6662,7 +6662,7 @@ TheilSen.Slope.Unified.ContinuousLegend.Map <-
   
   tm_raster(
     col.scale = tm_scale_continuous(
-      values = "brewer.rd_yl_gn",
+      values = "brewer.rd_yl_bu",
       midpoint = 0,
       limits = Slope.Limits
     ),
