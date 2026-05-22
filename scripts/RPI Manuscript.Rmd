@@ -6264,6 +6264,16 @@ areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
 All.Pixel.Slopes <- All.Pixel.Slopes %>%
   filter(!(Area %in% areas_to_remove))
 
+# Turning Area into an ordered factor ranked from lowest to highest median slope
+# Compute median slope per area and reorder Area as a factor
+area_order <- All.Pixel.Slopes %>%
+  group_by(Area) %>%
+  summarise(median_slope = median(Slope, na.rm = TRUE)) %>%
+  arrange(median_slope)
+
+All.Pixel.Slopes <- All.Pixel.Slopes %>%
+  mutate(Area = factor(Area, levels = area_order$Area))
+
 # Ridgeline plot with median line to match RPI plot style
 TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, 
                                                         y = Area, 
@@ -6289,16 +6299,16 @@ TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope,
   theme(
     axis.text.x = element_text(angle = 45, 
                                hjust = 1, 
-                               size = 11, 
+                               size = 15, 
                                face = "bold", 
                                color = "black"
                                ),
-    axis.text.y = element_text(size = 10, 
+    axis.text.y = element_text(size = 15, 
                                face = "bold", 
                                color = "black"
                                ),
     axis.title.x = element_text(face = "bold", 
-                                size = 12
+                                size = 15
                                 ),
     legend.position = "none"
   )
