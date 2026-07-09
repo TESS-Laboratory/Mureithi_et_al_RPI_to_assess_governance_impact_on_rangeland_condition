@@ -5,7 +5,10 @@ This work was developed by Isaac Nduta Mureithi under the Oppenheimer Programme 
 
 A static version of this repo is archived at [![DOI](https://zenodo.org/badge/1091020355.svg)](https://doi.org/10.5281/zenodo.17662206)
 
-
+1. **actual_gpp_ea_v2.tif** - Integrated annual GPP estimates for 22 hydrological years (September-August) from September 2000 to August 2023, based on the PML_V2 ET and GPP dataset.
+2. **potential_gpp_ea_v2.tif** - The estimated potential GPP for each grid cell and hydrological year based on a quantile regression forest model with climatic, topographic and soil predictors (using the 90th percentile of predicted GPP as the potential).
+3. **rpi_ea_v2.tif** - The relative productivity index values, defined as the ratio between actual and potential GPP in a given grid cell and hydrological year.
+4. **rpi_ea_temporal_performance.tif** - A three-band raster reporting the pixel-level mean absolute error (mae), root mean squared error (rmse) and r-squared (rsq) for the quantile regression forest model. These layers can be used as quality control to identify pixels where the model is performing well or poorly at modelling inter-annual variability in GPP as a function of covariates.
 
 The folder **data** contains study area shapefiles for Kenya's administrative boundaries, protected areas from WDPA, conservancy boundaries, and Relative Productivity Index (RPI) raster datasets. The **Kenya's Rangeland Protected Areas.Rmd** is the main R Markdown document containing the complete analysis workflow including data import, spatial processing, trend analysis using Theil-Sen slope estimation, and visualisation of RPI patterns across Amboseli National Park, Tsavo East and West National Parks, AET conservancies, and surrounding buffer areas. The analysis utilises libraries including sf, terra, tidyverse, tmap, and trend for spatial data processing, statistical analysis, and mapping. The document includes custom themes for publication-quality visualizations, temporal performance metrics (MAE, R², RMSE, Rppt), and comparative analysis of vegetation productivity across different governance types.
 
@@ -13,7 +16,20 @@ Spatial datasets for conservancies (AET_Conservancies), and community lands (AET
 
 ## Data Provenance
 The reproducible code is openly available on GitHub under a GNU GPL V3 licence (https://github.com/TESS-Laboratory/Mureithi_RPI_Conservation_Governance), and the RPI datasets required to run the scripts are available at https://zenodo.org/records/14843888 , including:
-1. **actual_gpp_ea_v2.tif** - Integrated annual GPP estimates for 22 hydrological years (September-August) from September 2000 to August 2023, based on the PML_V2 ET and GPP dataset.
-2. **potential_gpp_ea_v2.tif** - The estimated potential GPP for each grid cell and hydrological year based on a quantile regression forest model with climatic, topographic and soil predictors (using the 90th percentile of predicted GPP as the potential).
-3. **rpi_ea_v2.tif** - The relative productivity index values, defined as the ratio between actual and potential GPP in a given grid cell and hydrological year.
-4. **rpi_ea_temporal_performance.tif** - A three-band raster reporting the pixel-level mean absolute error (mae), root mean squared error (rmse) and r-squared (rsq) for the quantile regression forest model. These layers can be used as quality control to identify pixels where the model is performing well or poorly at modelling inter-annual variability in GPP as a function of covariates.
+
+This project uses `renv` to ensure reproducibility of the R environment. The `.Rprofile` at the project root activates `renv`
+automatically when you open the project in RStudio.
+ 
+> **Important:** Always open this project via the `.Rproj` file (or
+> File → Open Project in RStudio) so that `.Rprofile` is sourced and
+> the `renv` library is activated before running any code.
+ 
+Install the pinned package versions:
+ 
+``` r
+renv::restore()
+**Note:** Rendered HTML files are excluded from version control to avoid large file sizes, but are generated automatically when the pipeline is
+run. The project uses `renv`; run `renv::restore()` to recreate the R environment before running the pipeline.
+```
+
+
