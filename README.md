@@ -2,7 +2,7 @@
 
 This repository contains the data and code used to reproduce the analyses, figures and tables presented in:
 
-Mureithi, I.N., et al. (2026). Relative Productivity Index reveals contrasting rangeland condition trajectories across governance types in southern Kenya. *African Journal of Range and Forage Science*.
+Mureithi, I.N., et al. (2026). Relative Productivity Index reveals contrasting rangeland condition trajectories across governance types in southern Kenya. *African Journal of Range and Forage Science* (in review).
 
 A permanent version of this repository is archived at [https://zenodo.org/records/14843888](https://zenodo.org/records/14843888)
 
