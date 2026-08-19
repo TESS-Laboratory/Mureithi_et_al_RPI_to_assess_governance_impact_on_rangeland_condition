@@ -1,35 +1,70 @@
 # Mureithi_RPI_Rangeland_Governance_Comparison
 
-This repository contains the data and analytical scripts for the research article "Relative Productivity Index reveals contrasting rangeland condition trajectories across governance types in southern Kenya" to be submitted to the African Journal of Range and Forage Science. The article addresses the research question: **"What do spatial patterns and long-term trends in relative vegetation productivity (RPI) reveal about variation in rangeland condition across governance types in the Amboseli-Tsavo ecosystem?"**  
-This work was developed by Isaac Nduta Mureithi under the Oppenheimer Programme in African Landscape Systems (OPALS) ~ Terrestrial Ecosystem Science and Services (TESS) Labs, building upon initial research conducted at the University of Exeter.
+This repository contains the data and code used to reproduce the analyses, figures and tables presented in:
 
-A static version of this repo is archived at [![DOI](https://zenodo.org/badge/1091020355.svg)](https://doi.org/10.5281/zenodo.17662206)
+Mureithi, I.N., et al. (2026). Relative Productivity Index reveals contrasting rangeland condition trajectories across governance types in southern Kenya. *African Journal of Range and Forage Science*.
 
-1. **actual_gpp_ea_v2.tif** - Integrated annual GPP estimates for 22 hydrological years (September-August) from September 2000 to August 2023, based on the PML_V2 ET and GPP dataset.
-2. **potential_gpp_ea_v2.tif** - The estimated potential GPP for each grid cell and hydrological year based on a quantile regression forest model with climatic, topographic and soil predictors (using the 90th percentile of predicted GPP as the potential).
-3. **rpi_ea_v2.tif** - The relative productivity index values, defined as the ratio between actual and potential GPP in a given grid cell and hydrological year.
-4. **rpi_ea_temporal_performance.tif** - A three-band raster reporting the pixel-level mean absolute error (mae), root mean squared error (rmse) and r-squared (rsq) for the quantile regression forest model. These layers can be used as quality control to identify pixels where the model is performing well or poorly at modelling inter-annual variability in GPP as a function of covariates.
+A permanent version of this repository is archived at [https://zenodo.org/records/14843888](https://zenodo.org/records/14843888)
 
-The folder **data** contains study area shapefiles for Kenya's administrative boundaries, protected areas from WDPA, conservancy boundaries, and Relative Productivity Index (RPI) raster datasets. The **Kenya's Rangeland Protected Areas.Rmd** is the main R Markdown document containing the complete analysis workflow including data import, spatial processing, trend analysis using Theil-Sen slope estimation, and visualisation of RPI patterns across Amboseli National Park, Tsavo East and West National Parks, AET conservancies, and surrounding buffer areas. The analysis utilises libraries including sf, terra, tidyverse, tmap, and trend for spatial data processing, statistical analysis, and mapping. The document includes custom themes for publication-quality visualizations, temporal performance metrics (MAE, R², RMSE, Rppt), and comparative analysis of vegetation productivity across different governance types.
+Use of this code is licensed under the GNU General Public License v3 (GNU GPL v3).
 
-Spatial datasets for conservancies (AET_Conservancies), and community lands (AET_Other_Conserved_Areas) found in the **Amboseli_Conservation_Areas** folder were acquired from Sustain East Africa Ltd. with support from Dr. Peter Tyrrell. Spatial datasets for ranches (RanchesTTWCA), and settled areas (SettledAreas) within the Tsavo Conservation Area, found in the **Tsavo_Conservation_Areas** folder, were obtained from Amos Chege Muthiuru, a PhD student in the Geography Department at King’s College London. Border demarcations of National Park spatial maps are available from the World Database on Protected Areas (WDPA), and is organised in the **WDPA_Amboseli_Tsavo** folder. UNEP-WCMC and IUCN (2025), Protected Planet: The World Database on Protected Areas (WDPA) and World Database on Other Effective Area-based Conservation Measures (WD-OECM) [Online], April 2025, Cambridge, UK: UNEP-WCMC and IUCN. Available at: www.protectedplanet.net.
+Contact Isaac Nduta Mureithi at [I.N.Mureithi@exeter.ac.uk]
 
-## Data Provenance
-The reproducible code is openly available on GitHub under a GNU GPL V3 licence (https://github.com/TESS-Laboratory/Mureithi_RPI_Conservation_Governance), and the RPI datasets required to run the scripts are available at https://zenodo.org/records/14843888 , including:
+---
 
-This project uses `renv` to ensure reproducibility of the R environment. The `.Rprofile` at the project root activates `renv`
-automatically when you open the project in RStudio.
- 
-> **Important:** Always open this project via the `.Rproj` file (or
-> File → Open Project in RStudio) so that `.Rprofile` is sourced and
-> the `renv` library is activated before running any code.
- 
-Install the pinned package versions:
- 
-``` r
+### Project overview
+
+This research investigates how spatial patterns and long-term trends in relative vegetation productivity (RPI) reveal variations in rangeland condition across governance regimes in the Amboseli-Tsavo ecosystem of southern Kenya. The repository integrates multi-decadal GPP satellite data with quantile regression forest modeling and non-parametric trend analysis across national parks, conservancies, group ranches, and settled areas. It provides the full computational workflow to reproduce all spatio-temporal performance assessments, Theil-Sen slope estimates, and comparative governance figures presented in the manuscript.
+
+---
+
+### Repository contents
+
+The primary code and spatial data components included in this repository are listed below.
+
+#### Scripts
+
+| Script | Description |
+| --- | --- |
+| *Kenya's Rangeland Protected Areas.Rmd* | Main R Markdown document containing the complete analysis workflow including spatial data import, raster processing, metric calculation (MAE, RMSE, $R^2$), Theil-Sen slope estimation, and figure generation across governance zones. |
+
+#### Data
+
+| File | Description |
+| --- | --- |
+| *actual_gpp_ea_v2.tif* | Integrated annual GPP estimates for 22 hydrological years (Sept 2000–Aug 2023) based on the PML_V2 dataset. |
+| *potential_gpp_ea_v2.tif* | Estimated potential GPP for each grid cell derived from a quantile regression forest model (90th percentile). |
+| *rpi_ea_v2.tif* | Relative Productivity Index raster layer defined as the ratio between actual and potential GPP. |
+| *rpi_ea_temporal_performance.tif* | Three-band quality control raster reporting pixel-level MAE, RMSE, and $R^2$ model metrics. |
+| *Amboseli_Conservation_Areas/* | Shapefiles for AET conservancies and community lands (*AET_Conservancies*, *AET_Other_Conserved_Areas*); sourced from Sustain East Africa Ltd. / Dr. Peter Tyrrell. |
+| *Tsavo_Conservation_Areas/* | Shapefiles for ranches and settled areas (*RanchesTTWCA*, *SettledAreas*); sourced from Amos Chege Muthiuru (King’s College London). |
+| *WDPA_Amboseli_Tsavo/* | National Park boundary shapefiles sourced from the World Database on Protected Areas (WDPA; UNEP-WCMC & IUCN, 2025). |
+
+---
+
+### Getting started
+
+Clone this repository and review the project overview and repository structure before running the analysis.
+
+TESS Lab projects typically use `renv` to record package dependencies and software versions. Where an *renv.lock* file is included, restore the project environment before running any analyses. Always open this project via the *.Rproj* file in RStudio so that *.Rprofile* is sourced automatically:
+
+```R
 renv::restore()
-**Note:** Rendered HTML files are excluded from version control to avoid large file sizes, but are generated automatically when the pipeline is
-run. The project uses `renv`; run `renv::restore()` to recreate the R environment before running the pipeline.
+
 ```
 
+---
 
+### Running the analysis
+
+Open and knit the main R Markdown script:
+
+* *Kenya's Rangeland Protected Areas.Rmd*
+
+Rendered HTML outputs are excluded from version control to manage repository size, but are automatically compiled when the pipeline is executed.
+
+---
+
+### Funding acknowledgement
+
+This work was developed under the Oppenheimer Programme in African Landscape Systems (OPALS) ~ Terrestrial Ecosystem Science and Services (TESS) Labs, building upon initial research conducted at the University of Exeter.
