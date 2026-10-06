@@ -6,10 +6,6 @@ output: html_document
 ---
 
 ```{r}
-#### MANUSCRIPT EDIT STARTS FROM LINE 5212 ####
-```
-
-```{r}
 # Load libraries
 
 # if (!require("pacman")) install.packages("pacman")
