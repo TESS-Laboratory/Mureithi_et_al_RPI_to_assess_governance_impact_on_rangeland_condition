@@ -6,15 +6,11 @@ output: html_document
 ---
 
 ```{r}
-#### MANUSCRIPT EDIT STARTS FROM LINE 5212 ####
-```
-
-```{r}
 # Load libraries
 
 # if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix, mgcv, kableExtra, flextable)
+pacman::p_load(here, sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix, mgcv, kableExtra, flextable)
 
 # DATA HANDLING#
 # tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
@@ -57,7 +53,36 @@ pacman::p_load(sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, 
 #trend -> for analysing trends in time-series data = Theil-Sen slope
 # shinyjs → for adding JavaScript functionality (like hiding elements, disabling buttons, running scripts) inside Shiny apps without writing raw JavaScript
 # rstatix -> for tidy post-hoc tests
+```
 
+```{r}
+# Project paths 
+# All inputs are read relative to the project root, which "here" resolves from the .Rproj file. No absolute paths are used, so the analysis runs unchanged on any machine once data/ is populated as described in the README.
+
+dir_data    <- here::here("data")
+dir_rpi <- file.path(dir_data, "RPI Datasets (GuyLomax)")
+dir_borders <- file.path(dir_data, "Country_Borders")
+dir_wdpa    <- file.path(dir_data, "WDPA_Amboseli_Tsavo", "National Parks&Reserves")
+dir_amb     <- file.path(dir_data, "Amboseli_Conservation_Areas")
+dir_tsv     <- file.path(dir_data, "Tsavo_Conservation_Areas")
+
+# Helper for WDPA downloads, which keep their original nested folder structure.
+# The numeric argument is the WDPA site ID (April 2025 release).
+wdpa_path <- function(name, id) {
+  file.path(dir_wdpa,
+            paste0(name, "-WDPA_WDOECM_Apr2025_Public_", id, "_shp"),
+            paste0("WDPA_WDOECM_Apr2025_Public_", id, "_shp_0"),
+            paste0("WDPA_WDOECM_Apr2025_Public_", id, "_shp-polygons.shp"))
+}
+
+required_dirs <- c(dir_rpi, dir_borders, dir_wdpa, dir_amb, dir_tsv)
+missing_dirs  <- required_dirs[!dir.exists(required_dirs)]
+if (length(missing_dirs) > 0) {
+  stop("Input data not found. Missing directories:\n  ",
+       paste(missing_dirs, collapse = "\n  "),
+       "\n\nSee the 'Obtaining the data' section of README.md for sources.",
+       call. = FALSE)
+}
 ```
 
 ```{r}
@@ -106,19 +131,19 @@ if (Sys.info()[["sysname"]] == "Windows") {
 ```{r}
 # Africa Country Boundary import
 
-Africa.Country.Boundaries <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/africa_country_boundaries_simplified_wgs84.shp")
+Africa.Country.Boundaries <- st_read(file.path(dir_borders, "africa_country_boundaries_simplified_wgs84.shp"))
 ```
 
 ```{r}
 #Focusing on Kenya
 
-Kenya.Admin.Boundary <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_admin_boundary_wgs84.shp")
+Kenya.Admin.Boundary <- st_read(file.path(dir_borders, "kenya_admin_boundary_wgs84.shp"))
 ```
 
 ```{r}
 #Focusing on Boundaries within Kenya
 
-Kenya.Regional.Admin.Boundary <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_regional_admin1_boundary_wgs84.shp")
+Kenya.Regional.Admin.Boundary <- st_read(file.path(dir_borders, "kenya_regional_admin1_boundary_wgs84.shp"))
 ```
 
 ```{r}
@@ -191,7 +216,7 @@ Kenya.Admin.Map
 ```{r}
 # Focusing on Kenya's Terrestrial Protected Areas
 
-Kenya.ProtectedAreas <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Country_Borders/kenya_terrestrial_protected_areas_wgs84.shp")
+Kenya.ProtectedAreas <- st_read(file.path(dir_borders, "kenya_terrestrial_protected_areas_wgs84.shp"))
 ```
 
 ```{r}
@@ -323,11 +348,11 @@ Kenya.Rangeland.Map
 ```{r}
 # Importing RPI Datasets - Rasters (TIFs)
 
-Actual.GPP <- rast("C:/Users/IsaacM/OneDrive - University of Exeter/CLASSES - MSc/BIOM4009 ResearchProject/DATA/Geospatial Data/R Use/2.Kenya-s-Rangelands-Protected-Areas_files/RPI Datasets (GuyLomax)/actual_gpp_ea_v2.tif")
+Actual.GPP <- rast(file.path(dir_rpi, "actual_gpp_ea_v2.tif"))
 
-Potential.GPP <- rast("C:/Users/IsaacM/OneDrive - University of Exeter/CLASSES - MSc/BIOM4009 ResearchProject/DATA/Geospatial Data/R Use/2.Kenya-s-Rangelands-Protected-Areas_files/RPI Datasets (GuyLomax)/potential_gpp_ea_v2.tif")
+Potential.GPP <- rast(file.path(dir_rpi, "potential_gpp_ea_v2.tif"))
 
-RPI <- rast("C:/Users/IsaacM/OneDrive - University of Exeter/CLASSES - MSc/BIOM4009 ResearchProject/DATA/Geospatial Data/R Use/2.Kenya-s-Rangelands-Protected-Areas_files/RPI Datasets (GuyLomax)/rpi_ea_v2.tif")
+RPI <- rast(file.path(dir_rpi, "rpi_ea_v2.tif"))
 ```
 
 ```{r}
@@ -339,17 +364,17 @@ RPI <- rast("C:/Users/IsaacM/OneDrive - University of Exeter/CLASSES - MSc/BIOM4
 ```{r}
 # Importing National Parks & National Reserves (GAE/TCA)
 
-Amboseli <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/Amboseli-WDPA_WDOECM_Apr2025_Public_758_shp/WDPA_WDOECM_Apr2025_Public_758_shp_0/WDPA_WDOECM_Apr2025_Public_758_shp-polygons.shp")
+Amboseli    <- st_read(wdpa_path("Amboseli",    758))
 
-ChyuluHills <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/ChyuluHills-WDPA_WDOECM_Apr2025_Public_19563_shp/WDPA_WDOECM_Apr2025_Public_19563_shp_0/WDPA_WDOECM_Apr2025_Public_19563_shp-polygons.shp")
+ChyuluHills <- st_read(wdpa_path("ChyuluHills", 19563))
 
-TsavoWest <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/TsavoWest-WDPA_WDOECM_Apr2025_Public_19564_shp/WDPA_WDOECM_Apr2025_Public_19564_shp_0/WDPA_WDOECM_Apr2025_Public_19564_shp-polygons.shp")
+TsavoWest   <- st_read(wdpa_path("TsavoWest",   19564))
 
-TsavoEast <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/TsavoEast-WDPA_WDOECM_Apr2025_Public_752_shp/WDPA_WDOECM_Apr2025_Public_752_shp_0/WDPA_WDOECM_Apr2025_Public_752_shp-polygons.shp")
+TsavoEast   <- st_read(wdpa_path("TsavoEast",   752))
 
-NgaiNdethia <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/NgaiNdethia-WDPA_WDOECM_Apr2025_Public_2595_shp/WDPA_WDOECM_Apr2025_Public_2595_shp_0/WDPA_WDOECM_Apr2025_Public_2595_shp-polygons.shp")
+NgaiNdethia <- st_read(wdpa_path("NgaiNdethia", 2595))
 
-SouthKitui <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/WDPA_Amboseli_Tsavo/National Parks&Reserves/SouthKitui-WDPA_WDOECM_Apr2025_Public_2590_shp/WDPA_WDOECM_Apr2025_Public_2590_shp_0/WDPA_WDOECM_Apr2025_Public_2590_shp-polygons.shp")
+SouthKitui  <- st_read(wdpa_path("SouthKitui",  2590))
 ```
 
 ```{r}
@@ -416,9 +441,9 @@ Kenya.GAE.TCA.Map
 ```{r}
 # Importing Community Conservancies & Group Ranches surrounding Amboseli
 
-AET.Conservancies <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Amboseli_Conservation_Areas/AET_Conservancies.shp")
+AET.Conservancies <- st_read(file.path(dir_amb, "AET_Conservancies.shp"))
 
-AET.Buffers <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Amboseli_Conservation_Areas/AET_Other_Conserved_Areas.shp")
+AET.Buffers <- st_read(file.path(dir_amb, "AET_Other_Conserved_Areas.shp"))
 ```
 
 ```{r}
@@ -508,9 +533,9 @@ AET.AllZones.Map
 ```{r}
 # Importing Community Conservancies & Group Ranches surrounding Tsavos
 
-Tsavo.Ranches <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Tsavo_Conservation_Areas/RanchesTTWCA.shp")
+Tsavo.Ranches <- st_read(file.path(dir_tsv, "RanchesTTWCA.shp"))
 
-Tsavo.SettledAreas <- st_read("C:/Workspace/Mureithi_RPI_Conservation_Governance/data/Tsavo_Conservation_Areas/SettledAreas.shp")
+Tsavo.SettledAreas <- st_read(file.path(dir_tsv, "SettledAreas.shp"))
 
 # Reprojecting Shapefile CRS to match RPI CRS
 
@@ -3952,7 +3977,7 @@ Combined.Slope.Maps
 ```{r}
 ## Import 
 
-Temporal.Performance <- rast("C:/Users/IsaacM/OneDrive - University of Exeter/CLASSES - MSc/BIOM4009 ResearchProject/DATA/Geospatial Data/R Use/2.Kenya-s-Rangelands-Protected-Areas_files/RPI Datasets (GuyLomax)/rpi_ea_temporal_performance.tif")
+Temporal.Performance <- rast(file.path(dir_rpi, "rpi_ea_temporal_performance.tif"))
 ```
 
 ```{r}
@@ -4456,10 +4481,10 @@ all.equal(ext(RSQ.Resampled.AET.AllZones), ext(AET.AllZones.RPI.Mean))  # Should
 ```
 
 ```{r}
-## Mask RPI rasters using R² threshold
+# Sensitivity check — not used for the published results.The block below applies an exploratory R² ≥ 0.3 threshold. It is retained to document the threshold sensitivity assessment only. All results reported in the > manuscript use the R² ≥ 0.1 threshold defined further below ("Masking out Pixels with Negative R^2"). Objects created here carry the suffix ".Filtered.3" and are not referenced by any downstream analysis or figure.
 
 # #  Set R² threshold
-RSQ.Threshold.3 <- 0.3  # I will adjust this to 0.1 or 0.2 after discussions with Guy Lomax
+RSQ.Threshold.3 <- 0.3  # Exploratory sensitivity threshold only; the published analysis uses 0.1 (see below)
 
 # 1. Creating mask for pixels with R² >= threshold
 RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.3
@@ -4917,10 +4942,10 @@ All.RPI.Rsquare.Filtered.3.Plots
 ```
 
 ```{r}
-# # Masking out Pixels with Negative R^2 (RPI pixels where R² < 0.1)
+# Published quality-control threshold.** All mean-RPI and Theil–Sen results reported in the manuscript are derived from objects with the suffix .Filtered.1`, produced by the R² ≥ 0.1 mask defined below.
 
 # #  Set R² threshold
-RSQ.Threshold.1 <- 0.1  # After agreement with Guy that "Any positive R-squared should be an improvement on using raw GPP or NDVI data"
+RSQ.Threshold.1 <- 0.1  # Published threshold. Any positive R² represents an improvement over using raw GPP or NDVI; 0.1 retains ~99% of study-area pixels while excluding pixels where the quantile regression forest performs worse than a constant prediction.
 ```
 
 ```{r}
