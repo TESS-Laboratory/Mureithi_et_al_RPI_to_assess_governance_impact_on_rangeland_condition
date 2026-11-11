@@ -3680,39 +3680,6 @@ print(Governance.Summary)
 ```
 
 ```{r}
-## Stats 1: Kruskal-Wallis Test
-
-# Run Kruskal-Wallis across all areas
-Kruskal.Wallis.Results <- kruskal.test(Slope ~ Area, data = All.Pixel.Slopes)
-print(Kruskal.Wallis.Results)
-
-```
-
-```{r}
-## Results explanation
-
-# This is a nonparametric test (like ANOVA on ranks).
-
-# Null hypothesis (H₀): All governance types have the same distribution of slopes.
-
-# Result: χ² = 24,950, df = 8, p < 2.2e‑16.
-
-# = The distributions of slope values differ significantly across the nine areas. At least one area is performing differently from the others.
-```
-
-```{r}
-## Stats 2: Pairwise Wilcoxon Tests
-
-pairwise.wilcox.test(All.Pixel.Slopes$Slope, All.Pixel.Slopes$ProtectionType, p.adjust.method = "bonferroni")
-```
-
-```{r}
-## Results explanation
-
-# = each protection type has a distinct slope distribution, and the differences are strong enough that they remain significant even after correcting for multiple comparisons.
-```
-
-```{r}
 # Temporal Trends across Years
 ```
 
