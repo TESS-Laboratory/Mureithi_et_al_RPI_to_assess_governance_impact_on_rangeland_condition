@@ -4916,403 +4916,26 @@ Tsavo.Settled.Values <- extract_area_values("Tsavo Settled Areas")
 ```
 
 ```{r}
-# # Clip RPI & R² to Kenya
+# MANUSCRIPT AND SI FIGURES AND TABLES
+
+# Every figure and table used in the manuscript and the SI is built and saved by code, with the file name it has in the plots/ folder. Figures are saved at their final printed size (width and height in centimetres, 600 dpi), so text sizes in the code are the sizes on the printed page. Knitting this document rebuilds the plots/ folder.
+# Figure 4, Figure S1 and Figure S5 are saved where they are built, earlier in this document. The remaining figures and tables are built below.
 ```
 
 ```{r}
-# First, calculate the mean RPI across all years
-RPI.Mean.EA <- app(RPI, mean, na.rm = TRUE)
+# Shared objects for the figures
 
-# Crop and mask both layers to Kenya
-RPI.Mean.Kenya <- mask(crop(RPI.Mean.EA, Kenya.Admin.Boundary), Kenya.Admin.Boundary)
-
-RSQ.Kenya <- mask(crop(RSQ.Layer, Kenya.Admin.Boundary), Kenya.Admin.Boundary)
-```
-
-```{r}
-# Convert to Data Frame
-
-Kenya.Values.RPI.Rsquare <- as.data.frame(
-  c(RPI = RPI.Mean.Kenya, RSQ = RSQ.Kenya),
-  na.rm = TRUE
-)
-colnames(Kenya.Values.RPI.Rsquare) <- c("RPI", "RSQ")
-```
-
-```{r}
-# Creating the improved plot and assign it to a variable
-Kenya.RPI.Rsquare.Plot <- ggplot(Kenya.Values.RPI.Rsquare, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 50) +
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density", labels = scales::label_math()) +
-  # Using a black dashed line for better visibility
-  geom_vline(xintercept = 0.1, linetype = "dashed", color = "black", linewidth = 1) +
-  labs(
-    title = "RPI vs R² across Kenya (Before Filtering)",
-    subtitle = "Black dashed line = R² threshold (0.1)",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_classic(base_size = 12) + # Use a clean, classic theme
-  theme(
-    plot.title = element_text(face = "bold", size = 12, hjust = 0.5),
-    plot.subtitle = element_text(face = "bold", size = 11, hjust = 0.5),
-    axis.title = element_text(face = "bold", size = 11),
-    legend.title = element_text(face = "bold", size = 10),
-    legend.text  = element_text(size = 9),
-    legend.position = "bottom",
-    legend.direction = "vertical"
-  )
-
-# Displaying the improved plot
-Kenya.RPI.Rsquare.Plot
-```
-
-```{r}
-# Save the plot for scientific publication
-#ggsave(
-#  "Kenya_RPI_vs_Rsq_A4.png",
-#  Kenya.RPI.Rsquare.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
-```
-
-```{r}
-# # Map Pixels with R² ≤ 0.1 in Kenya (A poor model fit filtering out poor-quality predictions)
-
-# Logical mask: poor fit = TRUE if R² ≤ 0.1
-RSQ.Low.Performance.Mask <- RSQ.Kenya <= 0.1
-
-# Creating the improved plot and assign it to a variable
-Kenya.Plot.Rsq.Low <- ggplot() +
-  
-  # ✅ KEEP THIS SIMPLE (your original was correct)
-  geom_spatraster(data = RSQ.Low.Performance.Mask) +
-  
-  scale_fill_manual(
-    name = expression("Model performance (" * R^2 * ")"),
-    values = c(
-      "FALSE" = "grey92",              # softer neutral
-      "TRUE"  = "#D55E00"              # strong, publication-friendly red
-    ),
-    labels = c(
-      "FALSE" = expression(R^2 > 0.1),
-      "TRUE"  = expression(R^2 <= 0.1)
-    )
-  ) +
-  
-  # Slightly improved border for clarity
-  geom_sf(
-    data = Kenya.Admin.Boundary,
-    fill = NA,
-    color = "black",
-    linewidth = 0.4
-  ) +
-  
-  labs(
-    title = expression("Low model performance (" * R^2 <= 0.1 * ") is spatially clustered across Kenya"),
-    subtitle = "Pixels with R² ≤ 0.1 are excluded from subsequent RPI analyses"
-  ) +
-  
-  theme_classic(base_size = 12) +
-  theme(
-    plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5),
-    
-    legend.position = "bottom",
-    legend.direction = "vertical",
-    legend.title = element_text(face = "bold"),
-    legend.text = element_text(size = 12),
-    
-    # Clean map look (important)
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    axis.title = element_blank(),
-    
-    plot.margin = margin(5, 5, 5, 5)
-  )
-
-Kenya.Plot.Rsq.Low
-```
-
-```{r}
-# Save the plot for scientific publication
-#ggsave(
-#  "Kenya_Low_model_performance_Pixels.png",
-#  Kenya.Plot.Rsq.Low,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
-```
-
-```{r}
-# MANUSCRIPT REFINEMENTS
-```
-
-```{r}
-# Improved RPI simulation function
-Simulate.RPI <- function(summary.df, area.name, n = 1000) {
-  
-  simulated.list <- lapply(1:nrow(summary.df), function(i) {
-    
-    mean.val <- summary.df$Mean[i]
-    sd.val <- summary.df$SD[i]
-    year.val <- gsub("rpi.", "", summary.df$Layer[i], fixed = TRUE)
-    
-    sim.values <- rnorm(
-      n,
-      mean = mean.val,
-      sd = sd.val
-    )
-    
-    data.frame(
-      Year = year.val,
-      RPI = sim.values,
-      Area = area.name
-    )
-  })
-  
-  bind_rows(simulated.list)
-}
-
-# RPI Ridgeline Plot tweaks
-
-Amboseli.Simulation <- Simulate.RPI(Amboseli.Summary, "Amboseli")
-TsavoEast.Simulation <- Simulate.RPI(TsavoEast.Summary, "TsavoEast")
-TsavoWest.Simulation <- Simulate.RPI(TsavoWest.Summary, "TsavoWest")
-Tsavo.Ranches.Simulation <- Simulate.RPI(Tsavo.Ranches.Summary, "Tsavo.Ranches")
-Tsavo.SettledAreas.Simulation <- Simulate.RPI(Tsavo.SettledAreas.Summary, "Tsavo.SettledAreas")
-Tsavo.AllZones.Simulation <- Simulate.RPI(Tsavo.AllZones.Summary, "Tsavo.AllZones")
-AET.Conservancies.Simulation <- Simulate.RPI(AET.Conservancies.Summary, "AET.Conservancies")
-AET.Buffers.Simulation <- Simulate.RPI(AET.Buffers.Summary, "AET.Buffers")
-AET.AllZones.Simulation <- Simulate.RPI(AET.AllZones.Summary, "AET.AllZones")
-
-RPI.All.Simulation <- bind_rows(
-  Amboseli.Simulation,
-  TsavoEast.Simulation,
-  TsavoWest.Simulation,
-  Tsavo.Ranches.Simulation,
-  Tsavo.SettledAreas.Simulation,
-  Tsavo.AllZones.Simulation,
-  AET.Conservancies.Simulation,
-  AET.Buffers.Simulation,
-  AET.AllZones.Simulation
-)
-
-area_labels.v2 <- c(
-  "Amboseli" = "Amboseli NP", 
-  "AET.Buffers" = "Amboseli Community/Group Ranches", 
-  "AET.AllZones" = "Amboseli All Zones", 
-  "AET.Conservancies" = "Amboseli Conservancies", 
-  "TsavoWest" = "Tsavo West NP", 
-  "TsavoEast" = "Tsavo East NP", 
-  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches", 
-  "Tsavo.SettledAreas" = "Tsavo Settled Areas", 
-  "Tsavo.AllZones" = "Tsavo All Zones"
-) 
-#area_labels.v1 <- c(
-#  "Amboseli Park" = "Amboseli NP",
-#  "AET Buffers" = "Amboseli Community/Group Ranches",
-#  "AET All Zones" = "Amboseli All Zones",
-#  "AET Conservancies" = "Amboseli Conservancies",
-#  "Tsavo West" = "Tsavo West NP",
-#  "Tsavo East" = "Tsavo East NP",
-#  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
-#  "Tsavo Settled Areas" = "Tsavo Settled Areas",
-#  "Tsavo All Zones" = "Tsavo All Zones"
-#)
-
-area_colors_simulation <- c(
+# The seven zones in the order used throughout the paper, with their colours
+zone_colours <- c(
   "Amboseli NP" = "#440154FF",
-  "Amboseli Community/Group Ranches" = "#AADC32FF",
   "Amboseli Conservancies" = "#5DC863FF",
-  "Amboseli All Zones" = "#FDE725FF",
+  "Amboseli Community/Group Ranches" = "#AADC32FF",
   "Tsavo East NP" = "#472D7BFF",
   "Tsavo West NP" = "#3B528BFF",
   "Tsavo Conservancies/Ranches" = "#2C728EFF",
-  "Tsavo Settled Areas" = "#21908CFF",
-  "Tsavo All Zones" = "#27AD81FF"
+  "Tsavo Settled Areas" = "#21908CFF"
 )
 
-# Re-convert to Character
-RPI.All.Simulation <- RPI.All.Simulation %>%
-  mutate(Area = as.character(Area))
-
-# Recode the Area Names to match my preferred labels
-RPI.All.Simulation <- RPI.All.Simulation %>%
-  mutate(Area = recode(Area, !!!area_labels.v2))
-
-# Filter out the "All Zones" categories
-areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
-
-RPI.All.Simulation <- RPI.All.Simulation %>%
-  filter(!(Area %in% areas_to_remove))
-
-# Reorder the factor levels based on mean RPI (highest first, but reverse for ggplot)
-Mean.RPI.Order <- RPI.All.Simulation %>%
-  group_by(Area) %>%
-  summarise(MeanRPI_Area = mean(RPI, na.rm = TRUE)) %>%
-  arrange(MeanRPI_Area) %>%
-  pull(Area)
-RPI.All.Simulation$Area <- factor(RPI.All.Simulation$Area, levels = Mean.RPI.Order)
-
-# Plotting the ridgeline simulation
-RPI.Ridgeline.Simulation.Plot <- ggplot(RPI.All.Simulation,
-                                        aes(x = RPI, y = Area, fill = Area)) +
-  
-  geom_density_ridges(
-    quantile_lines = TRUE,
-    quantiles = 0.5,
-    alpha = 0.7,
-    scale = 1.2,
-    color = "black",
-    linewidth = 0.3,
-    rel_min_height = 0.001
-  ) +
-  
-  scale_fill_manual(values = area_colors_simulation) +
-  
-  coord_cartesian(xlim = c(-0.2, 1.4)) +
-  
-  labs(
-    title = "",
-    subtitle = "",
-    x = "RPI",
-    y = NULL
-  ) +
-  
-  theme_minimal(base_size = 12) +
-  theme(
-    legend.position = "none",
-    
-    axis.text.y = element_text(size = 10, face = "bold", color = "black"),
-    axis.text.x = element_text(size = 11, face = "bold", color = "black"),
-    axis.title.x = element_text(face = "bold", size = 12),
-    
-    plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5),
-    
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank()
-  )
-
-RPI.Ridgeline.Simulation.Plot
-```
-
-```{r}
-# Saving the above plot
-#ggsave(
-#  "Mean_RPI_Ridgeline_Plot.png",
-#  RPI.Ridgeline.Simulation.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
-```
-
-```{r}
-# Modifying the "Ridgeline_Slopes" plot by adding a Median Line for Visual Consistency
-area_labels.v2 <- c(
-  "Amboseli" = "Amboseli NP", 
-  "AET.Buffers" = "Amboseli Community/Group Ranches", 
-  "AET.AllZones" = "Amboseli All Zones", 
-  "AET.Conservancies" = "Amboseli Conservancies", 
-  "TsavoWest" = "Tsavo West NP", 
-  "TsavoEast" = "Tsavo East NP", 
-  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches", 
-  "Tsavo.SettledAreas" = "Tsavo Settled Areas", 
-  "Tsavo.AllZones" = "Tsavo All Zones"
-) 
-
-area_colors_simulation <- c(
-  "Amboseli NP" = "#440154FF", 
-  "Amboseli Community/Group Ranches" = "#AADC32FF", 
-  "Amboseli Conservancies" = "#5DC863FF", 
-  "Amboseli All Zones" = "#FDE725FF", 
-  "Tsavo East NP" = "#472D7BFF", 
-  "Tsavo West NP" = "#3B528BFF", 
-  "Tsavo Conservancies/Ranches" = "#2C728EFF", 
-  "Tsavo Settled Areas" = "#21908CFF", 
-  "Tsavo All Zones" = "#27AD81FF"
-)
-
-# Convert Area to Character
-All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  mutate(Area = as.character(Area)) %>%
-  mutate(Area = recode(Area, !!!area_labels.v2))
-
-# Removing the "...AllZones"
-areas_to_remove <- c("Tsavo All Zones", "Amboseli All Zones")
-
-All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  filter(!(Area %in% areas_to_remove))
-
-# Turning Area into an ordered factor ranked from lowest to highest median slope
-# Compute median slope per area and reorder Area as a factor
-area_order <- All.Pixel.Slopes %>%
-  group_by(Area) %>%
-  summarise(median_slope = median(Slope, na.rm = TRUE)) %>%
-  arrange(median_slope)
-
-All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  mutate(Area = factor(Area, levels = area_order$Area))
-
-# Ridgeline plot with median line to match RPI plot style
-TheilSen.Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, 
-                                                        y = Area, 
-                                                        fill = Area)) +
-  geom_density_ridges(
-    quantile_lines = TRUE,
-    quantiles = 0.5,  
-    alpha = 0.7,      
-    scale = 3,  
-    rel_min_height = 0.01,
-    color = "black"
-  ) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 1) +
-
-  scale_fill_manual(values = area_colors_simulation) +
-  coord_cartesian(xlim = c(-0.03, 0.03)) +
-  labs(
-    title = "",
-    x = "Slope",
-    y = NULL
-  ) +
-  theme_ridges(font_size = 14, grid = TRUE) +
-  theme(
-    axis.text.x = element_text(angle = 45, 
-                               hjust = 1, 
-                               size = 15, 
-                               face = "bold", 
-                               color = "black"
-                               ),
-    axis.text.y = element_text(size = 15, 
-                               face = "bold", 
-                               color = "black"
-                               ),
-    axis.title.x = element_text(face = "bold", 
-                                size = 15
-                                ),
-    legend.position = "none"
-  )
-
-TheilSen.Ridgeline.Plot
-```
-
-```{r}
-# Saving the above plot
-#ggsave(
-#  "TheilSen_Ridgeline_Plot.png",
-#  TheilSen.Ridgeline.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
-```
-
-```{r}
 # Study Area Map (focused on areas under study only)
 
 # Defining "make_zone" function
@@ -5324,163 +4947,20 @@ make_zone <- function(sf_layer, zone_name) {
 
 All.Zones.Composite <- bind_rows(
   make_zone(Amboseli, "Amboseli NP"),
-  make_zone(TsavoEast, "Tsavo East NP"),
-  make_zone(TsavoWest, "Tsavo West NP"),
   make_zone(AET.Conservancies, "Amboseli Conservancies"),
   make_zone(AET.Buffers, "Amboseli Community/Group Ranches"),
+  make_zone(TsavoEast, "Tsavo East NP"),
+  make_zone(TsavoWest, "Tsavo West NP"),
   make_zone(Tsavo.Ranches, "Tsavo Conservancies/Ranches"),
   make_zone(Tsavo.SettledAreas, "Tsavo Settled Areas")
-)
+) %>%
+  mutate(zone = factor(zone, levels = names(zone_colours)))
 
-area_labels.noAllZones <- c(
-  "Amboseli Park" = "Amboseli NP",
-  "AET Buffers" = "Amboseli Community/Group Ranches",
-  "AET Conservancies" = "Amboseli Conservancies",
-  "Tsavo West" = "Tsavo West NP",
-  "Tsavo East" = "Tsavo East NP",
-  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
-  "Tsavo Settled Areas" = "Tsavo Settled Areas"
-)
-
-area_colors_simulation.noAllZones <- c(
-  "Amboseli NP" = "#440154FF",
-  "Amboseli Community/Group Ranches" = "#AADC32FF",
-  "Amboseli Conservancies" = "#5DC863FF",
-  "Tsavo East NP" = "#472D7BFF",
-  "Tsavo West NP" = "#3B528BFF",
-  "Tsavo Conservancies/Ranches" = "#2C728EFF",
-  "Tsavo Settled Areas" = "#21908CFF"
-)
-
-# Recode zone names to match palette
-  #All.Zones.Composite <- All.Zones.Composite %>%
-  #  mutate(zone = recode(zone, !!!area_labels.noAllZones))
-
-# Recode zone names to match palette
-All.Zones.Composite <- All.Zones.Composite %>%
-  mutate(
-    zone = factor(zone, levels = names(area_colors_simulation.noAllZones))
-  )
-
-# Create the map with colored zones and white borders
-tmap_mode("plot")
-
-Specific.Study.Areas.Map.Coloured <- tm_shape(All.Zones.Composite) +
-  tm_polygons(
-    fill = "zone",
-    fill.scale = tm_scale(
-      values = area_colors_simulation.noAllZones
-    ),
-    fill.legend = tm_legend(
-      title = "Study Area"
-    ),
-    col = "white",
-    lwd = 2
-  ) +
-  tm_layout(
-    legend.outside = TRUE,
-    frame = FALSE
-  )
-
-Specific.Study.Areas.Map.Coloured
-```
-
-```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = Specific.Study.Areas.Map.Coloured,
-#  filename = "Specific_Study_Areas_Map_Coloured_Plot.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
-# Creating a "Specific.Study.Areas.Map.Coloured" within Kenya Administrative Boundary
-
-Main.Study.Area.Map <- 
-  # Regional admin boundary as background context
-  tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_polygons(
-    fill = "grey90",
-    col = "grey40",
-    lwd = 0.5
-  ) +
-  
-  # Coloured study zones on top
-
-  tm_shape(All.Zones.Composite) +
-  tm_polygons(
-    fill = "zone",
-    fill.scale = tm_scale(
-      values = area_colors_simulation.noAllZones
-    ),
-    fill.legend = tm_legend(
-      title = "Study Area"
-    ),
-    col = "white",
-    lwd = 0.5
-  ) +
-  
-  tm_title("") +
-  
-  tm_compass(
-    position = c("left", "bottom"),
-    size = 1.5
-  ) +
-  
-  tm_scalebar(
-    position = c("left", "bottom"),
-    text.size = 0.5
-  ) +
-  
-  tm_layout(
-    legend.outside = TRUE,
-    frame = FALSE
-  )
-
-Main.Study.Area.Map
-```
-
-```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = Main.Study.Area.Map,
-#  filename = "Main.Study.Area.Map.Plot.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
-# Creating a static RPI map
-
-#area_labels.noAllZones <- c(
-#  "Amboseli Park" = "Amboseli NP",
-#  "AET Buffers" = "Amboseli Community/Group Ranches",
-#  "AET Conservancies" = "Amboseli Conservancies",
-#  "Tsavo West" = "Tsavo West NP",
-#  "Tsavo East" = "Tsavo East NP",
-#  "Tsavo Ranches" = "Tsavo Conservancies/Ranches",
-#  "Tsavo Settled Areas" = "Tsavo Settled Areas"
-#)
-
-#area_colors_simulation.noAllZones <- c(
-#  "Amboseli NP" = "#440154FF",
-#  "Amboseli Community/Group Ranches" = "#AADC32FF",
-#  "Amboseli Conservancies" = "#5DC863FF",
-#  "Tsavo East NP" = "#472D7BFF",
-#  "Tsavo West NP" = "#3B528BFF",
-#  "Tsavo Conservancies/Ranches" = "#2C728EFF",
-#  "Tsavo Settled Areas" = "#21908CFF"
-#)
+# Outline of the whole study area (all seven zones merged)
+Study.Area.Outline <- st_union(All.Zones.Composite)
 
 # Merge all Rasters into one single object
-# terra::merge handles rasters with different extents and stitches them together
+# The zones do not overlap, so terra::merge simply stitches the zonal rasters together
 Combined.RPI.Filtered.1.Raster <- terra::merge(
   Amboseli.RPI.Mean.Filtered.1,
   TsavoEast.RPI.Mean.Filtered.1,
@@ -5490,140 +4970,6 @@ Combined.RPI.Filtered.1.Raster <- terra::merge(
   AET.Conservancies.RPI.Mean.Filtered.1,
   AET.Buffers.RPI.Mean.Filtered.1
 )
-
-# Combine all Vector Borders into one single object
-# This allows us to draw all the white outlines at once
-Combined.Borders <- dplyr::bind_rows(
-  Amboseli %>% dplyr::select(geometry),
-  TsavoEast %>% dplyr::select(geometry),
-  TsavoWest %>% dplyr::select(geometry),
-  Tsavo.Ranches %>% dplyr::select(geometry),
-  Tsavo.SettledAreas %>% dplyr::select(geometry),
-  AET.Conservancies %>% dplyr::select(geometry),
-  AET.Buffers %>% dplyr::select(geometry)
-)
-
-# Create the Single Map
-tmap_mode("plot")
-RPI.Filtered1.Unified.Map <- 
-  
-  tm_shape(Combined.RPI.Filtered.1.Raster) +
-  tm_raster(
-    fill.scale = tm_scale_continuous(
-      values = "viridis",
-      trans = "sqrt" 
-    ),
-    fill.legend = tm_legend(
-      title = "Mean RPI",
-      reverse = FALSE,
-      frame = FALSE
-    )
-  ) +
-
-  tm_shape(Combined.Borders) +
-  tm_borders(col = "white", lwd = 1.5, fill_alpha = 0.8) +
-  tm_title("Spatial Distribution of Filtered Mean RPI Across Study Areas") +
-  
-  tm_layout(legend.outside = TRUE) +
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom"))
-
-
-RPI.Filtered1.Unified.Map
-```
-
-```{r}
-# Tweaking the above map with a different colour scheme
-tmap_mode("plot")
-RPI.Filtered1.Unified.ContinuousLegend.Map <- 
-  
-  tm_shape(Combined.RPI.Filtered.1.Raster) +
-  tm_raster(
-    col.scale = tm_scale_continuous(
-      values = "viridis",
-      limits = c(0, 1)
-      ),
-    col.legend = tm_legend(
-      title = "Mean RPI",
-      reverse = TRUE
-    )
-  ) +
-
-  tm_shape(Combined.Borders) +
-  tm_borders(col = "black", lwd = 1, fill_alpha = 0.8) +
-  tm_title("Spatial Distribution of Filtered Mean RPI Across Study Areas") +
-  
-  tm_layout(legend.outside = TRUE,
-            frame = FALSE) +
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom"))
-
-
-RPI.Filtered1.Unified.ContinuousLegend.Map
-```
-```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = RPI.Filtered1.Unified.ContinuousLegend.Map,
-#  filename = "RPI_Filtered1_Unified_ContinuousLegend_Map.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
-# Refining the breaks to use in the above map
-# Define the breaks exactly where you want the color changes
-# The last break (2.0) acts as a 'catch-all' for the high values
-RPI.Filtered1.Unified.Map.Breaks <- c(0, 0.2, 0.4, 0.6, 0.8, 1.0, 2.0)
-
-tmap_mode("plot")
-# Update the Map
-RPI.Filtered1.Unified.BreakLegend.Map <- 
-  tm_shape(Combined.RPI.Filtered.1.Raster) +
-  tm_raster(
-    col.scale = tm_scale_intervals(
-      breaks = RPI.Filtered1.Unified.Map.Breaks,
-      values = "viridis"
-    ),
-    col.legend = tm_legend(
-      title = "Mean RPI (Filtered by R² ≥ 0.1)",
-      reverse = FALSE,
-      # These labels correspond to the spaces between your breaks
-      labels = c("0.0 - 0.2", "0.2 - 0.4", "0.4 - 0.6", 
-                 "0.6 - 0.8", "0.8 - 1.0", "> 1.0")
-    )
-  ) +
-  tm_shape(Combined.Borders) +
-  tm_borders(col = "black", lwd = 0.8) + 
-  tm_title("") +
-  tm_layout(
-    legend.outside = TRUE,
-    frame = FALSE
-  ) +
-
-  tm_compass(position = c("left", "bottom")) + 
-  tm_scalebar(position = c("left", "bottom"))
-
-RPI.Filtered1.Unified.BreakLegend.Map
-```
-
-```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = RPI.Filtered1.Unified.BreakLegend.Map,
-#  filename = "RPI_Filtered1_Unified_Map.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
-# Now to create a similar map for the Theil-Sen Slopes (Trends) across the study areas
 
 # Merge Slope Rasters (Excluding 'All Zones' to avoid redundancy)
 Combined.Slope.Raster <- terra::merge(
@@ -5636,154 +4982,675 @@ Combined.Slope.Raster <- terra::merge(
   AET.Buffers.Slope.Raster
 )
 
-# Standardise Vector Borders (Matches RPI logic above)
-Combined.Borders <- dplyr::bind_rows(
-  Amboseli %>% dplyr::select(geometry),
-  TsavoEast %>% dplyr::select(geometry),
-  TsavoWest %>% dplyr::select(geometry),
-  Tsavo.Ranches %>% dplyr::select(geometry),
-  Tsavo.SettledAreas %>% dplyr::select(geometry),
-  AET.Conservancies %>% dplyr::select(geometry),
-  AET.Buffers %>% dplyr::select(geometry)
-)
-
-# Define Logic for Slopes
-# We use a diverging scale. RPI slopes are usually small (e.g., -0.05 to 0.05)
-# 0 is the critical 'no change' threshold.
-Slope.Breaks <- c(-0.1, -0.03, -0.01, 0.01, 0.03, 0.1)
-
-tmap_mode("plot")
-
-TheilSen.Slope.Unified.BreakLegend.Map <- 
-  tm_shape(Combined.Slope.Raster) +
-  tm_raster(
-    col.scale = tm_scale_intervals(
-      breaks = Slope.Breaks,
-      values = "brewer.rd_bu", 
-      midpoint = 0
-    ),
-    col.legend = tm_legend(
-      title = "Theil-Sen Slope (RPI/Year)",
-      reverse = FALSE,
-      labels = c("Strong Decline", 
-                 "Moderate Decline", 
-                 "Stable", 
-                 "Moderate Increase", 
-                 "Strong Increase")
-    )
-  ) +
-
-  tm_shape(Combined.Borders) +
-  tm_borders(col = "black", lwd = 0.8) + 
-  
-  # Map Layout and Essentials
-  tm_title("") +
-  tm_layout(
-    legend.outside = TRUE,
-    frame = FALSE,
-    legend.outside.position = "right" 
-  ) +
-  tm_compass(position = c("left", "bottom")) + 
-  tm_scalebar(position = c("left", "bottom"))
-
-# Print the map
-TheilSen.Slope.Unified.BreakLegend.Map
-```
-
-```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = TheilSen.Slope.Unified.BreakLegend.Map,
-#  filename = "TheilSen_Slope_Unified.Map.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
-# Continuous Theil–Sen Slope Map (No Interval Breaks) to differentiate with above map
-
-# Optional: Define display limits for the continuous slope scale
-# Helps prevent extreme outliers from dominating the colour stretch
-Slope.Limits <- c(-0.05, 0.05)
-
-# Continuous Theil–Sen Slope Map
-TheilSen.Slope.Unified.ContinuousLegend.Map <- 
-  
-  tm_shape(Combined.Slope.Raster) +
-  
-  tm_raster(
-    col.scale = tm_scale_continuous(
-      values = "brewer.rd_yl_bu",
-      midpoint = 0,
-      limits = Slope.Limits
-    ),
-    
-    col.legend = tm_legend(
-      title = "Theil-Sen Slope\n(RPI/Year)",
-      reverse = FALSE
-    )
-  ) +
-  
-  # Add Study Area Borders
-  tm_shape(Combined.Borders) +
-  tm_borders(
-    col = "black",
-    lwd = 0.8
-  ) +
-  
-  # Layout
-  tm_title("") +
-  
-  tm_layout(
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    frame = FALSE
-  ) +
-  
-  # Map Elements
-  tm_compass(
-    position = c("left", "bottom")
-  ) +
-  
-  tm_scalebar(
-    position = c("left", "bottom")
+# Map theme and map furniture, sized for the printed page
+theme_map <- theme_void(base_size = 8) +
+  theme(
+    legend.title = element_text(size = 8, color = "black"),
+    legend.text = element_text(size = 7, color = "black"),
+    legend.key.size = unit(0.35, "cm"),
+    plot.margin = margin(2, 2, 2, 2)
   )
 
-# Print Map
-TheilSen.Slope.Unified.ContinuousLegend.Map
+map_scale_bar <- function(location = "bl") {
+  annotation_scale(
+    location = location,
+    width_hint = 0.25,
+    height = unit(0.12, "cm"),
+    text_cex = 0.6,
+    line_width = 0.3
+  )
+}
+
+map_north_arrow <- function(location = "tl") {
+  annotation_north_arrow(
+    location = location,
+    height = unit(0.7, "cm"),
+    width = unit(0.45, "cm"),
+    style = north_arrow_orienteering(text_size = 5, line_width = 0.4)
+  )
+}
+
+# Panel labels in the form (A), (B), (C)
+panel_tags <- plot_annotation(tag_levels = "A", tag_prefix = "(", tag_suffix = ")")
+panel_tag_theme <- theme(plot.tag = element_text(size = 9, face = "bold"))
+
+# Labels for a colour scale whose ends are capped: values beyond the limits are drawn in the end colour, and the end labels say so
+capped_labels <- function(breaks, accuracy = 1, lower = FALSE, upper = TRUE) {
+  lab <- scales::number(breaks, accuracy = accuracy, big.mark = ",")
+  if (upper) lab[length(lab)] <- paste0("≥ ", lab[length(lab)])
+  if (lower) lab[1] <- paste0("≤ ", lab[1])
+  lab
+}
+
+# Wrap long zone names over several lines; a name may also break after a "/"
+wrap_zone_label <- function(x, width = 20) {
+  x <- str_wrap(gsub("/", "/ ", x, fixed = TRUE), width = width)
+  gsub("/ ", "/", x, fixed = TRUE)
+}
+
+# The governance-zone map used as panel (B) of Figures 2 and 3. It has no legend of its own: the zones are named in panel (C), which uses the same colours.
+Zones.Map.Panel <- ggplot() +
+  geom_sf(data = All.Zones.Composite, aes(fill = zone), colour = "white", linewidth = 0.12) +
+  scale_fill_manual(values = zone_colours) +
+  theme_map +
+  theme(legend.position = "none")
+
+Zones.Map.Panel
 ```
 
 ```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = TheilSen.Slope.Unified.ContinuousLegend.Map,
-#  filename = "TheilSen_Slope_Unified.ContinuousLegend.Map.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
+# Pixel-level values used in the figures and tables (real pixels only - nothing is simulated)
 
-```{r}
-# Creating a table indicating RPI values above 1 within the entire study area
-
-# Combine all actual pixel-level RPI data with area labels
-RPI.Actual.All <- bind_rows(
-  Amboseli.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli NP"),
-  AET.Conservancies.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli Conservancies"),
-  AET.Buffers.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Amboseli Community/Group Ranches"),
-  TsavoEast.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo East NP"),
-  TsavoWest.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo West NP"),
-  Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo Conservancies/Ranches"),
-  Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1 %>% mutate(Area = "Tsavo Settled Areas")
+# Mean RPI (hydrological years 2000-2022) of every retained pixel (R² ≥ 0.1) in each zone, taken straight from the filtered mean rasters
+RPI.Pixel.Means <- bind_rows(
+  tibble(Area = "Amboseli NP", RPI = as.data.frame(Amboseli.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Amboseli Conservancies", RPI = as.data.frame(AET.Conservancies.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Amboseli Community/Group Ranches", RPI = as.data.frame(AET.Buffers.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Tsavo East NP", RPI = as.data.frame(TsavoEast.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Tsavo West NP", RPI = as.data.frame(TsavoWest.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Tsavo Conservancies/Ranches", RPI = as.data.frame(Tsavo.Ranches.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]]),
+  tibble(Area = "Tsavo Settled Areas", RPI = as.data.frame(Tsavo.SettledAreas.RPI.Mean.Filtered.1, na.rm = TRUE)[[1]])
 )
 
-# Compute proportion with RPI > 1 per area
-RPI.Above1.Table <- RPI.Actual.All %>%
+# Mean RPI and R² of every pixel in each zone BEFORE quality control (used for Figure S6 and the before/after comparison)
+RSQ.Pixel.Values <- bind_rows(
+  as.data.frame(c(Amboseli.RPI.Mean, RSQ.Amboseli), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Amboseli NP"),
+  as.data.frame(c(AET.Conservancies.RPI.Mean, RSQ.AET.Conservancies), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Amboseli Conservancies"),
+  as.data.frame(c(AET.Buffers.RPI.Mean, RSQ.AET.Buffers), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Amboseli Community/Group Ranches"),
+  as.data.frame(c(TsavoEast.RPI.Mean, RSQ.TsavoEast), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Tsavo East NP"),
+  as.data.frame(c(TsavoWest.RPI.Mean, RSQ.TsavoWest), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Tsavo West NP"),
+  as.data.frame(c(Tsavo.Ranches.RPI.Mean, RSQ.Tsavo.Ranches), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Tsavo Conservancies/Ranches"),
+  as.data.frame(c(Tsavo.SettledAreas.RPI.Mean, RSQ.Tsavo.SettledAreas), na.rm = TRUE) %>% setNames(c("RPI", "RSQ")) %>% mutate(Area = "Tsavo Settled Areas")
+) %>%
+  as_tibble()
+
+# Pixel-level Theil-Sen slopes of the seven zones (the two "All Zones" composites are left out)
+Zone.Pixel.Slopes <- bind_rows(
+  Amboseli.TheilSen,
+  AET.Conservancies.TheilSen,
+  AET.Buffers.TheilSen,
+  TsavoEast.TheilSen,
+  TsavoWest.TheilSen,
+  Tsavo.Ranches.TheilSen,
+  Tsavo.SettledAreas.TheilSen
+) %>%
+  filter(!is.na(Slope)) %>%
+  mutate(Area = recode(as.character(Area), !!!area_labels))
+```
+
+```{r}
+# How many pixels the R² filter keeps in each zone (Table S3)
+
+# Number of pixels with a value in a raster
+count_pixels <- function(r) sum(!is.na(values(r)))
+
+Pixel.Retention.Table <- tibble(
+  Area = names(zone_colours),
+  Pixels_Before = c(
+    count_pixels(Amboseli.RPI.Mean),
+    count_pixels(AET.Conservancies.RPI.Mean),
+    count_pixels(AET.Buffers.RPI.Mean),
+    count_pixels(TsavoEast.RPI.Mean),
+    count_pixels(TsavoWest.RPI.Mean),
+    count_pixels(Tsavo.Ranches.RPI.Mean),
+    count_pixels(Tsavo.SettledAreas.RPI.Mean)
+  ),
+  Pixels_After = c(
+    count_pixels(Amboseli.RPI.Mean.Filtered.1),
+    count_pixels(AET.Conservancies.RPI.Mean.Filtered.1),
+    count_pixels(AET.Buffers.RPI.Mean.Filtered.1),
+    count_pixels(TsavoEast.RPI.Mean.Filtered.1),
+    count_pixels(TsavoWest.RPI.Mean.Filtered.1),
+    count_pixels(Tsavo.Ranches.RPI.Mean.Filtered.1),
+    count_pixels(Tsavo.SettledAreas.RPI.Mean.Filtered.1)
+  )
+)
+
+# Totals for the six focal governance zones (Tsavo Settled Areas are shown for context only) and for all seven zones
+Pixel.Retention.Table <- bind_rows(
+  Pixel.Retention.Table,
+  Pixel.Retention.Table %>%
+    filter(Area != "Tsavo Settled Areas") %>%
+    summarise(Area = "Six focal zones combined", Pixels_Before = sum(Pixels_Before), Pixels_After = sum(Pixels_After)),
+  Pixel.Retention.Table %>%
+    summarise(Area = "All seven zones combined", Pixels_Before = sum(Pixels_Before), Pixels_After = sum(Pixels_After))
+) %>%
+  mutate(
+    Pixels_Removed = Pixels_Before - Pixels_After,
+    Percent_Retained = round(100 * Pixels_After / Pixels_Before, 1)
+  )
+
+Pixel.Retention.Table
+
+# Check: the same counts are obtained from the paired RPI and R² values
+stopifnot(
+  all(Pixel.Retention.Table$Pixels_Before[1:7] == as.integer(table(factor(RSQ.Pixel.Values$Area, levels = names(zone_colours))))),
+  all(Pixel.Retention.Table$Pixels_After[1:7] == as.integer(table(factor(RPI.Pixel.Means$Area, levels = names(zone_colours)))))
+)
+
+# Save as Word document
+Pixel.Retention.Flex <- Pixel.Retention.Table %>%
+  rename(
+    `Governance zone` = Area,
+    `Pixels before filtering` = Pixels_Before,
+    `Pixels retained (R² ≥ 0.1)` = Pixels_After,
+    `Pixels removed` = Pixels_Removed,
+    `% retained` = Percent_Retained
+  ) %>%
+  flextable() %>%
+  set_caption("Number of RPI pixels in each governance zone before and after the R² ≥ 0.1 quality-control filter") %>%
+  theme_booktabs() %>%
+  autofit()
+
+save_as_docx(Pixel.Retention.Flex, path = here::here("plots", "Table_S3_pixels_retained_after_R2_filter.docx"))
+```
+
+```{r}
+# Distribution of pixel-level mean RPI in each zone (Figure 2C)
+
+# Every value plotted is the mean RPI of one retained pixel ("RPI.Pixel.Means"). The vertical line in each ridge is the median.
+
+# Order the zones from lowest (bottom) to highest (top) median mean RPI
+Median.RPI.Order <- RPI.Pixel.Means %>%
+  group_by(Area) %>%
+  summarise(MedianRPI_Area = median(RPI)) %>%
+  arrange(MedianRPI_Area) %>%
+  pull(Area)
+
+RPI.Pixel.Means$Area <- factor(RPI.Pixel.Means$Area, levels = Median.RPI.Order)
+
+RPI.Ridgeline.Plot <- ggplot(RPI.Pixel.Means, aes(x = RPI, y = Area, fill = Area)) +
+
+  geom_density_ridges(
+    quantile_lines = TRUE,
+    quantiles = 2,
+    alpha = 0.7,
+    scale = 1.2,
+    color = "black",
+    linewidth = 0.25,
+    rel_min_height = 0.001
+  ) +
+
+  scale_fill_manual(values = zone_colours) +
+
+  scale_y_discrete(labels = wrap_zone_label, expand = expansion(mult = c(0.02, 0.2))) +
+
+  # The x-axis is limited to 0-1.5; the few pixels with a higher mean RPI are counted in "Numbers reported in the manuscript"
+  coord_cartesian(xlim = c(0, 1.5)) +
+
+  labs(
+    x = "Mean RPI",
+    y = NULL
+  ) +
+
+  theme_minimal(base_size = 8) +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title.x = element_text(size = 8),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+RPI.Ridgeline.Plot
+```
+
+```{r}
+# Distribution of pixel-level Theil-Sen slopes in each zone (Figure 3C)
+
+# Order the zones from lowest (bottom) to highest (top) median slope
+Median.Slope.Order <- Zone.Pixel.Slopes %>%
+  group_by(Area) %>%
+  summarise(median_slope = median(Slope)) %>%
+  arrange(median_slope) %>%
+  pull(Area)
+
+Zone.Pixel.Slopes$Area <- factor(Zone.Pixel.Slopes$Area, levels = Median.Slope.Order)
+
+# Ridgeline plot with median line to match RPI plot style
+TheilSen.Ridgeline.Plot <- ggplot(Zone.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)) +
+
+  geom_density_ridges(
+    quantile_lines = TRUE,
+    quantiles = 2,
+    alpha = 0.7,
+    scale = 1.2,
+    color = "black",
+    linewidth = 0.25,
+    rel_min_height = 0.001
+  ) +
+
+  geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 0.4) +
+
+  scale_fill_manual(values = zone_colours) +
+
+  scale_y_discrete(labels = wrap_zone_label, expand = expansion(mult = c(0.02, 0.2))) +
+
+  # The x-axis is limited to -0.03 to 0.03; the few pixels with steeper slopes are counted in "Numbers reported in the manuscript"
+  coord_cartesian(xlim = c(-0.03, 0.03)) +
+
+  labs(
+    x = expression("Theil–Sen slope (RPI yr"^-1 * ")"),
+    y = NULL
+  ) +
+
+  theme_minimal(base_size = 8) +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title.x = element_text(size = 8),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+TheilSen.Ridgeline.Plot
+```
+
+```{r}
+# FIGURE 1: Study area and governance zones
+
+# Built fully in R with patchwork, so no intermediate image files or PowerPoint steps are needed.
+
+# (A) Kenya within Africa
+Figure1.A <- ggplot() +
+  geom_sf(data = Africa.Country.Boundaries, fill = "grey85", colour = "black", linewidth = 0.15) +
+  geom_sf(data = Kenya.Admin.Boundary, fill = "forestgreen", colour = "black", linewidth = 0.2) +
+  coord_sf(xlim = c(-19, 52), ylim = c(-36, 38), expand = FALSE) +
+  theme_map
+
+# (B) Photograph of the study landscape
+# The photograph is the only part of the figure that is not generated from data. It is read from images/ if it is there; otherwise a labelled placeholder is drawn so that the document still knits.
+Figure1.Photo.Path <- here::here("images", "Figure_1B_elephants_Amboseli.jpg")
+
+if (file.exists(Figure1.Photo.Path)) {
+  Figure1.B <- wrap_elements(full = rasterGrob(as.raster(magick::image_read(Figure1.Photo.Path)), interpolate = TRUE))
+} else {
+  Figure1.B <- wrap_elements(full = grobTree(
+    rectGrob(gp = gpar(col = "grey70", fill = NA)),
+    textGrob("Photograph not found. Save it as\nimages/Figure_1B_elephants_Amboseli.jpg", gp = gpar(col = "grey40", fontsize = 6))
+  ))
+}
+
+# (C) The seven zones within southern Kenya
+Study.Area.BBox <- st_bbox(All.Zones.Composite)
+
+Figure1.C <- ggplot() +
+  geom_sf(data = Kenya.Regional.Admin.Boundary, fill = "grey92", colour = "grey55", linewidth = 0.2) +
+  geom_sf(data = All.Zones.Composite, aes(fill = zone), colour = "white", linewidth = 0.12) +
+  scale_fill_manual(values = zone_colours, name = "Governance zone") +
+  coord_sf(
+    xlim = c(Study.Area.BBox[["xmin"]] - 1.6, Study.Area.BBox[["xmax"]] + 1.0),
+    ylim = c(Study.Area.BBox[["ymin"]] - 0.3, Study.Area.BBox[["ymax"]] + 0.3),
+    expand = FALSE
+  ) +
+  map_scale_bar("br") +
+  map_north_arrow("tr") +
+  theme_map +
+  # The legend sits inside the panel, in the empty corner south-west of the study area
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.01, 0.02),
+    legend.justification = c(0, 0),
+    legend.background = element_rect(fill = "white", colour = NA)
+  )
+
+Figure.1 <- (Figure1.A | Figure1.B) / Figure1.C +
+  plot_layout(heights = c(6.5, 9)) +
+  panel_tags &
+  panel_tag_theme
+
+Figure.1
+
+ggsave(
+  here::here("plots", "Figure_1_study_area_governance_zones.png"),
+  plot = Figure.1,
+  width = 16,
+  height = 16,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE 2: Mean RPI by governance zone
+
+# (A) Mean RPI of the retained pixels. The colour scale is capped at 1: pixels with mean RPI above 1 are drawn in the top colour (they are not removed), and are shown as their own class in Figure S4.
+Figure2.A <- ggplot() +
+  geom_spatraster(data = Combined.RPI.Filtered.1.Raster, maxcell = Inf) +
+  geom_sf(data = All.Zones.Composite, fill = NA, colour = "black", linewidth = 0.12) +
+  scale_fill_viridis_c(
+    name = "Mean RPI",
+    limits = c(0, 1),
+    oob = scales::squish,
+    breaks = seq(0, 1, 0.2),
+    labels = capped_labels(seq(0, 1, 0.2), accuracy = 0.1),
+    na.value = "transparent"
+  ) +
+  map_scale_bar("bl") +
+  map_north_arrow("tl") +
+  theme_map +
+  # The legend sits inside the panel, in the empty area south of Amboseli
+  theme(legend.position = "inside", legend.position.inside = c(0.1, 0.32))
+
+Figure.2 <- Figure2.A / (Zones.Map.Panel | RPI.Ridgeline.Plot) +
+  plot_layout(heights = c(13, 7)) +
+  panel_tags &
+  panel_tag_theme
+
+Figure.2
+
+ggsave(
+  here::here("plots", "Figure_2_mean_RPI_by_governance_zone.png"),
+  plot = Figure.2,
+  width = 16,
+  height = 20.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE 3: RPI trends by governance zone
+
+# (A) Pixel-level Theil-Sen slopes. The colour scale is capped at -0.02 and +0.02 RPI per year (about three standard deviations of the slopes), so that the pattern across most pixels can be seen: steeper slopes are drawn in the end colours (they are not removed).
+Slope.Limits <- c(-0.02, 0.02)
+Slope.Breaks <- c(-0.02, -0.01, 0, 0.01, 0.02)
+
+Figure3.A <- ggplot() +
+  geom_spatraster(data = Combined.Slope.Raster, maxcell = Inf) +
+  geom_sf(data = All.Zones.Composite, fill = NA, colour = "black", linewidth = 0.12) +
+  scale_fill_distiller(
+    name = "Theil–Sen slope\n(RPI per year)",
+    palette = "RdYlBu",
+    direction = 1,
+    limits = Slope.Limits,
+    oob = scales::squish,
+    breaks = Slope.Breaks,
+    labels = capped_labels(Slope.Breaks, accuracy = 0.01, lower = TRUE),
+    na.value = "transparent"
+  ) +
+  map_scale_bar("bl") +
+  map_north_arrow("tl") +
+  theme_map +
+  # The legend sits inside the panel, in the empty area south of Amboseli
+  theme(legend.position = "inside", legend.position.inside = c(0.1, 0.32))
+
+Figure.3 <- Figure3.A / (Zones.Map.Panel | TheilSen.Ridgeline.Plot) +
+  plot_layout(heights = c(13, 7)) +
+  panel_tags &
+  panel_tag_theme
+
+Figure.3
+
+ggsave(
+  here::here("plots", "Figure_3_RPI_trends_by_governance_zone.png"),
+  plot = Figure.3,
+  width = 16,
+  height = 20.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE S2: Model performance (MAE, RMSE, R²) across Kenya
+
+# One figure with three panels and one caption. Each metric has its own continuous, colour-blind-friendly (viridis) scale. MAE and RMSE have a few very large values, so their scales are capped at the 99th percentile; R² is capped at 0 because a few pixels are strongly negative. Capped values are drawn in the end colour and the end label says so.
+
+performance_map <- function(layer, legend_title, limits, breaks, labels) {
+  ggplot() +
+    geom_sf(data = Kenya.Admin.Boundary, fill = "grey90", colour = NA) +
+    geom_spatraster(data = layer, maxcell = 2e6) +
+    geom_sf(data = Kenya.Admin.Boundary, fill = NA, colour = "black", linewidth = 0.2) +
+    scale_fill_viridis_c(
+      name = legend_title,
+      limits = limits,
+      oob = scales::squish,
+      breaks = breaks,
+      labels = labels,
+      na.value = "transparent"
+    ) +
+    guides(fill = guide_colourbar(
+      title.position = "top",
+      barwidth = unit(3.6, "cm"),
+      barheight = unit(0.25, "cm")
+    )) +
+    theme_map +
+    theme(legend.position = "bottom")
+}
+
+# Upper limits for the MAE and RMSE colour scales (99th percentile, rounded up to the nearest 100)
+MAE.Upper <- ceiling(as.numeric(global(Temporal.Performance.Kenya[["mae"]], quantile, probs = 0.99, na.rm = TRUE)) / 100) * 100
+RMSE.Upper <- ceiling(as.numeric(global(Temporal.Performance.Kenya[["rmse"]], quantile, probs = 0.99, na.rm = TRUE)) / 100) * 100
+
+MAE.Breaks <- seq(0, MAE.Upper, length.out = 5)
+RMSE.Breaks <- seq(0, RMSE.Upper, length.out = 5)
+RSQ.Breaks <- seq(0, 1, 0.25)
+
+Figure.S2 <- (
+  performance_map(
+    Temporal.Performance.Kenya[["mae"]],
+    expression("MAE (g C m"^-2 * " yr"^-1 * ")"),
+    limits = c(0, MAE.Upper), breaks = MAE.Breaks, labels = capped_labels(MAE.Breaks)
+  ) |
+    performance_map(
+      Temporal.Performance.Kenya[["rmse"]],
+      expression("RMSE (g C m"^-2 * " yr"^-1 * ")"),
+      limits = c(0, RMSE.Upper), breaks = RMSE.Breaks, labels = capped_labels(RMSE.Breaks)
+    ) |
+    performance_map(
+      Temporal.Performance.Kenya[["rsq"]],
+      expression(R^2),
+      limits = c(0, 1), breaks = RSQ.Breaks, labels = capped_labels(RSQ.Breaks, accuracy = 0.01, lower = TRUE, upper = FALSE)
+    )
+) +
+  panel_tags &
+  panel_tag_theme
+
+Figure.S2
+
+ggsave(
+  here::here("plots", "Figure_S2_model_performance_Kenya.png"),
+  plot = Figure.S2,
+  width = 16,
+  height = 8.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE S3: Why pixels with R² < 0.1 are excluded
+
+# Mean RPI and R² of every RPI v2 pixel in Kenya (before any filtering)
+RPI.Mean.EA <- app(RPI, mean, na.rm = TRUE)
+
+RPI.Mean.Kenya <- mask(crop(RPI.Mean.EA, Kenya.Admin.Boundary), Kenya.Admin.Boundary, touches = FALSE)
+
+RSQ.Kenya <- mask(crop(RSQ.Layer, Kenya.Admin.Boundary), Kenya.Admin.Boundary, touches = FALSE)
+
+# Convert to Data Frame
+Kenya.Values.RPI.Rsquare <- as.data.frame(c(RPI.Mean.Kenya, RSQ.Kenya), na.rm = TRUE)
+colnames(Kenya.Values.RPI.Rsquare) <- c("RPI", "RSQ")
+
+# (A) Where the excluded pixels are. Pixels are classed as retained (R² ≥ 0.1) or excluded (R² < 0.1), the same rule as the filter. Kenya is drawn in dark grey underneath, so areas outside the RPI v2 product show as dark grey.
+Kenya.QC.Class <- classify(
+  RSQ.Kenya,
+  rcl = matrix(c(-Inf, RSQ.Threshold.1, 1,
+                 RSQ.Threshold.1, Inf, 0), ncol = 3, byrow = TRUE),
+  right = FALSE
+)
+levels(Kenya.QC.Class) <- data.frame(id = c(0, 1), class = c("Retained", "Excluded"))
+
+Kenya.Plot.Rsq.Low <- ggplot() +
+  geom_sf(data = Kenya.Admin.Boundary, fill = "grey45", colour = NA) +
+  geom_spatraster(data = Kenya.QC.Class, maxcell = Inf) +
+  scale_fill_manual(
+    name = NULL,
+    values = c("Retained" = "grey88", "Excluded" = "#D55E00"),
+    labels = c("Retained" = expression(R^2 >= 0.1 ~ "(retained)"), "Excluded" = expression(R^2 < 0.1 ~ "(excluded)")),
+    na.value = "transparent",
+    na.translate = FALSE
+  ) +
+  geom_sf(data = Kenya.Admin.Boundary, fill = NA, colour = "black", linewidth = 0.2) +
+  # Outline of the Amboseli-Tsavo study area
+  geom_sf(data = Study.Area.Outline, fill = NA, colour = "black", linewidth = 0.35) +
+  theme_map +
+  theme(legend.position = "bottom", legend.direction = "vertical")
+
+# (B) Mean RPI against R². A few extreme pixels stretch the R² axis to about -39, which hides the threshold, so the axis starts at -2. The pixels left off the axis are counted in "Numbers reported in the manuscript".
+Kenya.RSQ.Axis.Minimum <- -2
+
+Kenya.RPI.Rsquare.Plot <- ggplot(
+  Kenya.Values.RPI.Rsquare %>% filter(RSQ >= Kenya.RSQ.Axis.Minimum),
+  aes(x = RSQ, y = RPI)
+) +
+  geom_hex(bins = 60) +
+  scale_fill_viridis_c(
+    option = "D",
+    trans = "log10",
+    name = "Pixels per hexagon",
+    labels = scales::label_comma()
+  ) +
+  geom_vline(xintercept = RSQ.Threshold.1, linetype = "dashed", color = "black", linewidth = 0.4) +
+  coord_cartesian(xlim = c(Kenya.RSQ.Axis.Minimum, 1)) +
+  labs(
+    x = expression(R^2),
+    y = "Mean RPI"
+  ) +
+  theme_classic(base_size = 8) +
+  theme(
+    axis.text = element_text(size = 7, color = "black"),
+    legend.title = element_text(size = 8),
+    legend.text = element_text(size = 7),
+    legend.key.height = unit(0.5, "cm"),
+    legend.key.width = unit(0.25, "cm")
+  )
+
+Figure.S3 <- (Kenya.Plot.Rsq.Low | Kenya.RPI.Rsquare.Plot) +
+  plot_layout(widths = c(1, 1.15)) +
+  panel_tags &
+  panel_tag_theme
+
+Figure.S3
+
+ggsave(
+  here::here("plots", "Figure_S3_R2_threshold_Kenya.png"),
+  plot = Figure.S3,
+  width = 16,
+  height = 9.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE S4: Where mean RPI is high or low, including where it exceeds 1
+
+# Figure 2A uses a continuous scale capped at 1. This map instead groups mean RPI into classes and gives pixels above 1 their own colour, so they can be located.
+RPI.Class.Breaks <- c(0, 0.2, 0.4, 0.6, 0.8, 1.0, Inf)
+RPI.Class.Labels <- c("0.0–0.2", "0.2–0.4", "0.4–0.6", "0.6–0.8", "0.8–1.0", "> 1.0")
+
+Combined.RPI.Class.Raster <- classify(
+  Combined.RPI.Filtered.1.Raster,
+  rcl = cbind(RPI.Class.Breaks[-7], RPI.Class.Breaks[-1], 0:5),
+  include.lowest = TRUE
+)
+levels(Combined.RPI.Class.Raster) <- data.frame(id = 0:5, class = RPI.Class.Labels)
+
+Figure.S4 <- ggplot() +
+  geom_spatraster(data = Combined.RPI.Class.Raster, maxcell = Inf) +
+  geom_sf(data = All.Zones.Composite, fill = NA, colour = "black", linewidth = 0.12) +
+  scale_fill_manual(
+    name = "Mean RPI",
+    values = setNames(c(viridis(5), "#EE3377"), RPI.Class.Labels),
+    na.value = "transparent",
+    na.translate = FALSE
+  ) +
+  map_scale_bar("bl") +
+  map_north_arrow("tl") +
+  theme_map +
+  theme(legend.position = "right")
+
+Figure.S4
+
+ggsave(
+  here::here("plots", "Figure_S4_mean_RPI_map_study_area.png"),
+  plot = Figure.S4,
+  width = 16,
+  height = 12.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# FIGURE S6: R² in each governance zone before filtering, and the share of pixels the filter keeps
+
+# Violins show the R² of every pixel in each zone before quality control; the dashed line is the R² = 0.1 threshold. A few pixels have strongly negative R², so the axis starts at -2 (the pixels left off the axis are counted in "Numbers reported in the manuscript"). The label above each violin is the percentage of the zone's pixels retained ("Pixel.Retention.Table").
+Zone.RSQ.Axis.Minimum <- -2
+
+Retention.Labels <- Pixel.Retention.Table %>%
+  filter(Area %in% names(zone_colours)) %>%
+  mutate(
+    Area = factor(Area, levels = names(zone_colours)),
+    Label = paste0(format(Percent_Retained, nsmall = 1), "%\nretained")
+  )
+
+Figure.S6 <- ggplot(
+  RSQ.Pixel.Values %>%
+    filter(RSQ >= Zone.RSQ.Axis.Minimum) %>%
+    mutate(Area = factor(Area, levels = names(zone_colours))),
+  aes(x = Area, y = RSQ, fill = Area)
+) +
+  geom_violin(scale = "width", color = "black", linewidth = 0.2, alpha = 0.8) +
+  geom_hline(yintercept = RSQ.Threshold.1, linetype = "dashed", color = "black", linewidth = 0.4) +
+  geom_text(
+    data = Retention.Labels,
+    aes(x = Area, y = 1.2, label = Label),
+    size = 2.3,
+    lineheight = 0.9,
+    inherit.aes = FALSE
+  ) +
+  scale_fill_manual(values = zone_colours) +
+  scale_x_discrete(labels = function(x) wrap_zone_label(x, width = 14)) +
+  scale_y_continuous(breaks = seq(-2, 1, 0.5)) +
+  coord_cartesian(ylim = c(Zone.RSQ.Axis.Minimum, 1.3)) +
+  labs(
+    x = NULL,
+    y = expression(R^2 ~ "(before filtering)")
+  ) +
+  theme_classic(base_size = 8) +
+  theme(
+    legend.position = "none",
+    axis.text = element_text(size = 7, color = "black")
+  )
+
+Figure.S6
+
+ggsave(
+  here::here("plots", "Figure_S6_R2_by_governance_zone.png"),
+  plot = Figure.S6,
+  width = 16,
+  height = 9,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+```
+
+```{r}
+# TABLE S1: Pixels with mean RPI above 1 in each zone
+
+# Compute proportion with RPI > 1 per area, from the mean RPI of the retained pixels
+RPI.Above1.Table <- RPI.Pixel.Means %>%
+  mutate(Area = as.character(Area)) %>%
   group_by(Area) %>%
   summarise(
     Total_Pixels = n(),
@@ -5799,26 +5666,6 @@ RPI.Above1.Table
 ```{r}
 # Making the above table publication worthy
 
-#library(kableExtra)
-
-RPI.Above1.Table %>%
-  select(Area, Total_Pixels, Pixels_Above_1, Percentage) %>%
-  rename(
-    `Study Area` = Area,
-    `Total Pixels` = Total_Pixels,
-    `Pixels with RPI > 1` = Pixels_Above_1,
-    `% with RPI > 1` = Percentage
-  ) %>%
-  kbl(caption = "Proportion of Each Study Area with Mean RPI Greater Than 1") %>%
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed"),
-    full_width = FALSE
-  )
-
-RPI.Above1.Table
-
-#library(flextable)
-
 RPI.Above1.Flex <- RPI.Above1.Table %>%
   select(Area, Total_Pixels, Pixels_Above_1, Percentage) %>%
   rename(
@@ -5832,7 +5679,8 @@ RPI.Above1.Flex <- RPI.Above1.Table %>%
   theme_booktabs() %>%
   autofit()
 
-# Save as Word document
-save_as_docx(RPI.Above1.Flex, path = "RPI_Above1_Table.docx")
-```
+RPI.Above1.Flex
 
+# Save as Word document, alongside the figures
+save_as_docx(RPI.Above1.Flex, path = here::here("plots", "Table_S1_pixels_RPI_above_1.docx"))
+```
