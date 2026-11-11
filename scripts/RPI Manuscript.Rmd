@@ -471,33 +471,44 @@ Tsavo.SettledAreas <- st_read(file.path(dir_tsv, "SettledAreas.shp"))
 # One rule for which pixels belong to each governance zone
 
 # The zone polygons come from three different sources and overlap in places (the overlaps are listed in "Zone.Overlaps.Before" below). Left as supplied, a pixel inside an overlap would be analysed in two zones. The steps below make sure every pixel is assigned to exactly one zone:
-#   1. All zone polygons are put in the CRS of the RPI grid and their geometries are repaired.
+#   1. All zone polygons are put in one projected CRS and their geometries are repaired.
 #   2. Overlaps between polygons of the same zone are removed, so no pixel is counted twice within a zone.
 #   3. Overlaps between zones are given to one zone only, in this order of precedence:
 #        Amboseli: National Park > Conservancies > Community/Group Ranches
 #        Tsavo:    National Parks > Conservancies/Ranches > Settled Areas
+#   4. The cleaned polygons are returned in the CRS of the RPI grid.
 # Later on, mask(..., touches = FALSE) and extract() both keep a pixel only when its centre lies inside a polygon, so the maps, the tables and the trend analysis all use the same pixels.
 
-# Step 1: Common CRS and valid geometries
-to_rpi_crs <- function(x) st_make_valid(st_transform(x, crs(RPI)))
+# Polygon overlaps and areas are worked out in a projected CRS (UTM zone 37S, in metres), where planar geometry is appropriate
+Zone.Projected.CRS <- 32737
 
-Amboseli           <- to_rpi_crs(Amboseli)
-TsavoEast          <- to_rpi_crs(TsavoEast)
-TsavoWest          <- to_rpi_crs(TsavoWest)
-AET.Conservancies  <- to_rpi_crs(AET.Conservancies)
-AET.Buffers        <- to_rpi_crs(AET.Buffers)
-Tsavo.Ranches      <- to_rpi_crs(Tsavo.Ranches)
-Tsavo.SettledAreas <- to_rpi_crs(Tsavo.SettledAreas)
+# Step 1: Common projected CRS and valid geometries
+clean_zone <- function(x) {
+  x %>%
+    st_transform(Zone.Projected.CRS) %>%
+    st_make_valid()
+}
+
+Amboseli           <- clean_zone(Amboseli)
+TsavoEast          <- clean_zone(TsavoEast)
+TsavoWest          <- clean_zone(TsavoWest)
+AET.Conservancies  <- clean_zone(AET.Conservancies)
+AET.Buffers        <- clean_zone(AET.Buffers)
+Tsavo.Ranches      <- clean_zone(Tsavo.Ranches)
+Tsavo.SettledAreas <- clean_zone(Tsavo.SettledAreas)
 
 # Area of a zone in km² (its polygons are merged first, so nothing is counted twice)
 area_km2 <- function(x) {
-  sum(as.numeric(units::set_units(st_area(st_union(st_geometry(x))), "km^2")))
+  x <- st_union(st_transform(st_geometry(x), Zone.Projected.CRS))
+  sum(as.numeric(st_area(x))) / 1e6
 }
 
 # Area shared by two zones in km²
 overlap_km2 <- function(a, b) {
-  shared <- suppressWarnings(st_intersection(st_union(st_geometry(a)), st_union(st_geometry(b))))
-  if (length(shared) == 0) 0 else sum(as.numeric(units::set_units(st_area(shared), "km^2")))
+  a <- st_union(st_transform(st_geometry(a), Zone.Projected.CRS))
+  b <- st_union(st_transform(st_geometry(b), Zone.Projected.CRS))
+  shared <- st_intersection(a, b)
+  if (length(shared) == 0) 0 else sum(as.numeric(st_area(shared))) / 1e6
 }
 
 # Table of the overlap between every pair of zones
@@ -562,6 +573,22 @@ Zone.Overlaps.After <- zone_overlaps(list(
 ))
 
 stopifnot(nrow(Zone.Overlaps.After) == 0)
+
+# Step 4: Back to the CRS of the RPI grid
+Amboseli           <- st_transform(Amboseli, crs(RPI))
+TsavoEast          <- st_transform(TsavoEast, crs(RPI))
+TsavoWest          <- st_transform(TsavoWest, crs(RPI))
+AET.Conservancies  <- st_transform(AET.Conservancies, crs(RPI))
+AET.Buffers        <- st_transform(AET.Buffers, crs(RPI))
+Tsavo.Ranches      <- st_transform(Tsavo.Ranches, crs(RPI))
+Tsavo.SettledAreas <- st_transform(Tsavo.SettledAreas, crs(RPI))
+
+# Check: every polygon is valid for terra, which does the masking and extraction
+stopifnot(
+  all(is.valid(vect(Amboseli))), all(is.valid(vect(TsavoEast))), all(is.valid(vect(TsavoWest))),
+  all(is.valid(vect(AET.Conservancies))), all(is.valid(vect(AET.Buffers))),
+  all(is.valid(vect(Tsavo.Ranches))), all(is.valid(vect(Tsavo.SettledAreas)))
+)
 ```
 
 ```{r}
