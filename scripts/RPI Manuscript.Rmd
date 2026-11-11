@@ -346,6 +346,26 @@ Actual.GPP <- rast(file.path(dir_rpi, "actual_gpp_ea_v2.tif"))
 Potential.GPP <- rast(file.path(dir_rpi, "potential_gpp_ea_v2.tif"))
 
 RPI <- rast(file.path(dir_rpi, "rpi_ea_v2.tif"))
+
+# The RPI v2 series covers 23 hydrological years (September 2000 to August 2023). Layers are named by the start year of each hydrological year (rpi.2000 to rpi.2022).
+stopifnot(nlyr(RPI) == 23)
+```
+
+```{r}
+# Importing the temporal performance layers (MAE, RMSE, R²) supplied with the RPI v2 product
+
+# These are imported here, before any zone is processed, so that the R² quality-control filter can be applied once, straight after each zone is cropped. Every later step (yearly zone means, Theil-Sen slopes, figures and tables) then uses the same retained pixels.
+
+Temporal.Performance <- rast(file.path(dir_rpi, "rpi_ea_temporal_performance.tif"))
+
+## Extract R² layer
+RSQ.Layer <- Temporal.Performance[["rsq"]]
+
+# The R² and RPI layers are on the same grid (same extent, resolution, origin and CRS), so the R² layer can simply be cropped to each zone; no resampling is needed
+stopifnot(compareGeom(RSQ.Layer, RPI))
+
+# Published quality-control threshold: pixels with R² < 0.1 are excluded from the analysis. Any positive R² represents an improvement over using raw GPP or NDVI; 0.1 excludes pixels where the quantile regression forest explains little or none of the year-to-year variation in GPP. The share of pixels retained in each zone is calculated in "Pixel.Retention.Table".
+RSQ.Threshold.1 <- 0.1
 ```
 
 ```{r}
@@ -952,11 +972,19 @@ Africa.Kenya.Connectivity.Final.Figure
 ```{r}
 ## Visualising Amboseli NP
 
-Amboseli.RPI.Mask <- mask(RPI, Amboseli)
-Amboseli.RPI.Crop <- crop(Amboseli.RPI.Mask, Amboseli)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+Amboseli.RPI.Crop.Unfiltered <- mask(crop(RPI, Amboseli, snap = "out"), Amboseli, touches = FALSE)
 
-# Averaging across years for visualization
-Amboseli.RPI.Mean <- mean(Amboseli.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+Amboseli.RPI.Mean <- mean(Amboseli.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.Amboseli <- crop(RSQ.Layer, Amboseli.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.Amboseli, Amboseli.RPI.Crop.Unfiltered))
+Amboseli.RPI.Crop <- mask(Amboseli.RPI.Crop.Unfiltered, RSQ.Amboseli >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+Amboseli.RPI.Mean.Filtered.1 <- mean(Amboseli.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -972,11 +1000,19 @@ tm_shape(Amboseli.RPI.Mean) +
 ```{r}
 ## Visualising Tsavo East NP
 
-TsavoEast.RPI.Mask <- mask(RPI, TsavoEast)
-TsavoEast.RPI.Crop <- crop(TsavoEast.RPI.Mask, TsavoEast)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+TsavoEast.RPI.Crop.Unfiltered <- mask(crop(RPI, TsavoEast, snap = "out"), TsavoEast, touches = FALSE)
 
-# Averaging across years for visualization
-TsavoEast.RPI.Mean <- mean(TsavoEast.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+TsavoEast.RPI.Mean <- mean(TsavoEast.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.TsavoEast <- crop(RSQ.Layer, TsavoEast.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.TsavoEast, TsavoEast.RPI.Crop.Unfiltered))
+TsavoEast.RPI.Crop <- mask(TsavoEast.RPI.Crop.Unfiltered, RSQ.TsavoEast >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+TsavoEast.RPI.Mean.Filtered.1 <- mean(TsavoEast.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -992,11 +1028,19 @@ tm_shape(TsavoEast.RPI.Mean) +
 ```{r}
 ## Visualising Tsavo West NP
 
-TsavoWest.RPI.Mask <- mask(RPI, TsavoWest)
-TsavoWest.RPI.Crop <- crop(TsavoWest.RPI.Mask, TsavoWest)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+TsavoWest.RPI.Crop.Unfiltered <- mask(crop(RPI, TsavoWest, snap = "out"), TsavoWest, touches = FALSE)
 
-# Averaging across years for visualization
-TsavoWest.RPI.Mean <- mean(TsavoWest.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+TsavoWest.RPI.Mean <- mean(TsavoWest.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.TsavoWest <- crop(RSQ.Layer, TsavoWest.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.TsavoWest, TsavoWest.RPI.Crop.Unfiltered))
+TsavoWest.RPI.Crop <- mask(TsavoWest.RPI.Crop.Unfiltered, RSQ.TsavoWest >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+TsavoWest.RPI.Mean.Filtered.1 <- mean(TsavoWest.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1012,11 +1056,19 @@ tm_shape(TsavoWest.RPI.Mean) +
 ```{r}
 ## Visualising AET.Conservancies
 
-AET.Conservancies.RPI.Mask <- mask(RPI, AET.Conservancies)
-AET.Conservancies.RPI.Crop <- crop(AET.Conservancies.RPI.Mask, AET.Conservancies)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+AET.Conservancies.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.Conservancies, snap = "out"), AET.Conservancies, touches = FALSE)
 
-# Averaging across years for visualization
-AET.Conservancies.RPI.Mean <- mean(AET.Conservancies.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+AET.Conservancies.RPI.Mean <- mean(AET.Conservancies.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.AET.Conservancies <- crop(RSQ.Layer, AET.Conservancies.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.AET.Conservancies, AET.Conservancies.RPI.Crop.Unfiltered))
+AET.Conservancies.RPI.Crop <- mask(AET.Conservancies.RPI.Crop.Unfiltered, RSQ.AET.Conservancies >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+AET.Conservancies.RPI.Mean.Filtered.1 <- mean(AET.Conservancies.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1032,11 +1084,19 @@ tm_shape(AET.Conservancies.RPI.Mean) +
 ```{r}
 ## Visualising AET.Buffers
 
-AET.Buffers.RPI.Mask <- mask(RPI, AET.Buffers)
-AET.Buffers.RPI.Crop <- crop(AET.Buffers.RPI.Mask, AET.Buffers)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+AET.Buffers.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.Buffers, snap = "out"), AET.Buffers, touches = FALSE)
 
-# Averaging across years for visualization
-AET.Buffers.RPI.Mean <- mean(AET.Buffers.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+AET.Buffers.RPI.Mean <- mean(AET.Buffers.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.AET.Buffers <- crop(RSQ.Layer, AET.Buffers.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.AET.Buffers, AET.Buffers.RPI.Crop.Unfiltered))
+AET.Buffers.RPI.Crop <- mask(AET.Buffers.RPI.Crop.Unfiltered, RSQ.AET.Buffers >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+AET.Buffers.RPI.Mean.Filtered.1 <- mean(AET.Buffers.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1052,11 +1112,19 @@ tm_shape(AET.Buffers.RPI.Mean) +
 ```{r}
 ## Visualising AET.AllZones
 
-AET.AllZones.RPI.Mask <- mask(RPI, AET.AllZones)
-AET.AllZones.RPI.Crop <- crop(AET.AllZones.RPI.Mask, AET.AllZones)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+AET.AllZones.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.AllZones, snap = "out"), AET.AllZones, touches = FALSE)
 
-# Averaging across years for visualization
-AET.AllZones.RPI.Mean <- mean(AET.AllZones.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+AET.AllZones.RPI.Mean <- mean(AET.AllZones.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.AET.AllZones <- crop(RSQ.Layer, AET.AllZones.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.AET.AllZones, AET.AllZones.RPI.Crop.Unfiltered))
+AET.AllZones.RPI.Crop <- mask(AET.AllZones.RPI.Crop.Unfiltered, RSQ.AET.AllZones >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+AET.AllZones.RPI.Mean.Filtered.1 <- mean(AET.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1075,11 +1143,19 @@ tm_shape(AET.AllZones.RPI.Mean) +
 ```{r}
 ## Visualising Tsavo.Ranches
 
-Tsavo.Ranches.RPI.Mask <- mask(RPI, Tsavo.Ranches)
-Tsavo.Ranches.RPI.Crop <- crop(Tsavo.Ranches.RPI.Mask, Tsavo.Ranches)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+Tsavo.Ranches.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.Ranches, snap = "out"), Tsavo.Ranches, touches = FALSE)
 
-# Averaging across years for visualization
-Tsavo.Ranches.RPI.Mean <- mean(Tsavo.Ranches.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+Tsavo.Ranches.RPI.Mean <- mean(Tsavo.Ranches.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.Tsavo.Ranches <- crop(RSQ.Layer, Tsavo.Ranches.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.Tsavo.Ranches, Tsavo.Ranches.RPI.Crop.Unfiltered))
+Tsavo.Ranches.RPI.Crop <- mask(Tsavo.Ranches.RPI.Crop.Unfiltered, RSQ.Tsavo.Ranches >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+Tsavo.Ranches.RPI.Mean.Filtered.1 <- mean(Tsavo.Ranches.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1095,11 +1171,19 @@ tm_shape(Tsavo.Ranches.RPI.Mean) +
 ```{r}
 ## Visualising Tsavo.SettledAreas
 
-Tsavo.SettledAreas.RPI.Mask <- mask(RPI, Tsavo.SettledAreas)
-Tsavo.SettledAreas.RPI.Crop <- crop(Tsavo.SettledAreas.RPI.Mask, Tsavo.SettledAreas)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+Tsavo.SettledAreas.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.SettledAreas, snap = "out"), Tsavo.SettledAreas, touches = FALSE)
 
-# Averaging across years for visualization
-Tsavo.SettledAreas.RPI.Mean <- mean(Tsavo.SettledAreas.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+Tsavo.SettledAreas.RPI.Mean <- mean(Tsavo.SettledAreas.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.Tsavo.SettledAreas <- crop(RSQ.Layer, Tsavo.SettledAreas.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.Tsavo.SettledAreas, Tsavo.SettledAreas.RPI.Crop.Unfiltered))
+Tsavo.SettledAreas.RPI.Crop <- mask(Tsavo.SettledAreas.RPI.Crop.Unfiltered, RSQ.Tsavo.SettledAreas >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+Tsavo.SettledAreas.RPI.Mean.Filtered.1 <- mean(Tsavo.SettledAreas.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -1115,11 +1199,19 @@ tm_shape(Tsavo.SettledAreas.RPI.Mean) +
 ```{r}
 ## Visualising Tsavo.AllZones
 
-Tsavo.AllZones.RPI.Mask <- mask(RPI, Tsavo.AllZones)
-Tsavo.AllZones.RPI.Crop <- crop(Tsavo.AllZones.RPI.Mask, Tsavo.AllZones)
+# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
+Tsavo.AllZones.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.AllZones, snap = "out"), Tsavo.AllZones, touches = FALSE)
 
-# Averaging across years for visualization
-Tsavo.AllZones.RPI.Mean <- mean(Tsavo.AllZones.RPI.Crop, na.rm = TRUE)
+# Averaging across years for visualization (all pixels in the zone, before quality control)
+Tsavo.AllZones.RPI.Mean <- mean(Tsavo.AllZones.RPI.Crop.Unfiltered, na.rm = TRUE)
+
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+RSQ.Tsavo.AllZones <- crop(RSQ.Layer, Tsavo.AllZones.RPI.Crop.Unfiltered)
+stopifnot(compareGeom(RSQ.Tsavo.AllZones, Tsavo.AllZones.RPI.Crop.Unfiltered))
+Tsavo.AllZones.RPI.Crop <- mask(Tsavo.AllZones.RPI.Crop.Unfiltered, RSQ.Tsavo.AllZones >= RSQ.Threshold.1, maskvalues = FALSE)
+
+# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
+Tsavo.AllZones.RPI.Mean.Filtered.1 <- mean(Tsavo.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
 tmap_mode(Map.Mode)
@@ -4060,12 +4152,6 @@ Combined.Slope.Maps
 ```
 
 ```{r}
-## Import 
-
-Temporal.Performance <- rast(file.path(dir_rpi, "rpi_ea_temporal_performance.tif"))
-```
-
-```{r}
 ## Clipping Temporal Performance to Kenya Admin Boundary
 
 ### Ensure CRS matches
@@ -4076,7 +4162,7 @@ Kenya.Admin.Boundary.Vect <- vect(Kenya.Admin.Boundary)
 
 ### Crop and mask
 Temporal.Performance.Kenya <- crop(Temporal.Performance, Kenya.Admin.Boundary.Vect)
-Temporal.Performance.Kenya <- mask(Temporal.Performance.Kenya, Kenya.Admin.Boundary.Vect)
+Temporal.Performance.Kenya <- mask(Temporal.Performance.Kenya, Kenya.Admin.Boundary.Vect, touches = FALSE)
 ```
 
 ```{r}
@@ -4342,227 +4428,21 @@ Combined.Temporal.Performance.TMap
 ```
 
 ```{r}
-## Extracting RSQ values from the raster & linking to each RPI.Mean
-## Extract R² layer
+## R² values for each zone
 
-RSQ.Layer <- Temporal.Performance[["rsq"]]
-```
+# The R² layer was cropped to each zone when the zone was first processed ("RSQ.<Zone>"). The R² and RPI layers share one grid, so cropping returns exactly the same cells as the zonal RPI rasters and no resampling is needed. (Bilinear resampling would blend neighbouring R² values and can drop pixels next to gaps.) The checks below confirm that every pair matches in extent, resolution and CRS.
 
-```{r}
-# Check alignment for Amboseli — they should match in extent/resolution
-
-all.equal(ext(RSQ.Layer), ext(Amboseli.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2704655 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in Amboseli
-crs(RSQ.Layer) == crs(Amboseli.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in Amboseli
-RSQ.Resampled.Amboseli <- resample(RSQ.Layer, Amboseli.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again in Amboseli
-all.equal(ext(RSQ.Resampled.Amboseli), ext(Amboseli.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in TsavoEast
-all.equal(ext(RSQ.Layer), ext(TsavoEast.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2447468 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in TsavoEast
-crs(RSQ.Layer) == crs(TsavoEast.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in TsavoEast
-RSQ.Resampled.TsavoEast <- resample(RSQ.Layer, TsavoEast.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again in TsavoEast
-all.equal(ext(RSQ.Resampled.TsavoEast), ext(TsavoEast.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in TsavoWest
-all.equal(ext(RSQ.Layer), ext(TsavoWest.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2509435 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in TsavoWest
-crs(RSQ.Layer) == crs(TsavoWest.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in TsavoWest
-RSQ.Resampled.TsavoWest <- resample(RSQ.Layer, TsavoWest.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again for TsavoWest
-all.equal(ext(RSQ.Resampled.TsavoWest), ext(TsavoWest.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in Tsavo.Ranches
-all.equal(ext(RSQ.Layer), ext(Tsavo.Ranches.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2552299 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in Tsavo.Ranches
-crs(RSQ.Layer) == crs(Tsavo.Ranches.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in Tsavo.Ranches
-RSQ.Resampled.Tsavo.Ranches <- resample(RSQ.Layer, Tsavo.Ranches.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.Tsavo.Ranches), ext(Tsavo.Ranches.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in Tsavo.SettledAreas
-all.equal(ext(RSQ.Layer), ext(Tsavo.SettledAreas.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2579323 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in Tsavo.SettledAreas
-crs(RSQ.Layer) == crs(Tsavo.SettledAreas.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in Tsavo.SettledAreas
-RSQ.Resampled.Tsavo.SettledAreas <- resample(RSQ.Layer, Tsavo.SettledAreas.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.Tsavo.SettledAreas), ext(Tsavo.SettledAreas.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in Tsavo.AllZones
-all.equal(ext(RSQ.Layer), ext(Tsavo.AllZones.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.25a48572 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in Tsavo.AllZones
-crs(RSQ.Layer) == crs(Tsavo.AllZones.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in Tsavo.AllZones
-RSQ.Resampled.Tsavo.AllZones <- resample(RSQ.Layer, Tsavo.AllZones.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.Tsavo.AllZones), ext(Tsavo.AllZones.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in AET.Conservancies
-all.equal(ext(RSQ.Layer), ext(AET.Conservancies.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2535526 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in AET.Conservancies
-crs(RSQ.Layer) == crs(AET.Conservancies.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in AET.Conservancies
-RSQ.Resampled.AET.Conservancies <- resample(RSQ.Layer, AET.Conservancies.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.AET.Conservancies), ext(AET.Conservancies.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution in AET.Buffers
-all.equal(ext(RSQ.Layer), ext(AET.Buffers.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.2540185 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in AET.Buffers
-crs(RSQ.Layer) == crs(AET.Buffers.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster in AET.Buffers
-RSQ.Resampled.AET.Buffers <- resample(RSQ.Layer, AET.Buffers.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.AET.Buffers), ext(AET.Buffers.RPI.Mean))  # Should now be TRUE
-```
-
-```{r}
-# Check alignment — they should match in extent/resolution
-all.equal(ext(RSQ.Layer), ext(AET.AllZones.RPI.Mean))  # should return TRUE
-```
-
-```{r}
-# The above mean relative difference of 0.252714 informs me that the Rasters are not aligned
-```
-
-```{r}
-# Step 1: Ensure the CRS is the same in AET.AllZones
-crs(RSQ.Layer) == crs(AET.AllZones.RPI.Mean)  # Should be TRUE
-```
-
-```{r}
-# Step 2: Align extent and resolution — resample R² to match RPI mean raster
-RSQ.Resampled.AET.AllZones <- resample(RSQ.Layer, AET.AllZones.RPI.Mean, method = "bilinear")
-```
-
-```{r}
-# Step 3: Now try checking again
-all.equal(ext(RSQ.Resampled.AET.AllZones), ext(AET.AllZones.RPI.Mean))  # Should now be TRUE
+stopifnot(
+  compareGeom(RSQ.Amboseli, Amboseli.RPI.Mean),
+  compareGeom(RSQ.TsavoEast, TsavoEast.RPI.Mean),
+  compareGeom(RSQ.TsavoWest, TsavoWest.RPI.Mean),
+  compareGeom(RSQ.Tsavo.Ranches, Tsavo.Ranches.RPI.Mean),
+  compareGeom(RSQ.Tsavo.SettledAreas, Tsavo.SettledAreas.RPI.Mean),
+  compareGeom(RSQ.Tsavo.AllZones, Tsavo.AllZones.RPI.Mean),
+  compareGeom(RSQ.AET.Conservancies, AET.Conservancies.RPI.Mean),
+  compareGeom(RSQ.AET.Buffers, AET.Buffers.RPI.Mean),
+  compareGeom(RSQ.AET.AllZones, AET.AllZones.RPI.Mean)
+)
 ```
 
 ```{r}
@@ -4572,7 +4452,7 @@ all.equal(ext(RSQ.Resampled.AET.AllZones), ext(AET.AllZones.RPI.Mean))  # Should
 RSQ.Threshold.3 <- 0.3  # Exploratory sensitivity threshold only; the published analysis uses 0.1 (see below)
 
 # 1. Creating mask for pixels with R² >= threshold
-RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.3
+RSQ.Mask.Amboseli <- RSQ.Amboseli >= RSQ.Threshold.3
 
 # 2. Applying the mask to the RPI mean raster
 Amboseli.RPI.Mean.Filtered.3 <- mask(Amboseli.RPI.Mean, RSQ.Mask.Amboseli, maskvalues = FALSE)
@@ -4592,7 +4472,7 @@ tm_shape(Amboseli.RPI.Mean.Filtered.3) +
 # Repeating the masking process for other areas
 
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.3
+RSQ.Mask.TsavoEast <- RSQ.TsavoEast >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 TsavoEast.RPI.Mean.Filtered.3 <- mask(TsavoEast.RPI.Mean, RSQ.Mask.TsavoEast, maskvalues = FALSE)
@@ -4610,7 +4490,7 @@ tm_shape(TsavoEast.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.3
+RSQ.Mask.TsavoWest <- RSQ.TsavoWest >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 TsavoWest.RPI.Mean.Filtered.3 <- mask(TsavoWest.RPI.Mean, RSQ.Mask.TsavoWest, maskvalues = FALSE)
@@ -4627,7 +4507,7 @@ tm_shape(TsavoWest.RPI.Mean.Filtered.3) +
 ```
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.3
+RSQ.Mask.Tsavo.Ranches <- RSQ.Tsavo.Ranches >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 Tsavo.Ranches.RPI.Mean.Filtered.3 <- mask(Tsavo.Ranches.RPI.Mean, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
@@ -4645,7 +4525,7 @@ tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold.3
+RSQ.Mask.Tsavo.SettledAreas <- RSQ.Tsavo.SettledAreas >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 Tsavo.SettledAreas.RPI.Mean.Filtered.3 <- mask(Tsavo.SettledAreas.RPI.Mean, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
@@ -4663,7 +4543,7 @@ tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.AllZones <- RSQ.Resampled.Tsavo.AllZones >= RSQ.Threshold.3
+RSQ.Mask.Tsavo.AllZones <- RSQ.Tsavo.AllZones >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 Tsavo.AllZones.RPI.Mean.Filtered.3 <- mask(Tsavo.AllZones.RPI.Mean, RSQ.Mask.Tsavo.AllZones, maskvalues = FALSE)
@@ -4681,7 +4561,7 @@ tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.3
+RSQ.Mask.AET.Conservancies <- RSQ.AET.Conservancies >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 AET.Conservancies.RPI.Mean.Filtered.3 <- mask(AET.Conservancies.RPI.Mean, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
@@ -4699,7 +4579,7 @@ tm_shape(AET.Conservancies.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.3
+RSQ.Mask.AET.Buffers <- RSQ.AET.Buffers >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 AET.Buffers.RPI.Mean.Filtered.3 <- mask(AET.Buffers.RPI.Mean, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
@@ -4717,7 +4597,7 @@ tm_shape(AET.Buffers.RPI.Mean.Filtered.3) +
 
 ```{r}
 # Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.AllZones <- RSQ.Resampled.AET.AllZones >= RSQ.Threshold.3
+RSQ.Mask.AET.AllZones <- RSQ.AET.AllZones >= RSQ.Threshold.3
 
 # Applying the mask to the RPI mean raster
 AET.AllZones.RPI.Mean.Filtered.3 <- mask(AET.AllZones.RPI.Mean, RSQ.Mask.AET.AllZones, maskvalues = FALSE)
@@ -4765,7 +4645,7 @@ tmap_arrange(
 # 1. Amboseli
 
 # Extract values from both rasters into a data.frame
-Amboseli.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.3, RSQ.Resampled.Amboseli), na.rm = TRUE)
+Amboseli.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.3, RSQ.Amboseli), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Amboseli.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4775,7 +4655,7 @@ colnames(Amboseli.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 2. TsavoEast
 
 # Extract values from both rasters into a data.frame
-TsavoEast.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.3, RSQ.Resampled.TsavoEast), na.rm = TRUE)
+TsavoEast.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.3, RSQ.TsavoEast), na.rm = TRUE)
 
 # Rename for clarity
 colnames(TsavoEast.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4785,7 +4665,7 @@ colnames(TsavoEast.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 3. TsavoWest
 
 # Extract values from both rasters into a data.frame
-TsavoWest.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.3, RSQ.Resampled.TsavoWest), na.rm = TRUE)
+TsavoWest.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.3, RSQ.TsavoWest), na.rm = TRUE)
 
 # Rename for clarity
 colnames(TsavoWest.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4795,7 +4675,7 @@ colnames(TsavoWest.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 3. Tsavo.Ranches
 
 # Extract values from both rasters into a data.frame
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.3, RSQ.Resampled.Tsavo.Ranches), na.rm = TRUE)
+Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.3, RSQ.Tsavo.Ranches), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4805,7 +4685,7 @@ colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 3. Tsavo.SettledAreas
 
 # Extract values from both rasters into a data.frame
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.3, RSQ.Resampled.Tsavo.SettledAreas), na.rm = TRUE)
+Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.3, RSQ.Tsavo.SettledAreas), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4815,7 +4695,7 @@ colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 3. Tsavo.AllZones
 
 # Extract values from both rasters into a data.frame
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.3, RSQ.Resampled.Tsavo.AllZones), na.rm = TRUE)
+Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.3, RSQ.Tsavo.AllZones), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4825,7 +4705,7 @@ colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 4. AET.Conservancies
 
 # Extract values from both rasters into a data.frame
-AET.Conservancies.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.3, RSQ.Resampled.AET.Conservancies), na.rm = TRUE)
+AET.Conservancies.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.3, RSQ.AET.Conservancies), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4835,7 +4715,7 @@ colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 5. AET.Buffers
 
 # Extract values from both rasters into a data.frame
-AET.Buffers.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.3, RSQ.Resampled.AET.Buffers), na.rm = TRUE)
+AET.Buffers.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.3, RSQ.AET.Buffers), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -4845,7 +4725,7 @@ colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
 # 6. AET.AllZones
 
 # Extract values from both rasters into a data.frame
-AET.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.3, RSQ.Resampled.AET.AllZones), na.rm = TRUE)
+AET.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.3, RSQ.AET.AllZones), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.AllZones.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
@@ -5021,25 +4901,13 @@ All.RPI.Rsquare.Filtered.3.Plots
 ```
 
 ```{r}
-# # Feedback on the above!
+# Published quality-control threshold (R² ≥ 0.1)
 
-# In several zones, notably AET.Conservancies, Amboseli, and AET.AllZones, there are observed clusters of pixels with consistently low RPI values (e.g., < 0.5) and strongly negative R² values (e.g., < -1). This combination suggests that the quantile regression forest model systematically overestimates inter-annual GPP variability in areas with consistently low productivity, such as rocky or sparsely vegetated regions. In these cases, the null model (assuming constant GPP) outperforms the predictive model, leading to highly negative R² values. As such, these areas are likely unsuitable for interpreting RPI trends, and we exclude them from further analysis by masking out pixels with R² < 0.
-```
-
-```{r}
-# Published quality-control threshold.** All mean-RPI and Theil–Sen results reported in the manuscript are derived from objects with the suffix .Filtered.1`, produced by the R² ≥ 0.1 mask defined below.
-
-# #  Set R² threshold
-RSQ.Threshold.1 <- 0.1  # Published threshold. Any positive R² represents an improvement over using raw GPP or NDVI; 0.1 retains ~99% of study-area pixels while excluding pixels where the quantile regression forest performs worse than a constant prediction.
+# The published threshold ("RSQ.Threshold.1") is set and applied once, straight after each zone is cropped (see "Visualising RPI for each Area" above). The mean-RPI maps, the yearly zone means and the Theil–Sen slopes reported in the manuscript therefore all use the same retained pixels. Objects with the suffix ".Filtered.1" hold the mean RPI of those retained pixels; the maps below show them zone by zone.
 ```
 
 ```{r}
 # 1. Amboseli
-
-RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-Amboseli.RPI.Mean.Filtered.1 <- mask(Amboseli.RPI.Mean, RSQ.Mask.Amboseli, maskvalues = FALSE)
 
 # Visualising the filtered result
 tmap_mode(Map.Mode)
@@ -5055,12 +4923,6 @@ tm_shape(Amboseli.RPI.Mean.Filtered.1) +
 ```{r}
 # 2. Tsavo East
 
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-TsavoEast.RPI.Mean.Filtered.1 <- mask(TsavoEast.RPI.Mean, RSQ.Mask.TsavoEast, maskvalues = FALSE)
-
 # Visualising the filtered result
 tmap_mode(Map.Mode)
 tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
@@ -5074,12 +4936,6 @@ tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
 
 ```{r}
 # 3. Tsavo West
-
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-TsavoWest.RPI.Mean.Filtered.1 <- mask(TsavoWest.RPI.Mean, RSQ.Mask.TsavoWest, maskvalues = FALSE)
 
 # Visualising the filtered result
 tmap_mode(Map.Mode)
@@ -5095,12 +4951,6 @@ tm_shape(TsavoWest.RPI.Mean.Filtered.1) +
 ```{r}
 # 3. Tsavo.Ranches
 
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-Tsavo.Ranches.RPI.Mean.Filtered.1 <- mask(Tsavo.Ranches.RPI.Mean, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
-
 # Visualising the filtered result
 tmap_mode(Map.Mode)
 tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
@@ -5115,12 +4965,6 @@ tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
 ```{r}
 # 3. Tsavo.SettledAreas
 
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-Tsavo.SettledAreas.RPI.Mean.Filtered.1 <- mask(Tsavo.SettledAreas.RPI.Mean, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
-
 # Visualising the filtered result
 tmap_mode(Map.Mode)
 tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
@@ -5134,12 +4978,6 @@ tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
 
 ```{r}
 # 3. Tsavo.AllZones
-
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.Tsavo.AllZones <- RSQ.Resampled.Tsavo.AllZones >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-Tsavo.AllZones.RPI.Mean.Filtered.1 <- mask(Tsavo.AllZones.RPI.Mean, RSQ.Mask.Tsavo.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
 tmap_mode(Map.Mode)
@@ -5156,12 +4994,6 @@ tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.1) +
 ```{r}
 #4. Amboseli Surrounding Conservancies
 
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-AET.Conservancies.RPI.Mean.Filtered.1 <- mask(AET.Conservancies.RPI.Mean, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
-
 # Visualising the filtered result
 tmap_mode(Map.Mode)
 tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
@@ -5176,12 +5008,6 @@ tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
 ```{r}
 # 5. Amboseli Surrounding Grazelands
 
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-AET.Buffers.RPI.Mean.Filtered.1 <- mask(AET.Buffers.RPI.Mean, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
-
 # Visualising the filtered result
 tmap_mode(Map.Mode)
 tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
@@ -5195,12 +5021,6 @@ tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
 
 ```{r}
 # 6. Amboseli Surrounding Lands
-
-# Step 1: Mask out RPI pixels where R² < 0.1
-RSQ.Mask.AET.AllZones <- RSQ.Resampled.AET.AllZones >= RSQ.Threshold.1
-
-# Applying Mask to RPI Mean Raster
-AET.AllZones.RPI.Mean.Filtered.1 <- mask(AET.AllZones.RPI.Mean, RSQ.Mask.AET.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
 tmap_mode(Map.Mode)
@@ -5377,7 +5197,7 @@ tmap_arrange(Map.Amboseli.RPI.Mean.Filtered.1,
 # 1. Amboseli
 
 # Extract values from both rasters into a data.frame
-Amboseli.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.1, RSQ.Resampled.Amboseli), na.rm = TRUE)
+Amboseli.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.1, RSQ.Amboseli), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Amboseli.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5387,7 +5207,7 @@ colnames(Amboseli.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 2. TsavoEast
 
 # Extract values from both rasters into a data.frame
-TsavoEast.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.1, RSQ.Resampled.TsavoEast), na.rm = TRUE)
+TsavoEast.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.1, RSQ.TsavoEast), na.rm = TRUE)
 
 # Rename for clarity
 colnames(TsavoEast.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5397,7 +5217,7 @@ colnames(TsavoEast.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 3. TsavoWest
 
 # Extract values from both rasters into a data.frame
-TsavoWest.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.1, RSQ.Resampled.TsavoWest), na.rm = TRUE)
+TsavoWest.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.1, RSQ.TsavoWest), na.rm = TRUE)
 
 # Rename for clarity
 colnames(TsavoWest.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5407,7 +5227,7 @@ colnames(TsavoWest.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 3. Tsavo.Ranches
 
 # Extract values from both rasters into a data.frame
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.1, RSQ.Resampled.Tsavo.Ranches), na.rm = TRUE)
+Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.1, RSQ.Tsavo.Ranches), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5417,7 +5237,7 @@ colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 3. Tsavo.SettledAreas
 
 # Extract values from both rasters into a data.frame
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.1, RSQ.Resampled.Tsavo.SettledAreas), na.rm = TRUE)
+Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.1, RSQ.Tsavo.SettledAreas), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5427,7 +5247,7 @@ colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 3. Tsavo.AllZones
 
 # Extract values from both rasters into a data.frame
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.1, RSQ.Resampled.Tsavo.AllZones), na.rm = TRUE)
+Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.1, RSQ.Tsavo.AllZones), na.rm = TRUE)
 
 # Rename for clarity
 colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5437,7 +5257,7 @@ colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 4. AET.Conservancies
 
 # Extract values from both rasters into a data.frame
-AET.Conservancies.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.1, RSQ.Resampled.AET.Conservancies), na.rm = TRUE)
+AET.Conservancies.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.1, RSQ.AET.Conservancies), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5447,7 +5267,7 @@ colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 5. AET.Buffers
 
 # Extract values from both rasters into a data.frame
-AET.Buffers.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.1, RSQ.Resampled.AET.Buffers), na.rm = TRUE)
+AET.Buffers.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.1, RSQ.AET.Buffers), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5457,7 +5277,7 @@ colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
 # 6. AET.AllZones
 
 # Extract values from both rasters into a data.frame
-AET.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.1, RSQ.Resampled.AET.AllZones), na.rm = TRUE)
+AET.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.1, RSQ.AET.AllZones), na.rm = TRUE)
 
 # Rename for clarity
 colnames(AET.AllZones.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
@@ -5642,459 +5462,53 @@ All.RPI.Rsquare.Filtered.1.Plots
 ```
 
 ```{r}
-# RPI Summary Statistics after filtering (threshold of 0.1)
+# RPI Summary Statistics before and after filtering (threshold of 0.1)
 ```
 
 ```{r}
-# Amboseli NP
-# Extract RPI values (all years)
-Amboseli.RPI.Values.Full <- terra::extract(Amboseli.RPI.Crop, Amboseli, cells = TRUE)
+# Yearly zone summaries before and after the R² filter
 
-# Remove ID column
-Amboseli.RPI.Values <- Amboseli.RPI.Values.Full[, names(Amboseli.RPI.Crop)]
+# The filter has already been applied once, straight after each zone was cropped: "<Zone>.RPI.Crop.Unfiltered" holds every pixel in the zone and "<Zone>.RPI.Crop" holds the retained pixels (R² ≥ 0.1). The function below summarises either stack in the same way, so nothing is filtered (or resampled) a second time here.
 
-# Summarise statistics before filtering
-Amboseli.Summary.Raw <- data.frame(
-  Layer  = names(Amboseli.RPI.Crop),
-  Mean   = apply(Amboseli.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(Amboseli.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(Amboseli.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Amboseli.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(Amboseli.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
+summarise_rpi_area <- function(rpi_stack, polygon, area_name) {
 
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-Amboseli.RPI.Filtered.Stack <- mask(Amboseli.RPI.Crop, RSQ.Mask.Amboseli, maskvalues = FALSE)
+  vals_full <- terra::extract(rpi_stack, polygon, cells = TRUE)
+  vals <- vals_full[, names(rpi_stack)]
 
-# Extract filtered values
-Amboseli.RPI.Values.Filtered.Full <- terra::extract(Amboseli.RPI.Filtered.Stack, Amboseli, cells = TRUE)
-
-Amboseli.RPI.Values.Filtered <- Amboseli.RPI.Values.Filtered.Full[, names(Amboseli.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-Amboseli.Summary.Filtered <- data.frame(
-  Layer  = names(Amboseli.RPI.Filtered.Stack),
-  Mean   = apply(Amboseli.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(Amboseli.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(Amboseli.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Amboseli.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(Amboseli.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-Amboseli.Summary.Filtered
-```
-
-```{r}
-# Amboseli Conservancies
-# Extract RPI values (all years)
-AET.Conservancies.RPI.Values.Full <- terra::extract(AET.Conservancies.RPI.Crop, AET.Conservancies, cells = TRUE)
-
-# Remove ID column
-AET.Conservancies.RPI.Values <- AET.Conservancies.RPI.Values.Full[, names(AET.Conservancies.RPI.Crop)]
-
-# Summarise statistics before filtering
-AET.Conservancies.Summary.Raw <- data.frame(
-  Layer  = names(AET.Conservancies.RPI.Crop),
-  Mean   = apply(AET.Conservancies.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(AET.Conservancies.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(AET.Conservancies.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(AET.Conservancies.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(AET.Conservancies.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-AET.Conservancies.RPI.Filtered.Stack <- mask(AET.Conservancies.RPI.Crop, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
-
-# Extract filtered values
-AET.Conservancies.RPI.Values.Filtered.Full <- terra::extract(AET.Conservancies.RPI.Filtered.Stack, AET.Conservancies, cells = TRUE)
-
-AET.Conservancies.RPI.Values.Filtered <- AET.Conservancies.RPI.Values.Filtered.Full[, names(AET.Conservancies.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-AET.Conservancies.Summary.Filtered <- data.frame(
-  Layer  = names(AET.Conservancies.RPI.Filtered.Stack),
-  Mean   = apply(AET.Conservancies.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(AET.Conservancies.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(AET.Conservancies.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(AET.Conservancies.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(AET.Conservancies.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-AET.Conservancies.Summary.Filtered
-```
-
-```{r}
-# Amboseli Community lands/ Group Ranches
-# Extract RPI values (all years)
-AET.Buffers.RPI.Values.Full <- terra::extract(AET.Buffers.RPI.Crop, AET.Buffers, cells = TRUE)
-
-# Remove ID column
-AET.Buffers.RPI.Values <- AET.Buffers.RPI.Values.Full[, names(AET.Buffers.RPI.Crop)]
-
-# Summarise statistics before filtering
-AET.Buffers.Summary.Raw <- data.frame(
-  Layer  = names(AET.Buffers.RPI.Crop),
-  Mean   = apply(AET.Buffers.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(AET.Buffers.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(AET.Buffers.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(AET.Buffers.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(AET.Buffers.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-AET.Buffers.RPI.Filtered.Stack <- mask(AET.Buffers.RPI.Crop, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
-
-# Extract filtered values
-AET.Buffers.RPI.Values.Filtered.Full <- terra::extract(AET.Buffers.RPI.Filtered.Stack, AET.Buffers, cells = TRUE)
-
-AET.Buffers.RPI.Values.Filtered <- AET.Buffers.RPI.Values.Filtered.Full[, names(AET.Buffers.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-AET.Buffers.Summary.Filtered <- data.frame(
-  Layer  = names(AET.Buffers.RPI.Filtered.Stack),
-  Mean   = apply(AET.Buffers.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(AET.Buffers.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(AET.Buffers.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(AET.Buffers.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(AET.Buffers.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-AET.Buffers.Summary.Filtered
-```
-
-```{r}
-# Tsavo West NP
-# Extract RPI values (all years)
-TsavoWest.RPI.Values.Full <- terra::extract(TsavoWest.RPI.Crop, TsavoWest, cells = TRUE)
-
-# Remove ID column
-TsavoWest.RPI.Values <- TsavoWest.RPI.Values.Full[, names(TsavoWest.RPI.Crop)]
-
-# Summarise statistics before filtering
-TsavoWest.Summary.Raw <- data.frame(
-  Layer  = names(TsavoWest.RPI.Crop),
-  Mean   = apply(TsavoWest.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(TsavoWest.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(TsavoWest.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(TsavoWest.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(TsavoWest.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-TsavoWest.RPI.Filtered.Stack <- mask(TsavoWest.RPI.Crop, RSQ.Mask.TsavoWest, maskvalues = FALSE)
-
-# Extract filtered values
-TsavoWest.RPI.Values.Filtered.Full <- terra::extract(TsavoWest.RPI.Filtered.Stack, TsavoWest, cells = TRUE)
-
-TsavoWest.RPI.Values.Filtered <- TsavoWest.RPI.Values.Filtered.Full[, names(TsavoWest.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-TsavoWest.Summary.Filtered <- data.frame(
-  Layer  = names(TsavoWest.RPI.Filtered.Stack),
-  Mean   = apply(TsavoWest.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(TsavoWest.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(TsavoWest.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(TsavoWest.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(TsavoWest.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-TsavoWest.Summary.Filtered
-```
-
-```{r}
-# Tsavo East NP
-# Extract RPI values (all years)
-TsavoEast.RPI.Values.Full <- terra::extract(TsavoEast.RPI.Crop, TsavoEast, cells = TRUE)
-
-# Remove ID column
-TsavoEast.RPI.Values <- TsavoEast.RPI.Values.Full[, names(TsavoEast.RPI.Crop)]
-
-# Summarise statistics before filtering
-TsavoEast.Summary.Raw <- data.frame(
-  Layer  = names(TsavoEast.RPI.Crop),
-  Mean   = apply(TsavoEast.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(TsavoEast.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(TsavoEast.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(TsavoEast.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(TsavoEast.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-TsavoEast.RPI.Filtered.Stack <- mask(TsavoEast.RPI.Crop, RSQ.Mask.TsavoEast, maskvalues = FALSE)
-
-# Extract filtered values
-TsavoEast.RPI.Values.Filtered.Full <- terra::extract(TsavoEast.RPI.Filtered.Stack, TsavoEast, cells = TRUE)
-
-TsavoEast.RPI.Values.Filtered <- TsavoEast.RPI.Values.Filtered.Full[, names(TsavoEast.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-TsavoEast.Summary.Filtered <- data.frame(
-  Layer  = names(TsavoEast.RPI.Filtered.Stack),
-  Mean   = apply(TsavoEast.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(TsavoEast.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(TsavoEast.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(TsavoEast.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(TsavoEast.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-TsavoEast.Summary.Filtered
-```
-
-```{r}
-# Tsavo Ranches
-# Extract RPI values (all years)
-Tsavo.Ranches.RPI.Values.Full <- terra::extract(Tsavo.Ranches.RPI.Crop, Tsavo.Ranches, cells = TRUE)
-
-# Remove ID column
-Tsavo.Ranches.RPI.Values <- Tsavo.Ranches.RPI.Values.Full[, names(Tsavo.Ranches.RPI.Crop)]
-
-# Summarise statistics before filtering
-Tsavo.Ranches.Summary.Raw <- data.frame(
-  Layer  = names(Tsavo.Ranches.RPI.Crop),
-  Mean   = apply(Tsavo.Ranches.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(Tsavo.Ranches.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(Tsavo.Ranches.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Tsavo.Ranches.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(Tsavo.Ranches.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-Tsavo.Ranches.RPI.Filtered.Stack <- mask(Tsavo.Ranches.RPI.Crop, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
-
-# Extract filtered values
-Tsavo.Ranches.RPI.Values.Filtered.Full <- terra::extract(Tsavo.Ranches.RPI.Filtered.Stack, Tsavo.Ranches, cells = TRUE)
-
-Tsavo.Ranches.RPI.Values.Filtered <- Tsavo.Ranches.RPI.Values.Filtered.Full[, names(Tsavo.Ranches.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-Tsavo.Ranches.Summary.Filtered <- data.frame(
-  Layer  = names(Tsavo.Ranches.RPI.Filtered.Stack),
-  Mean   = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(Tsavo.Ranches.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-Tsavo.Ranches.Summary.Filtered
-```
-
-```{r}
-# Tsavo Settled Areas
-# Extract RPI values (all years)
-Tsavo.SettledAreas.RPI.Values.Full <- terra::extract(Tsavo.SettledAreas.RPI.Crop, Tsavo.SettledAreas, cells = TRUE)
-
-# Remove ID column
-Tsavo.SettledAreas.RPI.Values <- Tsavo.SettledAreas.RPI.Values.Full[, names(Tsavo.SettledAreas.RPI.Crop)]
-
-# Summarise statistics before filtering
-Tsavo.SettledAreas.Summary.Raw <- data.frame(
-  Layer  = names(Tsavo.SettledAreas.RPI.Crop),
-  Mean   = apply(Tsavo.SettledAreas.RPI.Values, 2, mean, na.rm = TRUE),
-  SD     = apply(Tsavo.SettledAreas.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25    = apply(Tsavo.SettledAreas.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Tsavo.SettledAreas.RPI.Values, 2, median, na.rm = TRUE),
-  Q75    = apply(Tsavo.SettledAreas.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-# Apply Threshold Filter (R² ≥ 0.1)
-RSQ.Threshold.1 <- 0.1
-# Create mask
-RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold.1
-# Apply mask to ALL yearly layers
-Tsavo.SettledAreas.RPI.Filtered.Stack <- mask(Tsavo.SettledAreas.RPI.Crop, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
-
-# Extract filtered values
-Tsavo.SettledAreas.RPI.Values.Filtered.Full <- terra::extract(Tsavo.SettledAreas.RPI.Filtered.Stack, Tsavo.SettledAreas, cells = TRUE)
-
-Tsavo.SettledAreas.RPI.Values.Filtered <- Tsavo.SettledAreas.RPI.Values.Filtered.Full[, names(Tsavo.SettledAreas.RPI.Filtered.Stack)]
-
-# Summary statistics after filtering
-Tsavo.SettledAreas.Summary.Filtered <- data.frame(
-  Layer  = names(Tsavo.SettledAreas.RPI.Filtered.Stack),
-  Mean   = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, mean, na.rm = TRUE),
-  SD     = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, sd, na.rm = TRUE),
-  Q25    = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, median, na.rm = TRUE),
-  Q75    = apply(Tsavo.SettledAreas.RPI.Values.Filtered, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-Tsavo.SettledAreas.Summary.Filtered
-```
-
-```{r}
-# Master Function to process the above
-
-process_rpi_area <- function(rpi_stack, rsq_raster, polygon, area_name, threshold = 0.1) {
-  
-  #1. RAW EXTRACTION
-  raw_vals_full <- terra::extract(rpi_stack, polygon, cells = TRUE)
-  raw_vals <- raw_vals_full[, names(rpi_stack)]
-  
-  raw_summary <- data.frame(
+  data.frame(
     Area   = area_name,
     Layer  = names(rpi_stack),
-    Mean   = apply(raw_vals, 2, mean, na.rm = TRUE),
-    SD     = apply(raw_vals, 2, sd, na.rm = TRUE),
-    Q25    = apply(raw_vals, 2, quantile, probs = 0.25, na.rm = TRUE),
-    Median = apply(raw_vals, 2, median, na.rm = TRUE),
-    Q75    = apply(raw_vals, 2, quantile, probs = 0.75, na.rm = TRUE)
+    Mean   = apply(vals, 2, mean, na.rm = TRUE),
+    SD     = apply(vals, 2, sd, na.rm = TRUE),
+    Q25    = apply(vals, 2, quantile, probs = 0.25, na.rm = TRUE),
+    Median = apply(vals, 2, median, na.rm = TRUE),
+    Q75    = apply(vals, 2, quantile, probs = 0.75, na.rm = TRUE)
   )
-  
-  #2. CORRECT FILTERING
-  rsq_resampled <- terra::resample(rsq_raster, rpi_stack, method = "bilinear")
-  
-  # Crop first
-  rpi_crop <- terra::crop(rpi_stack, polygon)
-  rsq_crop <- terra::crop(rsq_resampled, polygon)
-  
-  # Mask to polygon
-  rpi_masked <- terra::mask(rpi_crop, polygon)
-  rsq_masked <- terra::mask(rsq_crop, polygon)
-  
-  # Apply threshold
-  rsq_binary <- rsq_masked >= threshold
-  
-  rpi_filtered <- terra::mask(rpi_masked, rsq_binary, maskvalues = FALSE)
-  
-  #3. FILTERED EXTRACTION
-  filt_vals_full <- terra::extract(rpi_filtered, polygon, cells = TRUE)
-  filt_vals <- filt_vals_full[, names(rpi_filtered)]
-  
-  filtered_summary <- data.frame(
-    Area   = area_name,
-    Layer  = names(rpi_filtered),
-    Mean   = apply(filt_vals, 2, mean, na.rm = TRUE),
-    SD     = apply(filt_vals, 2, sd, na.rm = TRUE),
-    Q25    = apply(filt_vals, 2, quantile, probs = 0.25, na.rm = TRUE),
-    Median = apply(filt_vals, 2, median, na.rm = TRUE),
-    Q75    = apply(filt_vals, 2, quantile, probs = 0.75, na.rm = TRUE)
-  )
-  
-  return(list(
-    raw = raw_summary,
-    filtered = filtered_summary
-  ))
 }
 
-# Application to all areas
-
-# Amboseli NP
-Amboseli.results <- process_rpi_area(
-  Amboseli.RPI.Crop,
-  RSQ.Resampled.Amboseli,
-  Amboseli,
-  "Amboseli NP"
-)
-
-# Conservancies
-AET.Conservancies.results <- process_rpi_area(
-  AET.Conservancies.RPI.Crop,
-  RSQ.Resampled.AET.Conservancies,
-  AET.Conservancies,
-  "Amboseli Conservancies"
-)
-
-# Buffers
-AET.Buffers.results <- process_rpi_area(
-  AET.Buffers.RPI.Crop,
-  RSQ.Resampled.AET.Buffers,
-  AET.Buffers,
-  "Amboseli Community/Group Ranches"
-)
-
-# Tsavo West
-TsavoWest.results <- process_rpi_area(
-  TsavoWest.RPI.Crop,
-  RSQ.Resampled.TsavoWest,
-  TsavoWest,
-  "Tsavo West NP"
-)
-
-# Tsavo East
-TsavoEast.results <- process_rpi_area(
-  TsavoEast.RPI.Crop,
-  RSQ.Resampled.TsavoEast,
-  TsavoEast,
-  "Tsavo East NP"
-)
-
-# Tsavo Ranches
-Tsavo.Ranches.results <- process_rpi_area(
-  Tsavo.Ranches.RPI.Crop,
-  RSQ.Resampled.Tsavo.Ranches,
-  Tsavo.Ranches,
-  "Tsavo Conservancies/Ranches"
-)
-
-# Tsavo Settled Areas
-Tsavo.SettledAreas.results <- process_rpi_area(
-  Tsavo.SettledAreas.RPI.Crop,
-  RSQ.Resampled.Tsavo.SettledAreas,
-  Tsavo.SettledAreas,
-  "Tsavo Settled Areas"
-)
-
-# Combination of outputs
-
-# RAW summaries
+# RAW summaries (every pixel in each zone, before quality control)
 All.Summary.Raw <- dplyr::bind_rows(
-  Amboseli.results$raw,
-  AET.Conservancies.results$raw,
-  AET.Buffers.results$raw,
-  TsavoWest.results$raw,
-  TsavoEast.results$raw,
-  Tsavo.Ranches.results$raw,
-  Tsavo.SettledAreas.results$raw
+  summarise_rpi_area(Amboseli.RPI.Crop.Unfiltered, Amboseli, "Amboseli NP"),
+  summarise_rpi_area(AET.Conservancies.RPI.Crop.Unfiltered, AET.Conservancies, "Amboseli Conservancies"),
+  summarise_rpi_area(AET.Buffers.RPI.Crop.Unfiltered, AET.Buffers, "Amboseli Community/Group Ranches"),
+  summarise_rpi_area(TsavoWest.RPI.Crop.Unfiltered, TsavoWest, "Tsavo West NP"),
+  summarise_rpi_area(TsavoEast.RPI.Crop.Unfiltered, TsavoEast, "Tsavo East NP"),
+  summarise_rpi_area(Tsavo.Ranches.RPI.Crop.Unfiltered, Tsavo.Ranches, "Tsavo Conservancies/Ranches"),
+  summarise_rpi_area(Tsavo.SettledAreas.RPI.Crop.Unfiltered, Tsavo.SettledAreas, "Tsavo Settled Areas")
 )
 
-# FILTERED summaries
+# FILTERED summaries (retained pixels only, R² ≥ 0.1) - these are the values reported in the manuscript
 All.Summary.Filtered <- dplyr::bind_rows(
-  Amboseli.results$filtered,
-  AET.Conservancies.results$filtered,
-  AET.Buffers.results$filtered,
-  TsavoWest.results$filtered,
-  TsavoEast.results$filtered,
-  Tsavo.Ranches.results$filtered,
-  Tsavo.SettledAreas.results$filtered
+  summarise_rpi_area(Amboseli.RPI.Crop, Amboseli, "Amboseli NP"),
+  summarise_rpi_area(AET.Conservancies.RPI.Crop, AET.Conservancies, "Amboseli Conservancies"),
+  summarise_rpi_area(AET.Buffers.RPI.Crop, AET.Buffers, "Amboseli Community/Group Ranches"),
+  summarise_rpi_area(TsavoWest.RPI.Crop, TsavoWest, "Tsavo West NP"),
+  summarise_rpi_area(TsavoEast.RPI.Crop, TsavoEast, "Tsavo East NP"),
+  summarise_rpi_area(Tsavo.Ranches.RPI.Crop, Tsavo.Ranches, "Tsavo Conservancies/Ranches"),
+  summarise_rpi_area(Tsavo.SettledAreas.RPI.Crop, Tsavo.SettledAreas, "Tsavo Settled Areas")
 )
 
-# Sanity check
-
-All.Summary.Filtered %>%
-  group_by(Area, Layer) %>%   # group by Area (and Layer if needed)
-  summarise(
-    mean_val   = mean(Mean, na.rm = TRUE),
-    sd_val     = sd(Mean, na.rm = TRUE),
-    q25_val    = quantile(Mean, 0.25, na.rm = TRUE),
-    median_val = median(Mean, na.rm = TRUE),
-    q75_val    = quantile(Mean, 0.75, na.rm = TRUE),
-    .groups = "drop"
-  )
+All.Summary.Filtered
 ```
 
 ```{r}
