@@ -8,13 +8,13 @@ A permanent version of this repository is archived at (https://zenodo.org/record
 
 Use of this code is licensed under the GNU General Public License v3 (GNU GPL v3).
 
-Contact Isaac Nduta Mureithi at [I.N.Mureithi@exeter.ac.uk]
+Contact Isaac Nduta Mureithi at [I.N.Mureithi@exeter.ac.uk] and/or Andrew Cunliffe at [A.Cunliffe@exeter.ac.uk]
 
 ---
 
 ### Project overview
 
-This research investigates how spatial patterns and long-term trends in relative vegetation productivity (RPI) reveal variations in rangeland condition across governance regimes in the Amboseli-Tsavo ecosystem of southern Kenya. The repository integrates multi-decadal GPP satellite data with quantile regression forest modeling and non-parametric trend analysis across national parks, conservancies, group ranches, and settled areas. It provides the full computational workflow to reproduce all spatio-temporal performance assessments, Theil-Sen slope estimates, and comparative governance figures presented in the manuscript.
+This research investigates how spatial patterns and long-term trends in relative vegetation productivity (RPI) reveal variations in rangeland condition across governance regimes in the Amboseli-Tsavo ecosystem of southern Kenya. The repository integrates multi-decadal GPP satellite data with quantile regression forest modelling and non-parametric trend analysis across national parks, conservancies, group ranches, and settled areas. It provides the full computational workflow to reproduce all spatio-temporal performance assessments, Theil-Sen slope estimates, and comparative governance figures presented in the manuscript.
 
 ---
 
@@ -110,4 +110,4 @@ Rendered HTML outputs are excluded from version control to manage repository siz
 
 ### Funding acknowledgement
 
-This work was developed under the Oppenheimer Programme in African Landscape Systems (OPALS) ~ Terrestrial Ecosystem Science and Services (TESS) Labs, building upon initial research conducted at the University of Exeter.
+This work was developed under the Oppenheimer Programme in African Landscape Systems (OPALS) ~ Terrestrial Ecosystem Science and Services (TESS) Lab, building upon initial research conducted at the University of Exeter.
