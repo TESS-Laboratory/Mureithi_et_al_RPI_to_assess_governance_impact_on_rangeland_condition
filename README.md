@@ -76,6 +76,27 @@ renv::restore()
 
 ```
 
+#### Software
+
+The analysis was run in R 4.4.1. The main packages and the versions used are listed below; the exact versions of all packages are recorded in *renv.lock*, and the knitted document ends with the full `sessionInfo()`.
+
+| Package | Version | Use |
+| --- | --- | --- |
+| terra | 1.8-54 | Raster processing (cropping, masking, extraction, zonal values) |
+| sf | 1.0-19 | Vector data (governance zone polygons) |
+| trend | 1.1.6 | Theil-Sen slopes (`sens.slope`) |
+| tidyverse | 2.0.0 | Data handling (dplyr 1.1.4, tidyr 1.3.1, purrr 1.0.2) |
+| zoo | 1.8-14 | 5-year rolling means |
+| ggplot2 | 3.5.2 | Figures |
+| tidyterra | 0.6.1 | Plotting rasters with ggplot2 |
+| patchwork | 1.3.0 | Multi-panel figures |
+| ggridges | 0.5.7 | Ridgeline plots |
+| ggspatial | 1.1.9 | Scale bars and north arrows |
+| tmap | 4.1 | Thematic maps |
+| viridis, scico | 0.6.5, 1.5.0 | Colour palettes |
+| flextable | 0.9.11 | Word tables |
+| here | 1.0.2 | File paths relative to the project root |
+
 ---
 
 ### Obtaining the data

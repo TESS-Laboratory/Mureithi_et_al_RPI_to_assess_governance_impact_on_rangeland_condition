@@ -5695,11 +5695,33 @@ save_as_docx(RPI.Above1.Flex, path = here::here("plots", "Table_S1_pixels_RPI_ab
 ## Data and software (Methods "Data analysis"; SI Table S2; Data Availability)
 
 cat("R version used for this run:", R.version.string, "\n")
-cat("Key packages: terra", as.character(packageVersion("terra")),
-    "| sf", as.character(packageVersion("sf")),
-    "| trend", as.character(packageVersion("trend")),
-    "| tidyterra", as.character(packageVersion("tidyterra")),
-    "| tmap", as.character(packageVersion("tmap")), "\n")
+
+# Packages used by this document, with the versions used for this run (the same versions are recorded in renv.lock)
+Packages.Used <- tibble(
+  Package = c("terra", "sf", "trend", "tidyverse", "zoo", "tidyterra", "tmap", "ggspatial",
+              "ggplot2", "patchwork", "ggridges", "viridis", "scico", "scales", "hexbin", "flextable", "here"),
+  Use = c("Raster processing (cropping, masking, extraction, zonal values)",
+          "Vector data (governance zone polygons)",
+          "Theil-Sen slopes (sens.slope)",
+          "Data handling (dplyr, tidyr, purrr)",
+          "5-year rolling means",
+          "Plotting rasters with ggplot2",
+          "Thematic maps",
+          "Scale bars and north arrows",
+          "Figures",
+          "Multi-panel figures",
+          "Ridgeline plots",
+          "Colour palettes",
+          "Colour palettes",
+          "Axis and legend labels",
+          "Hexagonal binning",
+          "Word tables",
+          "File paths relative to the project root")
+) %>%
+  mutate(Version = map_chr(Package, function(p) as.character(packageVersion(p)))) %>%
+  select(Package, Version, Use)
+
+knitr::kable(Packages.Used)
 
 cat("RPI v2 series:", nlyr(RPI), "hydrological years; layers", names(RPI)[1], "to", names(RPI)[nlyr(RPI)],
     "(named by start year), i.e. September 2000 to August 2023\n")
