@@ -440,6 +440,111 @@ AET.Buffers <- st_read(file.path(dir_amb, "AET_Other_Conserved_Areas.shp"))
 ```
 
 ```{r}
+# Importing Community Conservancies & Group Ranches surrounding Tsavos
+
+Tsavo.Ranches <- st_read(file.path(dir_tsv, "RanchesTTWCA.shp"))
+
+Tsavo.SettledAreas <- st_read(file.path(dir_tsv, "SettledAreas.shp"))
+```
+
+```{r}
+# One rule for which pixels belong to each governance zone
+
+# The zone polygons come from three different sources and overlap in places (the overlaps are listed in "Zone.Overlaps.Before" below). Left as supplied, a pixel inside an overlap would be analysed in two zones. The steps below make sure every pixel is assigned to exactly one zone:
+#   1. All zone polygons are put in the CRS of the RPI grid and their geometries are repaired.
+#   2. Overlaps between polygons of the same zone are removed, so no pixel is counted twice within a zone.
+#   3. Overlaps between zones are given to one zone only, in this order of precedence:
+#        Amboseli: National Park > Conservancies > Community/Group Ranches
+#        Tsavo:    National Parks > Conservancies/Ranches > Settled Areas
+# Later on, mask(..., touches = FALSE) and extract() both keep a pixel only when its centre lies inside a polygon, so the maps, the tables and the trend analysis all use the same pixels.
+
+# Step 1: Common CRS and valid geometries
+to_rpi_crs <- function(x) st_make_valid(st_transform(x, crs(RPI)))
+
+Amboseli           <- to_rpi_crs(Amboseli)
+TsavoEast          <- to_rpi_crs(TsavoEast)
+TsavoWest          <- to_rpi_crs(TsavoWest)
+AET.Conservancies  <- to_rpi_crs(AET.Conservancies)
+AET.Buffers        <- to_rpi_crs(AET.Buffers)
+Tsavo.Ranches      <- to_rpi_crs(Tsavo.Ranches)
+Tsavo.SettledAreas <- to_rpi_crs(Tsavo.SettledAreas)
+
+# Area of a zone in km² (its polygons are merged first, so nothing is counted twice)
+area_km2 <- function(x) {
+  sum(as.numeric(units::set_units(st_area(st_union(st_geometry(x))), "km^2")))
+}
+
+# Area shared by two zones in km²
+overlap_km2 <- function(a, b) {
+  shared <- suppressWarnings(st_intersection(st_union(st_geometry(a)), st_union(st_geometry(b))))
+  if (length(shared) == 0) 0 else sum(as.numeric(units::set_units(st_area(shared), "km^2")))
+}
+
+# Table of the overlap between every pair of zones
+zone_overlaps <- function(zones) {
+  combn(names(zones), 2, simplify = FALSE) %>%
+    map_dfr(function(pair) {
+      tibble(
+        ZoneA = pair[1],
+        ZoneB = pair[2],
+        Overlap_km2 = round(overlap_km2(zones[[pair[1]]], zones[[pair[2]]]), 2)
+      )
+    }) %>%
+    filter(Overlap_km2 >= 0.01) %>%
+    arrange(desc(Overlap_km2))
+}
+
+# Recording the overlaps in the polygons as supplied, before they are removed
+Zone.Overlaps.Before <- zone_overlaps(list(
+  "Amboseli NP" = Amboseli,
+  "Amboseli Conservancies" = AET.Conservancies,
+  "Amboseli Community/Group Ranches" = AET.Buffers,
+  "Tsavo East NP" = TsavoEast,
+  "Tsavo West NP" = TsavoWest,
+  "Tsavo Conservancies/Ranches" = Tsavo.Ranches,
+  "Tsavo Settled Areas" = Tsavo.SettledAreas
+))
+
+Zone.Overlaps.Before
+
+# Steps 2 and 3: Remove overlaps within a zone, then overlaps with the zones that take precedence
+make_exclusive <- function(x, ...) {
+
+  # Within the zone: each polygon loses any part already covered by an earlier polygon of the same zone
+  x <- st_difference(x)
+
+  # Between zones: remove the parts covered by the zones that take precedence
+  higher <- list(...)
+  if (length(higher) > 0) {
+    higher <- st_union(do.call(c, lapply(higher, st_geometry)))
+    x <- suppressWarnings(st_difference(x, higher))
+  }
+
+  # Keep polygons only and drop anything left empty
+  x <- suppressWarnings(st_collection_extract(st_make_valid(x), "POLYGON"))
+  x[!st_is_empty(x), ]
+}
+
+AET.Conservancies  <- make_exclusive(AET.Conservancies, Amboseli, TsavoWest)
+AET.Buffers        <- make_exclusive(AET.Buffers, Amboseli, AET.Conservancies)
+Tsavo.Ranches      <- make_exclusive(Tsavo.Ranches, TsavoEast, TsavoWest)
+Tsavo.SettledAreas <- make_exclusive(Tsavo.SettledAreas, TsavoEast, TsavoWest, Tsavo.Ranches)
+
+# Check: no overlap should remain between any two zones
+Zone.Overlaps.After <- zone_overlaps(list(
+  "Amboseli NP" = Amboseli,
+  "Amboseli Conservancies" = AET.Conservancies,
+  "Amboseli Community/Group Ranches" = AET.Buffers,
+  "Tsavo East NP" = TsavoEast,
+  "Tsavo West NP" = TsavoWest,
+  "Tsavo Conservancies/Ranches" = Tsavo.Ranches,
+  "Tsavo Settled Areas" = Tsavo.SettledAreas
+))
+
+stopifnot(nrow(Zone.Overlaps.After) == 0)
+```
+
+```{r}
 # Visualising the Conservancies & Community Lands within AET
 
 ggplot() +
@@ -521,19 +626,6 @@ AET.AllZones.Map
 #  height = 6,
 #  dpi = 300
 #)
-```
-
-```{r}
-# Importing Community Conservancies & Group Ranches surrounding Tsavos
-
-Tsavo.Ranches <- st_read(file.path(dir_tsv, "RanchesTTWCA.shp"))
-
-Tsavo.SettledAreas <- st_read(file.path(dir_tsv, "SettledAreas.shp"))
-
-# Reprojecting Shapefile CRS to match RPI CRS
-
-Tsavo.Ranches <- st_transform(Tsavo.Ranches, crs(RPI))
-Tsavo.SettledAreas <- st_transform(Tsavo.SettledAreas, crs(RPI))
 ```
 
 ```{r}
