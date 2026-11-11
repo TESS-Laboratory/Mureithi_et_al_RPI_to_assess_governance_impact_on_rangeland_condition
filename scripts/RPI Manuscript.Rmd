@@ -3731,175 +3731,7 @@ Annual.RPI.Visual.Trends.Faceted.Plot
 ```
 
 ```{r}
-# Including Theil-Sen Slope in the Plot of Mean RPI trends with Standard Deviation
-
-# Define the custom color palette with names that match your data
-areas_colours_names <- c(
-  "Amboseli" = "#440154FF",
-  "AET.Buffers" = "#AADC32FF",
-  "AET.Conservancies" = "#5DC863FF",
-  "AET.AllZones" = "#FDE725FF",
-  "TsavoEast" = "#472D7BFF",
-  "TsavoWest" = "#3B528BFF",
-  "Tsavo.Ranches" = "#2C728EFF",
-  "Tsavo.SettledAreas" = "#21908CFF",
-  "Tsavo.AllZones" = "#27AD81FF"
-)
-
-# 1. Join Theil-Sen slopes to yearly data
-# Assuming this data frame is already created and available
-Combined.Trends <- Annual.RPI.Visual.Trends %>%
-  left_join(All.Trends.Summary %>% select(Area, MeanSlope), by = "Area")
-
-# 2. Create the plot with manual color and fill scales
-Combined.Trends.Plot <- ggplot(Combined.Trends, aes(x = Year, y = MeanRPI)) +
-  # SD ribbon
-  geom_ribbon(aes(ymin = MeanRPI - SD, ymax = MeanRPI + SD, fill = Area), alpha = 0.2) +
-  # Dashed annual line
-  geom_line(aes(color = Area), linewidth = 1, linetype = "dashed") +
-  # Annual points
-  geom_point(aes(color = Area), size = 2) +
-  # Theil-Sen slope line
-  geom_smooth(aes(color = Area), method = "lm", formula = y ~ x, se = FALSE, linewidth = 1.2) +
-  # Facets with fixed y-scale and custom labels
-  facet_wrap(~ Area, ncol = 3, scales = "fixed", labeller = as_labeller(c(
-    "Amboseli" = "Amboseli",
-    "AET.Buffers" = "AET Buffers",
-    "AET.Conservancies" = "AET Conservancies",
-    "AET.AllZones" = "AET All Zones",
-    "TsavoEast" = "Tsavo East",
-    "TsavoWest" = "Tsavo West",
-    "Tsavo.Ranches" = "Tsavo Ranches",
-    "Tsavo.SettledAreas" = "Tsavo Settled Areas",
-    "Tsavo.AllZones" = "Tsavo All Zones"
-  ))) +
-  # Use your custom palette for colors
-  scale_color_manual(values = areas_colours_names) +
-  # Use your custom palette for fill (for the ribbon)
-  scale_fill_manual(values = areas_colours_names) +
-  # Labels
-  labs(
-    title = "Annual RPI Trends with Theil-Sen Slope Overlaid",
-    x = "Year",
-    y = "Mean RPI"
-  ) +
-  # Clean theme
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    strip.text = element_text(face = "bold"),
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
-    axis.text = element_text(size = 9),
-    axis.title = element_text(size = 11)
-  )
-
-# 3. Add panel tags (A, B, C...)
-# This part requires the 'patchwork' package or a similar tool for plot annotations.
-# If you are using patchwork, make sure you have it loaded.
-Combined.Trends.Plot <- Combined.Trends.Plot +
-  plot_annotation(tag_levels = "A")
-
-# 4. Show the plot
-Combined.Trends.Plot
-
-# Save the plot
-#ggsave(
-#  filename = "Combined_Annual_and_TheilSen_Trends_Improved.png",
-#  plot = Combined.Trends.Plot,
-#  width = 12,
-#  height = 8,
-#  dpi = 300
-#)
-```
-
-```{r}
-# Tweaking the map above:
-
-area_labels <- c(
-  "Amboseli" = "Amboseli NP",
-  "AET.Buffers" = "Amboseli Community/Group Ranches",
-  "AET.AllZones" = "Amboseli All Zones",
-  "AET.Conservancies" = "Amboseli Conservancies",
-  "TsavoWest" = "Tsavo West NP",
-  "TsavoEast" = "Tsavo East NP",
-  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches",
-  "Tsavo.SettledAreas" = "Tsavo Settled Areas",
-  "Tsavo.AllZones" = "Tsavo All Zones"
-)
-
-# Plot
-Combined.Trends.Plot <- ggplot(Combined.Trends, aes(x = Year, y = MeanRPI)) +
-  
-  # 1. Uncertainty FIRST (background layer)
-  geom_ribbon(
-    aes(ymin = MeanRPI - SD, ymax = MeanRPI + SD, fill = Area),
-    alpha = 0.15
-  ) +
-  
-  # 2. Annual trend (solid, cleaner than dashed)
-  geom_line(aes(color = Area), linewidth = 0.8) +
-  
-  # 3. Points (smaller, less dominant)
-  geom_point(aes(color = Area), size = 1.5) +
-  
-  # 4. Theil–Sen trend (make it DISTINCT)
-  geom_smooth(
-    aes(group = Area),
-    method = "lm",
-    formula = y ~ x,
-    se = FALSE,
-    colour = "black",      
-    linewidth = 1
-  ) +
-  
-  # 5. Facets with CLEAN labels
-  facet_wrap(
-    ~ Area,
-    ncol = 3,
-    scales = "fixed",
-    labeller = labeller(Area = area_labels)
-  ) +
-  
-  # 6. Palette
-  scale_color_manual(values = areas_colours_names) +
-  scale_fill_manual(values = areas_colours_names) +
-  
-  # 7. Labels
-  labs(
-    title = "",
-    x = "Year",
-    y = "Mean RPI"
-  ) +
-  
-  # 8. Theme
-  theme_classic() +
-  theme(
-    legend.position = "none",
-    
-    # Facet titles
-    strip.text = element_text(size = 10, face = "bold"),
-    
-    # Axis
-    axis.text = element_text(size = 9),
-    axis.title = element_text(size = 11),
-    
-    # Title
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 13),
-    
-    # Panel spacing (VERY important)
-    panel.spacing = unit(1, "lines")
-  )
-
-# Panel tags
-Combined.Trends.Plot <- Combined.Trends.Plot +
-  plot_annotation(tag_levels = "A")
-
-Combined.Trends.Plot
-```
-
-```{r}
-# Combined Mean RPI Trends with Theil–Sen Slopes
-# Revised Version Incorporating Feedback
+# Combined Mean RPI Trends with Theil–Sen Slopes (Figure 4)
 
 area_labels <- c(
   "Amboseli" = "Amboseli NP",
@@ -3925,19 +3757,33 @@ areas_colours_names <- c(
   "Tsavo.AllZones" = "#27AD81FF"
 )
 
+# Order of the panels: Amboseli zones first, then Tsavo zones
+area_order_panels <- c("Amboseli", "AET.Conservancies", "AET.Buffers",
+                       "TsavoEast", "TsavoWest", "Tsavo.Ranches", "Tsavo.SettledAreas")
+
 Combined.Trends <- Annual.RPI.Visual.Trends %>%
-  left_join(
-    All.Trends.Summary %>%
-      dplyr::select(Area, MeanSlope),
-    by = "Area"
-  )
+  mutate(Area = factor(Area, levels = area_order_panels))
+
+# Theil–Sen line for each zone
+# The line drawn in each panel is the Theil–Sen slope of that zone's annual mean RPI series (the 23 points shown in the panel). The intercept is the median of (MeanRPI - Slope * Year), so the line runs through the middle of the series. It is not an ordinary straight-line (lm) fit. This zone-level slope is not the same number as the mean of the pixel-level Theil–Sen slopes reported in the text ("All.Trends.Summary"); both are printed side by side in "Numbers reported in the manuscript".
+Zone.TheilSen.Lines <- Annual.RPI.Visual.Trends %>%
+  group_by(Area) %>%
+  arrange(Year, .by_group = TRUE) %>%
+  summarise(
+    Slope = as.numeric(sens.slope(MeanRPI)$estimates),
+    Intercept = median(MeanRPI - Slope * Year),
+    .groups = "drop"
+  ) %>%
+  mutate(Area = factor(Area, levels = area_order_panels))
+
+Zone.TheilSen.Lines
 
 Combined.Trends.Plot <- ggplot(
   Combined.Trends,
   aes(x = Year, y = MeanRPI)
 ) +
-  
-  # Uncertainty Ribbon
+
+  # Ribbon: spread of pixel values within each year (mean ± 1 standard deviation across pixels). This is spatial variability within the zone, not interannual variability.
   geom_ribbon(
     aes(
       ymin = MeanRPI - SD,
@@ -3946,94 +3792,70 @@ Combined.Trends.Plot <- ggplot(
     ),
     alpha = 0.15
   ) +
-  
+
   # Annual Time-Series (Dashed)
   geom_line(
     aes(color = Area),
-    linewidth = 0.9,
+    linewidth = 0.4,
     linetype = "dashed"
   ) +
-  
+
   # Annual Points
   geom_point(
     aes(color = Area),
-    size = 1.8
+    size = 0.9
   ) +
-  
-  # Theil–Sen Trend Line (Colour-Coded Solid)
-  geom_smooth(
-    aes(color = Area),
-    method = "lm",
-    formula = y ~ x,
-    se = FALSE,
-    linewidth = 1.2,
-    linetype = "solid"
+
+  # Theil–Sen Trend Line of the annual zone means (Colour-Coded Solid)
+  geom_abline(
+    data = Zone.TheilSen.Lines,
+    aes(slope = Slope, intercept = Intercept, color = Area),
+    linewidth = 0.8
   ) +
-  
-  # Facets
+
+  # Facets (long zone names are wrapped so that they are not cut off)
   facet_wrap(
     ~ Area,
     ncol = 3,
     scales = "fixed",
-    labeller = labeller(Area = area_labels)
+    labeller = labeller(Area = function(x) str_wrap(area_labels[as.character(x)], width = 24))
   ) +
-  
+
   # Colour Scales
   scale_color_manual(values = areas_colours_names) +
   scale_fill_manual(values = areas_colours_names) +
-  
+
   # Labels
   labs(
-    title = "",
-    x = "Year",
-    y = "Mean RPI"
+    x = "Hydrological year (start year)",
+    y = "Mean annual RPI"
   ) +
-  
-  # Theme
-  theme_classic() +
-  
+
+  # Theme (text sizes are final printed sizes, because the figure is saved at its printed width)
+  theme_classic(base_size = 8) +
+
   theme(
     legend.position = "none",
-    
-    # Facet Labels
-    strip.text = element_text(
-      size = 10,
-      face = "bold"
-    ),
-    
-    # Axis Text
-    axis.text = element_text(size = 9),
-    
-    # Axis Titles
-    axis.title = element_text(size = 11),
-    
-    # Plot Title
-    plot.title = element_text(
-      hjust = 0.5,
-      face = "bold",
-      size = 13
-    ),
-    
-    # Panel Spacing
-    panel.spacing = unit(1, "lines")
+    strip.text = element_text(size = 8, face = "bold"),
+    axis.text = element_text(size = 7, color = "black"),
+    axis.title = element_text(size = 8),
+    panel.spacing = unit(0.8, "lines")
   )
-
-Combined.Trends.Plot <- Combined.Trends.Plot +
-  plot_annotation(tag_levels = "A")
 
 Combined.Trends.Plot
 ```
 
 ```{r}
-# Save the tweaked plot
-#ggsave(
-#  filename = "Figure4Manuscript_AnnualRPI_TheilSenSlope.png",
-#  plot = Combined.Trends.Plot,
-#  width = 11.69,
-#  height = 8.27,
-#  dpi = 600,
-#  bg = "white"
-#)
+# Saving Figure 4 at its final printed size
+ggsave(
+  here::here("plots", "Figure_4_annual_mean_RPI_time_series.png"),
+  plot = Combined.Trends.Plot,
+  width = 16,
+  height = 13,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
