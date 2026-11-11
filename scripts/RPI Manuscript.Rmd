@@ -26,6 +26,8 @@ library(terra)       # for handling and processing raster data
 library(tidyterra)   # for using tidyverse tools on terra objects (geom_spatraster)
 library(tmap)        # for creating thematic maps
 library(ggspatial)   # for adding scale bars and north arrows to maps built with ggplot2
+library(rnaturalearth)      # for Natural Earth country outlines (Africa map)
+library(rnaturalearthdata)  # holds the 1:50m Natural Earth data that ne_countries(scale = "medium") reads
 
 # VISUALISATION#
 library(viridis)     # for perceptually uniform, colour-blind-friendly colour palettes
@@ -126,7 +128,17 @@ if (Sys.info()[["sysname"]] == "Windows") {
 ```{r}
 # Africa Country Boundary import
 
-Africa.Country.Boundaries <- st_read(file.path(dir_borders, "africa_country_boundaries_simplified_wgs84.shp"))
+# Country outlines come from Natural Earth (1:50m), which includes South Sudan. The data ship with the rnaturalearthdata package, so nothing has to be downloaded.
+Africa.Country.Boundaries <- ne_countries(scale = "medium", continent = "Africa", returnclass = "sf")
+
+# Natural Earth draws Somaliland as a separate polygon. It is merged with Somalia here, so that the map shows internationally recognised (UN member state) boundaries.
+Africa.Country.Boundaries <- Africa.Country.Boundaries %>%
+  mutate(name = if_else(name == "Somaliland", "Somalia", name)) %>%
+  group_by(name) %>%
+  summarise(.groups = "drop")
+
+# Check: South Sudan and Kenya are both on the map
+stopifnot(all(c("S. Sudan", "Kenya") %in% Africa.Country.Boundaries$name))
 ```
 
 ```{r}
@@ -5254,7 +5266,8 @@ TheilSen.Ridgeline.Plot
 # (A) Kenya within Africa
 Figure1.A <- ggplot() +
   geom_sf(data = Africa.Country.Boundaries, fill = "grey85", colour = "black", linewidth = 0.15) +
-  geom_sf(data = Kenya.Admin.Boundary, fill = "forestgreen", colour = "black", linewidth = 0.2) +
+  # Kenya is highlighted from the same Natural Earth layer, so its outline matches its neighbours exactly
+  geom_sf(data = filter(Africa.Country.Boundaries, name == "Kenya"), fill = "forestgreen", colour = "black", linewidth = 0.2) +
   coord_sf(xlim = c(-19, 52), ylim = c(-36, 38), expand = FALSE) +
   theme_map
 
@@ -5699,7 +5712,8 @@ cat("R version used for this run:", R.version.string, "\n")
 # Packages used by this document, with the versions used for this run (the same versions are recorded in renv.lock)
 Packages.Used <- tibble(
   Package = c("terra", "sf", "trend", "tidyverse", "zoo", "tidyterra", "tmap", "ggspatial",
-              "ggplot2", "patchwork", "ggridges", "viridis", "scico", "scales", "hexbin", "flextable", "here"),
+              "ggplot2", "patchwork", "ggridges", "viridis", "scico", "scales", "hexbin", "flextable", "here",
+              "rnaturalearth"),
   Use = c("Raster processing (cropping, masking, extraction, zonal values)",
           "Vector data (governance zone polygons)",
           "Theil-Sen slopes (sens.slope)",
@@ -5716,7 +5730,8 @@ Packages.Used <- tibble(
           "Axis and legend labels",
           "Hexagonal binning",
           "Word tables",
-          "File paths relative to the project root")
+          "File paths relative to the project root",
+          "Africa country outlines (Natural Earth, 1:50m)")
 ) %>%
   mutate(Version = map_chr(Package, function(p) as.character(packageVersion(p)))) %>%
   select(Package, Version, Use)
