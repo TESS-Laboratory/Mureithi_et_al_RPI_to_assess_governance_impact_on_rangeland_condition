@@ -5684,3 +5684,250 @@ RPI.Above1.Flex
 # Save as Word document, alongside the figures
 save_as_docx(RPI.Above1.Flex, path = here::here("plots", "Table_S1_pixels_RPI_above_1.docx"))
 ```
+
+```{r}
+# NUMBERS REPORTED IN THE MANUSCRIPT
+
+# The rule for this section: if a number appears in the manuscript or the SI, a line of code below produces it. Each chunk prints the values for one part of the paper, so the text can be checked against (and updated from) this output after every run.
+```
+
+```{r}
+## Data and software (Methods "Data analysis"; SI Table S2; Data Availability)
+
+cat("R version used for this run:", R.version.string, "\n")
+cat("Key packages: terra", as.character(packageVersion("terra")),
+    "| sf", as.character(packageVersion("sf")),
+    "| trend", as.character(packageVersion("trend")),
+    "| tidyterra", as.character(packageVersion("tidyterra")),
+    "| tmap", as.character(packageVersion("tmap")), "\n")
+
+cat("RPI v2 series:", nlyr(RPI), "hydrological years; layers", names(RPI)[1], "to", names(RPI)[nlyr(RPI)],
+    "(named by start year), i.e. September 2000 to August 2023\n")
+cat("RPI grid:", crs(RPI, describe = TRUE)$name, "(EPSG:", crs(RPI, describe = TRUE)$code, "); resolution",
+    format(res(RPI)[1], digits = 6), "degrees (15 arc-seconds)\n")
+```
+
+```{r}
+## Pixel size and zone areas (Methods "Temporal and trend analysis")
+
+# The RPI grid is in geographic coordinates (degrees), so a pixel is not exactly 500 m x 500 m (0.25 km²). cellSize() gives the true area of every pixel, and areas are therefore summed pixel by pixel rather than calculated as "pixel count x 0.25".
+Pixel.Area.km2 <- cellSize(RPI[[1]], unit = "km")
+
+# Total area (km²) of the pixels that have a value in a raster
+pixel_area_sum <- function(r) {
+  a <- crop(Pixel.Area.km2, r)
+  sum(values(a)[!is.na(values(r))])
+}
+
+Zone.Area.Table <- tibble(
+  Area = names(zone_colours),
+  Polygon_km2 = c(
+    area_km2(Amboseli), area_km2(AET.Conservancies), area_km2(AET.Buffers),
+    area_km2(TsavoEast), area_km2(TsavoWest), area_km2(Tsavo.Ranches), area_km2(Tsavo.SettledAreas)
+  ),
+  Pixels_Before = Pixel.Retention.Table$Pixels_Before[1:7],
+  Pixel_Area_Before_km2 = c(
+    pixel_area_sum(Amboseli.RPI.Mean), pixel_area_sum(AET.Conservancies.RPI.Mean), pixel_area_sum(AET.Buffers.RPI.Mean),
+    pixel_area_sum(TsavoEast.RPI.Mean), pixel_area_sum(TsavoWest.RPI.Mean), pixel_area_sum(Tsavo.Ranches.RPI.Mean),
+    pixel_area_sum(Tsavo.SettledAreas.RPI.Mean)
+  ),
+  Pixels_After = Pixel.Retention.Table$Pixels_After[1:7],
+  Pixel_Area_After_km2 = c(
+    pixel_area_sum(Amboseli.RPI.Mean.Filtered.1), pixel_area_sum(AET.Conservancies.RPI.Mean.Filtered.1),
+    pixel_area_sum(AET.Buffers.RPI.Mean.Filtered.1), pixel_area_sum(TsavoEast.RPI.Mean.Filtered.1),
+    pixel_area_sum(TsavoWest.RPI.Mean.Filtered.1), pixel_area_sum(Tsavo.Ranches.RPI.Mean.Filtered.1),
+    pixel_area_sum(Tsavo.SettledAreas.RPI.Mean.Filtered.1)
+  )
+) %>%
+  mutate(Mean_Pixel_km2 = Pixel_Area_Before_km2 / Pixels_Before)
+
+# Polygon_km2 = area of the zone boundary; Pixel_Area_Before_km2 = area of the RPI pixels inside it (smaller than the polygon wherever the RPI v2 product has no data); Pixel_Area_After_km2 = area of the pixels retained after the R² filter
+knitr::kable(Zone.Area.Table, digits = c(0, 1, 0, 1, 0, 1, 4))
+
+# Areas recorded in the WDPA files for the three national parks (reported area and GIS area, km²), for comparison with Polygon_km2
+bind_rows(
+  st_drop_geometry(Amboseli)[, c("NAME", "REP_AREA", "GIS_AREA")],
+  st_drop_geometry(TsavoEast)[, c("NAME", "REP_AREA", "GIS_AREA")],
+  st_drop_geometry(TsavoWest)[, c("NAME", "REP_AREA", "GIS_AREA")]
+)
+
+# Overlaps between the zone polygons as supplied (km²), before every pixel was assigned to one zone
+knitr::kable(Zone.Overlaps.Before)
+```
+
+```{r}
+## Model performance across Kenya (Methods "Model validation and quality control"; Figures S2 and S3)
+
+# Summary of the three performance layers over every RPI v2 pixel inside Kenya's national boundary. (The RPI v2 product only has values for rangeland pixels, so these are the rangeland pixels of Kenya.)
+Kenya.Performance.Summary <- as.data.frame(Temporal.Performance.Kenya, na.rm = TRUE) %>%
+  pivot_longer(everything(), names_to = "Metric", values_to = "Value") %>%
+  group_by(Metric) %>%
+  summarise(
+    Pixels = n(),
+    Median = median(Value),
+    Mean = mean(Value),
+    SD = sd(Value),
+    Min = min(Value),
+    Max = max(Value)
+  )
+
+knitr::kable(Kenya.Performance.Summary, digits = 2)
+
+# Share of Kenya's RPI v2 pixels below the R² threshold, and the pixels left off the R² axis of Figure S3B
+cat("Kenya: pixels with R² < 0.1:", sum(Kenya.Values.RPI.Rsquare$RSQ < RSQ.Threshold.1), "of", nrow(Kenya.Values.RPI.Rsquare),
+    "(", round(100 * mean(Kenya.Values.RPI.Rsquare$RSQ < RSQ.Threshold.1), 2), "%)\n")
+cat("Kenya: pixels with R² <", Kenya.RSQ.Axis.Minimum, "(not shown in Figure S3B):", sum(Kenya.Values.RPI.Rsquare$RSQ < Kenya.RSQ.Axis.Minimum),
+    "(", round(100 * mean(Kenya.Values.RPI.Rsquare$RSQ < Kenya.RSQ.Axis.Minimum), 3), "%)\n")
+cat("Kenya: R² of pixels with mean RPI > 1: median", round(median(Kenya.Values.RPI.Rsquare$RSQ[Kenya.Values.RPI.Rsquare$RPI > 1]), 2), "\n")
+```
+
+```{r}
+## Pixels retained by the R² filter (Methods; Table S3; Figure S6; response to Reviewer 2)
+
+knitr::kable(Pixel.Retention.Table)
+
+# R² range in each zone before filtering, and the pixels left off the axis of Figure S6
+RSQ.Pixel.Values %>%
+  mutate(Area = factor(Area, levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(
+    Pixels = n(),
+    Min_RSQ = min(RSQ),
+    Median_RSQ = median(RSQ),
+    Max_RSQ = max(RSQ),
+    Pixels_Below_Axis = sum(RSQ < Zone.RSQ.Axis.Minimum)
+  ) %>%
+  knitr::kable(digits = 2)
+
+# Effect of the filter on the extreme values of pixel-level mean RPI in each zone
+RSQ.Pixel.Values %>%
+  mutate(Area = factor(Area, levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(
+    Min_Before = min(RPI),
+    Min_After = min(RPI[RSQ >= RSQ.Threshold.1]),
+    Max_Before = max(RPI),
+    Max_After = max(RPI[RSQ >= RSQ.Threshold.1])
+  ) %>%
+  knitr::kable(digits = 2)
+
+# Does every retained pixel have a complete 23-year series? (Years = number of years with a value; Pixels = number of pixels)
+All.Pixel.Values.RPI.Visual %>%
+  count(Area, ID, name = "Years") %>%
+  count(Area, Years, name = "Pixels") %>%
+  knitr::kable()
+```
+
+```{r}
+## Mean RPI (Results "Spatial patterns and temporal dynamics of mean relative productivity"; Figure 2; Table S1)
+
+# Summary statistics of a set of values
+summarise_values <- function(x) {
+  tibble(
+    N = length(x),
+    Min = min(x),
+    Q25 = unname(quantile(x, 0.25)),
+    Median = median(x),
+    Mean = mean(x),
+    Q75 = unname(quantile(x, 0.75)),
+    Max = max(x)
+  )
+}
+
+# Pixel-level mean RPI across the combined study area
+bind_rows(
+  summarise_values(RPI.Pixel.Means$RPI[RPI.Pixel.Means$Area != "Tsavo Settled Areas"]) %>% mutate(Zones = "Six focal zones combined", .before = 1),
+  summarise_values(RPI.Pixel.Means$RPI) %>% mutate(Zones = "All seven zones combined", .before = 1)
+) %>%
+  knitr::kable(digits = 2)
+
+# Pixel-level mean RPI in each zone
+RPI.Pixel.Means %>%
+  mutate(Area = factor(as.character(Area), levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(summarise_values(RPI)) %>%
+  knitr::kable(digits = 2)
+
+# Annual mean RPI of each zone: the statistics quoted zone by zone in the Results
+# Median, range (with the years in which the lowest and highest annual means occurred) and interquartile range of the 23 annual zone means; the number of years with an annual mean below 0.50; the range of the annual standard deviations; and the change between the first and last year
+Annual.Zone.Summary <- All.Summary.Filtered %>%
+  mutate(
+    Year = as.integer(sub("rpi\\.", "", Layer)),
+    Area = factor(Area, levels = names(zone_colours))
+  ) %>%
+  group_by(Area) %>%
+  summarise(
+    Median_Annual_Mean = median(Mean),
+    Min_Annual_Mean = min(Mean),
+    Year_Of_Min = Year[which.min(Mean)],
+    Max_Annual_Mean = max(Mean),
+    Year_Of_Max = Year[which.max(Mean)],
+    Q25_Annual_Mean = unname(quantile(Mean, 0.25)),
+    Q75_Annual_Mean = unname(quantile(Mean, 0.75)),
+    Years_Below_0.50 = sum(Mean < 0.50),
+    Min_Annual_SD = min(SD),
+    Max_Annual_SD = max(SD),
+    Mean_2000 = Mean[Year == 2000],
+    Mean_2022 = Mean[Year == 2022],
+    Percent_Change_2000_To_2022 = 100 * (Mean_2022 - Mean_2000) / Mean_2000
+  )
+
+knitr::kable(Annual.Zone.Summary, digits = 2)
+
+# Table S1: pixels with mean RPI above 1
+knitr::kable(RPI.Above1.Table)
+
+# Figure 2: pixels drawn in the top colour of panel A (mean RPI > 1) and pixels beyond the x-axis of panel C (mean RPI > 1.5)
+cat("Pixels with mean RPI > 1:", sum(RPI.Pixel.Means$RPI > 1), "of", nrow(RPI.Pixel.Means),
+    "(", round(100 * mean(RPI.Pixel.Means$RPI > 1), 2), "%)\n")
+cat("Pixels with mean RPI > 1.5 (beyond the x-axis of Figure 2C):", sum(RPI.Pixel.Means$RPI > 1.5), "\n")
+
+# Figure S5: pixel-years above the y-axis limit of 1.5
+cat("Pixel-years with annual RPI > 1.5 (above the y-axis of Figure S5):", sum(All.RPI.Visual.Areas$RPI_value > 1.5), "of", nrow(All.RPI.Visual.Areas),
+    "(", round(100 * mean(All.RPI.Visual.Areas$RPI_value > 1.5), 2), "%)\n")
+```
+
+```{r}
+## Theil-Sen trends (Results "Long-term trends in relative vegetation productivity"; Figures 3 and 4)
+
+# Pixel-level slopes across the combined study area
+bind_rows(
+  summarise_values(Zone.Pixel.Slopes$Slope[Zone.Pixel.Slopes$Area != "Tsavo Settled Areas"]) %>% mutate(Zones = "Six focal zones combined", .before = 1),
+  summarise_values(Zone.Pixel.Slopes$Slope) %>% mutate(Zones = "All seven zones combined", .before = 1)
+) %>%
+  knitr::kable(digits = 4)
+
+# Pixel-level slopes in each zone: number of pixels, mean, median and standard deviation of the slopes, and how many standard deviations the mean lies from zero. The last column is the Theil-Sen slope of the zone's annual mean RPI series, which is the line drawn in Figure 4.
+Zone.Slope.Summary <- Zone.Pixel.Slopes %>%
+  mutate(Area = factor(as.character(Area), levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(
+    N_Pixels = n(),
+    MeanSlope = mean(Slope),
+    MedianSlope = median(Slope),
+    SD = sd(Slope),
+    Mean_In_SD_From_Zero = MeanSlope / SD
+  ) %>%
+  left_join(
+    Zone.TheilSen.Lines %>%
+      transmute(
+        Area = factor(recode(as.character(Area), !!!area_labels), levels = names(zone_colours)),
+        Slope_Of_Annual_Zone_Means = Slope
+      ),
+    by = "Area"
+  )
+
+knitr::kable(Zone.Slope.Summary, digits = c(0, 0, 5, 5, 5, 2, 5))
+
+# Figure 3: pixels drawn in the end colours of panel A (slope beyond the limits of the colour scale) and pixels beyond the x-axis of panel C (slope beyond -0.03 or +0.03)
+cat("Pixels with |slope| >", max(Slope.Limits), "(end colours of Figure 3A):", sum(abs(Zone.Pixel.Slopes$Slope) > max(Slope.Limits)), "of", nrow(Zone.Pixel.Slopes),
+    "(", round(100 * mean(abs(Zone.Pixel.Slopes$Slope) > max(Slope.Limits)), 2), "%)\n")
+cat("Pixels with |slope| > 0.03 (beyond the x-axis of Figure 3C):", sum(abs(Zone.Pixel.Slopes$Slope) > 0.03),
+    "(", round(100 * mean(abs(Zone.Pixel.Slopes$Slope) > 0.03), 2), "%)\n")
+```
+
+```{r}
+## Full record of the R session used for this run
+
+sessionInfo()
+```
