@@ -51,3 +51,7 @@ rsconnect/
 
 # Input data — not redistributed (see README, "Obtaining the data")
 data/
+
+# Rendered notebook output (rebuilt by knitting scripts/RPI Manuscript.Rmd)
+scripts/*.html
+scripts/*_files/
