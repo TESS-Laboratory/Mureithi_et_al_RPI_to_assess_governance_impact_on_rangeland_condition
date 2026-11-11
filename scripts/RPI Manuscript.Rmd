@@ -35,7 +35,6 @@ library(scico)       # for scientific colour maps
 library(patchwork)   # for combining multiple plots into one figure
 library(ggridges)    # for creating ridgeline plots
 library(grid)        # for units and image panels inside figures
-library(kableExtra)  # for enhancing tables created with knitr::kable()
 library(flextable)   # for creating publication-quality tables saved as Word documents
 
 # STATISTICAL ANALYSIS#
@@ -58,6 +57,9 @@ dir_borders <- file.path(dir_data, "Country_Borders")
 dir_wdpa    <- file.path(dir_data, "WDPA_Amboseli_Tsavo", "National Parks&Reserves")
 dir_amb     <- file.path(dir_data, "Amboseli_Conservation_Areas")
 dir_tsv     <- file.path(dir_data, "Tsavo_Conservation_Areas")
+
+# Figures and tables are written to plots/ (created here if it does not exist yet)
+dir.create(here::here("plots"), showWarnings = FALSE)
 
 # Helper for WDPA downloads, which keep their original nested folder structure.
 # The numeric argument is the WDPA site ID (April 2025 release).
@@ -270,16 +272,15 @@ Kenya.ProtectedAreas.Map
 ```
 
 ```{r}
-# Saving the map
-#tmap_save(
-#  Kenya.ProtectedAreas.Map,
-#  "Figure_S1_Kenya_Protected_Areas.tiff",
-#  width = 8,
-#  height = 6,
-#  units = "in",
-#  dpi = 600,
-#  compression = "lzw"
-#)
+# Saving Figure S1 at its final printed size
+tmap_save(
+  Kenya.ProtectedAreas.Map,
+  filename = here::here("plots", "Figure_S1_Kenya_protected_areas.png"),
+  width = 16,
+  height = 13,
+  units = "cm",
+  dpi = 600
+)
 ```
 
 ```{r}
@@ -328,14 +329,6 @@ Kenya.Rangeland.Map <-
   )
 
 Kenya.Rangeland.Map
-
-#tmap_save(
-#  tm = Kenya.Rangeland.Map,
-#  filename = "Kenya_Rangeland_Counties_Map.png", # Choose a file name
-#  width = 8,  # width in inches
-#  height = 6, # height in inches
-#  dpi = 300   # resolution
-#)
 ```
 
 ```{r}
@@ -375,80 +368,13 @@ RSQ.Threshold.1 <- 0.1
 ```
 
 ```{r}
-# Importing National Parks & National Reserves (GAE/TCA)
+# Importing the three National Parks (WDPA site IDs: Amboseli 758, Tsavo East 752, Tsavo West 19564)
 
 Amboseli    <- st_read(wdpa_path("Amboseli",    758))
 
-ChyuluHills <- st_read(wdpa_path("ChyuluHills", 19563))
-
-TsavoWest   <- st_read(wdpa_path("TsavoWest",   19564))
-
 TsavoEast   <- st_read(wdpa_path("TsavoEast",   752))
 
-NgaiNdethia <- st_read(wdpa_path("NgaiNdethia", 2595))
-
-SouthKitui  <- st_read(wdpa_path("SouthKitui",  2590))
-```
-
-```{r}
-# Visualising GAE/TCA
-
-GAE.TCA <- bind_rows(
-  Amboseli,
-  ChyuluHills,
-  TsavoEast,
-  TsavoWest,
-  NgaiNdethia,
-  SouthKitui
-) %>%
-  mutate(Area = NAME)  # standardises the column
-```
-
-```{r}
-# Mapping
-tmap_mode("plot")
-
-Kenya.GAE.TCA.Map <-
-  tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_polygons(
-    fill = "grey90",
-    col = "grey40",
-    lwd = 0.5
-  ) +
-
-  tm_shape(GAE.TCA) +
-  tm_polygons(
-    fill = "Area",
-    fill.scale = tm_scale_categorical(values = "Set3"),
-    fill.legend = tm_legend(title = "Protected Area"),
-    col = "black",
-    lwd = 0.8
-  ) +
-
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom")) +
-
-  tm_title("") +
-
-  tm_layout(
-    frame = FALSE,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    legend.text.size = 0.8,
-    legend.title.size = 0.9,
-    text.fontfamily = "Helvetica"
-  )
-
-Kenya.GAE.TCA.Map
-
-# Saving the map
-#tmap_save(
-#  tm = Kenya.PAs.Map,
-#  filename = "Kenya_PAs_Map.png", # Choose a file name
-#  width = 8,
-#  height = 6,
-#  dpi = 300
-#)
+TsavoWest   <- st_read(wdpa_path("TsavoWest",   19564))
 ```
 
 ```{r}
@@ -664,15 +590,6 @@ AET.AllZones.Map <-
   )
 
 AET.AllZones.Map
-
-# Saving the Map
-#tmap_save(
-#  tm = AET.AllZones.Map,
-#  filename = "AET_Conservancies_and_Buffers_Map.png", # Choose a file name
-#  width = 8,
-#  height = 6,
-#  dpi = 300
-#)
 ```
 
 ```{r}
@@ -750,246 +667,6 @@ TCA.AllZones.Map <-
   )
 
 TCA.AllZones.Map
-
-# Saving the map
-#tmap_save(
-#  tm = TCA.AllZones.Map,
-#  filename = "Tsavo_Ranches_and_Settled_Areas_Map.png", # Choose a file name
-#  width = 8,
-#  height = 6,
-#  dpi = 300
-#)
-```
-
-```{r}
-# CONNECTIVITY MAP OF THE ECOREGIONS
-tmap_mode("plot")
-
-Connectivity.Map <- 
-  tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_polygons(
-    fill = "grey90",
-    col = "grey40",
-    lwd = 0.5
-  ) +
-  
-  tm_shape(Tsavo.AllZones) +
-  tm_polygons(
-    fill = "ZoneType",
-    fill.scale = tm_scale_categorical(values = c(
-      "Ranches" = "#2C728EFF",          # Tsavo Ranches
-      "Settled Areas" = "#21908CFF"     # Tsavo Settled Areas
-    )),
-    fill.legend = tm_legend(title = "Tsavo Surroundings"),
-    col = "grey30", lwd = 0.3
-  ) +
-  
-  tm_shape(AET.AllZones) +
-  tm_polygons(
-    fill = "ZoneType",
-    fill.scale = tm_scale_categorical(values = c(
-      "Buffer" = "#AADC32FF",
-      "Conservancy" = "#5DC863FF"
-    )),
-    fill.legend = tm_legend(title = "Amboseli Surroundings"),
-    col = "grey20", lwd = 0.4
-  ) +
-  
-  tm_shape(GAE.TCA) +
-  tm_polygons(
-    fill = "Area",
-    fill.scale = tm_scale_categorical(values = c(
-      "Amboseli" = "#440154FF",
-      "Tsavo East" = "#472D7BFF",
-      "Tsavo West" = "#3B528BFF",
-      "Chyulu Hills" = "#2A788EFF",     # complementary blue
-      "Ngai Ndethia" = "#22A884FF",     # mid green-blue
-      "South Kitui" = "#7AD151FF"       # lighter green
-    )),
-    fill.legend = tm_legend(title = "Protected Areas"),
-    col = "black", lwd = 0.8
-  ) +
-  
-  tm_title("") +
-  
-  tm_compass(
-    position = c("left", "top"),
-    size = 1.5
-  ) +
-  
-  tm_scalebar(
-    position = c("left", "bottom"),
-    text.size = 0.7) +
-  
-  tm_layout(
-    frame = FALSE,
-    legend.show = FALSE,
-    asp = 0,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    outer.margins = c(0.02, 0.02, 0.05, 0.02)
-  )
-
-Connectivity.Map
-
-# Saving the map to a file
-#tmap_save(
-#  tm = Connectivity.Map,
-#  filename = "Connectivity_Map.png", # Change to .png for a static image
-#  width = 10,
-#  height = 8,
-#  dpi = 300
-#)
-```
-
-```{r}
-# Focusing in on study areas
-
-Connectivity.Focus.Map <- 
-  
-  tm_shape(GAE.TCA) +
-  tm_polygons(
-    fill = "Area",
-    fill.scale = tm_scale_categorical(values = c(
-      "Amboseli" = "#440154FF",
-      "Tsavo East" = "#472D7BFF",
-      "Tsavo West" = "#3B528BFF",
-      "Chyulu Hills" = "#2A788EFF",     # complementary blue
-      "Ngai Ndethia" = "#22A884FF",     # mid green-blue
-      "South Kitui" = "#7AD151FF"       # lighter green
-    )),
-    fill.legend = tm_legend(title = "Protected Areas"),
-    col = "black", lwd = 0.8
-  ) +
-  
-  tm_shape(Tsavo.AllZones) +
-  tm_polygons(
-    fill = "ZoneType",
-    fill.scale = tm_scale_categorical(values = c(
-      "Ranches" = "#2C728EFF",          # Tsavo Ranches
-      "Settled Areas" = "#21908CFF"     # Tsavo Settled Areas
-    )),
-    fill.legend = tm_legend(title = "Tsavo Surroundings"),
-    col = "grey30", lwd = 0.3
-  ) +
-  
-  tm_shape(AET.AllZones) +
-  tm_polygons(
-    fill = "ZoneType",
-    fill.scale = tm_scale_categorical(values = c(
-      "Buffer" = "#AADC32FF",
-      "Conservancy" = "#5DC863FF"
-    )),
-    fill.legend = tm_legend(title = "Amboseli Surroundings"),
-    col = "grey20", lwd = 0.4
-  ) +
-  
-  tm_title("") +
-  tm_compass(
-    position = c("left", "top"),
-    size = 1.5
-  ) +
-  
-  tm_scalebar(
-    position = c("left", "bottom"),
-    text.size = 0.7) +
-  
-  tm_layout(
-    frame = FALSE,
-    asp = 0,
-    legend.show = TRUE,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    outer.margins = c(0.02, 0.02, 0.05, 0.02)
-  )
-
-Connectivity.Focus.Map
-```
-
-```{r}
-# Combining Africa Map, Connectivity Map & Connectivity Focus Map into one figure (Figure 1 edit)
-
-# Saving each map to avoid the Grob|Patchwork inconsistency
-#tmap_save(
-#  Africa.Map,
-#  "Africa_Map.png",
-#  dpi = 600,
-#  width = 10,
-#  height = 8
-#)
-
-#tmap_save(
-#  Connectivity.Map,
-# "Connectivity_Map.png",
-#  dpi = 600,
-#  width = 10,
-#  height = 8
-#)
-
-#tmap_save(
-#  Connectivity.Focus.Map,
-#  "Connectivity_Focus_Map.png",
-#  dpi = 600,
-#  width = 10,
-#  height = 8
-#)
-
-# Reading the saved images 
-Africa.img <- rasterGrob(
-  readPNG("Africa_Map.png"),
-  interpolate = TRUE,
-  width = unit(1, "npc"),
-  height = unit(1, "npc")
-)
-
-Conn.img <- rasterGrob(
-  readPNG("Connectivity_Map.png"),
-  interpolate = TRUE,
-  width = unit(1, "npc"),
-  height = unit(1, "npc")
-)
-
-ConnFocus.img <- rasterGrob(
-  readPNG("Connectivity_Focus_Map.png"),
-  interpolate = TRUE,
-  width = unit(1, "npc"),
-  height = unit(1, "npc")
-)
-
-# Creating an empty panel for attaching an image 
-empty_panel <- grid::grobTree( grid::rectGrob(gp = grid::gpar(col = "grey70", fill = NA)), grid::textGrob("To be added", gp = grid::gpar(col = "grey50")) ) 
-
-# Assembling everything together 
-Africa.Kenya.Connectivity.Final.Figure <-
-  (wrap_elements(Africa.img) | wrap_elements(Conn.img)) /
-  (wrap_elements(ConnFocus.img) | wrap_elements(empty_panel)) +
-  
-  plot_layout(
-    widths = c(1, 1),
-    heights = c(1, 1),
-    guides = "collect"
-  ) +
-  
-  plot_annotation(tag_levels = "A") &
-  
-  theme(
-    plot.margin = margin(0, 0, 0, 0),
-    panel.spacing = unit(0, "null")
-  )
-
-Africa.Kenya.Connectivity.Final.Figure
-```
-
-```{r}
-# Saving the Final Figure "Africa.Kenya.Connectivity.Final.Figure"
-#ggsave(
-#  "Final_Figure_A4.png",
-#  Africa.Kenya.Connectivity.Final.Figure,
-#  width = 11.69,
-#  height = 8.27,
-#  dpi = 600,
-#  bg = "white"
-#)
 ```
 
 ```{r}
@@ -1329,12 +1006,6 @@ Combined.RPI.Maps.Before.Filtering <- tmap_arrange(
 )
 
 Combined.RPI.Maps.Before.Filtering
-
-# Saving the combined map as an interactive HTML file
-#tmap_save(
-#  tm = Combined.RPI.Maps.Before.Filtering,
-#  filename = "Mean_RPI_Maps_Static.png" # Using .png or .pdf for a static image
-#)
 ```
 
 ```{r}
@@ -2379,16 +2050,6 @@ scale_geom_defaults()
 
 # Print
 Combined.RPI.Violin.Plots
-
-# Save LARGE, full-page
-#ggsave(
-#  filename = "Combined_RPI_Violin_Plots_FullPage.png",
-#  plot = Combined.RPI.Violin.Plots,
-#  width = 26,
-#  height = 30,
-#  units = "cm",
-#  dpi = 310
-#)
 ```
 
 ```{r}
@@ -2793,10 +2454,10 @@ area_labels.noAllZones <- c(
   "Tsavo Settled Areas" = "Tsavo Settled Areas"
 )
 
-area_colors_simulation.noAllZones <- c(
+area_colors_zones.noAllZones <- c(
   "Amboseli NP" = "#440154FF",
-  "Amboseli Community/Group Ranches" = "#AADC32FF",
   "Amboseli Conservancies" = "#5DC863FF",
+  "Amboseli Community/Group Ranches" = "#AADC32FF",
   "Tsavo East NP" = "#472D7BFF",
   "Tsavo West NP" = "#3B528BFF",
   "Tsavo Conservancies/Ranches" = "#2C728EFF",
@@ -2808,85 +2469,82 @@ All.RPI.Visual.Areas$Area <- recode(All.RPI.Visual.Areas$Area, !!!area_labels.no
 All.Means$Area <- recode(All.Means$Area, !!!area_labels.noAllZones)
 
 # Order facets by Area
-area_order <- names(area_colors_simulation.noAllZones)
+area_order <- names(area_colors_zones.noAllZones)
 All.RPI.Visual.Areas$Area <- factor(All.RPI.Visual.Areas$Area, levels = area_order)
 All.Means$Area <- factor(All.Means$Area, levels = area_order)
 
-# Y-axis limits
-y_limits <- c(0, max(All.RPI.Visual.Areas$RPI_value, na.rm = TRUE))
+# The y-axis is limited to 0-1.5 so that the bulk of the distributions can be seen. coord_cartesian() only zooms in: the pixel-years above 1.5 stay in the violins' calculation and are counted in "Numbers reported in the manuscript".
+y_limits <- c(0, 1.5)
 
-
-# Plot
+# Plot (Figure S5)
+# The violins are drawn from the retained pixels only (R² ≥ 0.1), because the filter is applied when each zone is cropped. The coloured line is the centred 5-year rolling mean of each zone's annual mean RPI; a centred 5-year mean cannot be calculated for the first two and the last two years, which is why the lines stop short of both ends.
 RPI.Distribution.Areas.Plot <- ggplot() +
-  
+
   # Violin distributions
   geom_violin(
     data = All.RPI.Visual.Areas,
     aes(x = Year, y = RPI_value, group = Year),
     fill = "grey85", color = "grey50",
-    alpha = 0.5, width = 0.8
+    alpha = 0.5, width = 0.8, linewidth = 0.15
   ) +
-  
+
   # Rolling mean lines
   geom_line(
     data = All.Means,
     aes(x = Year, y = RollingMean5, color = Area),
-    linewidth = 1.1
+    linewidth = 0.6
   ) +
-  
+
   # Rolling mean points
   geom_point(
     data = All.Means,
     aes(x = Year, y = RollingMean5, color = Area),
-    size = 2
+    size = 0.8
   ) +
-  
+
   # Colour mapping
-  scale_color_manual(values = area_colors_simulation.noAllZones) +
-  
+  scale_color_manual(values = area_colors_zones.noAllZones) +
+
   # Labels
   labs(
-    title = "",
-    x = "Year",
-    y = "RPI Value",
-    color = "Study Area"
+    x = "Hydrological year (start year)",
+    y = "Annual RPI"
   ) +
-  
+
   # Axes
-  scale_y_continuous(limits = y_limits) +
+  coord_cartesian(ylim = y_limits) +
   scale_x_continuous(
     breaks = seq(min(All.RPI.Visual.Areas$Year),
                  max(All.RPI.Visual.Areas$Year), by = 5)
   ) +
-  
-  # Facets
-  facet_wrap(~Area, ncol = 3, scales = "fixed") +
-  
-  # Theme
-  theme_minimal(base_size = 14) +
+
+  # Facets (long zone names are wrapped so that they are not cut off)
+  facet_wrap(~Area, ncol = 3, scales = "fixed", labeller = label_wrap_gen(width = 18)) +
+
+  # Theme (text sizes are final printed sizes, because the figure is saved at its printed width)
+  theme_minimal(base_size = 8) +
   theme(
+    axis.text = element_text(size = 7, color = "black"),
     axis.text.x = element_text(angle = 45, hjust = 1),
     legend.position = "none",
-    legend.background = element_rect(fill = "white", color = "black"),
-    legend.key = element_rect(fill = "white", color = NA),
     panel.grid.minor = element_blank(),
-    strip.text = element_text(face = "bold")   
-  ) +
-  
-  guides(color = guide_legend(ncol = 3))
+    strip.text = element_text(size = 8, face = "bold")
+  )
 
 RPI.Distribution.Areas.Plot
 ```
 
 ```{r}
-# Saving the above plot
-#ggsave(
-#  "RPI_Distribution_Areas_Plot.png",
-#  RPI.Distribution.Areas.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 600
-#)
+# Saving Figure S5 at its final printed size
+ggsave(
+  here::here("plots", "Figure_S5_annual_RPI_distributions.png"),
+  plot = RPI.Distribution.Areas.Plot,
+  width = 16,
+  height = 20,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
@@ -3256,14 +2914,6 @@ Mean.Slope.Plot <- ggplot(All.Trends.Summary, aes(x = reorder(Area, MeanSlope), 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 Mean.Slope.Plot
-# Saving it
-#ggsave(
-#  filename = "MeanSlopePlot.png",
-#  plot = Mean.Slope.Plot,
-#  width = 10,
-#  height = 8,
-#  dpi = 300
-#)
 ```
 
 ```{r}
@@ -3341,9 +2991,6 @@ Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)
   )
 
 Ridgeline.Plot
-
-# Save
-#ggsave("Ridgeline_Slopes.png", Ridgeline.Plot, width = 12, height = 8, dpi = 300)
 ```
 
 ```{r}
@@ -3384,15 +3031,6 @@ All.Pixel.Slopes.Plot <- ggplot(All.Pixel.Slopes, aes(x = Area, y = Slope, fill 
   )
 
 All.Pixel.Slopes.Plot
-
-# Saving the plot for publication
-#ggsave(
-#  filename = "Violin_Plots_Trends_by_Area.png",
-#  plot = All.Pixel.Slopes.Plot,
-#  width = 12,
-#  height = 8,
-#  dpi = 300
-#)
 ```
 
 ```{r}
@@ -3746,15 +3384,6 @@ Annual.RPI.Visual.Trends.Faceted.Plot <- ggplot(Annual.RPI.Visual.Trends, aes(x 
   theme(legend.position = "none")
 
 Annual.RPI.Visual.Trends.Faceted.Plot
-
-# 2. Saving the plot to a file
-#ggsave(
-#  filename = "Annual_RPI_Trends_Faceted.png", 
-#  plot = Annual.RPI.Visual.Trends.Faceted.Plot,                     
-#  width = 12,                                 
-#  height = 8,                                 
-#  dpi = 300                                  
-#)
 ```
 
 ```{r}
@@ -3949,14 +3578,6 @@ Combined.Slope.Maps <- tmap_arrange(
 
 # Displaying the plot 
 Combined.Slope.Maps
-
-# Saving the plot to a high-resolution file 
-#tmap_save(
-# tm = Combined.Slope.Maps, 
-# filename = "Theil_Sen_Slope_Maps.png", 
-# width = 12, 
-# height = 12, 
-# dpi = 300)
 ```
 
 ```{r}
@@ -4065,15 +3686,6 @@ Combined.Temporal.Performance.Plot <- (Plot.MAE | Plot.RMSE | Plot.Rsqd) #+
 #  )
 
 Combined.Temporal.Performance.Plot
-
-# Save the combined plot to a file
-#ggsave(
-#  filename = "Temporal_Performance_Kenya.png",
-#  plot = Combined.Temporal.Performance.Plot,
-#  width = 8.27,
-#  height = 11.69,
-#  dpi = 300
-#)
 ```
 
 ```{r}
@@ -4157,17 +3769,6 @@ Combined.Temporal.Performance.Plot
 ```
 
 ```{r}
-# Saving the tweaked map
-#ggsave(
-#  "FigureS2Manuscript_TemporalPerformanceKenya.png",
-#  Combined.Temporal.Performance.Plot,
-#  width = 11.69,
-#  height = 8.27,
-#  dpi = 600
-#)
-```
-
-```{r}
 # Modifying the MAE, RSME AND R^2
 
 # names(Temporal.Performance.Kenya) <- c("mae","rmse","rsq")
@@ -4232,18 +3833,6 @@ Combined.Temporal.Performance.TMap
 ```
 
 ```{r}
-# Saving the above plot
-#tmap_save(
-#  tm = Combined.Temporal.Performance.TMap,
-#  filename = "Combined_Temporal_Performance_TMap.png",
-#  width = 8.27,
-#  height = 11.69,
-#  units = "in",
-#  dpi = 600
-#)
-```
-
-```{r}
 ## R² values for each zone
 
 # The R² layer was cropped to each zone when the zone was first processed ("RSQ.<Zone>"). The R² and RPI layers share one grid, so cropping returns exactly the same cells as the zonal RPI rasters and no resampling is needed. (Bilinear resampling would blend neighbouring R² values and can drop pixels next to gaps.) The checks below confirm that every pair matches in extent, resolution and CRS.
@@ -4262,7 +3851,7 @@ stopifnot(
 ```
 
 ```{r}
-# Sensitivity check — not used for the published results.The block below applies an exploratory R² ≥ 0.3 threshold. It is retained to document the threshold sensitivity assessment only. All results reported in the > manuscript use the R² ≥ 0.1 threshold defined further below ("Masking out Pixels with Negative R^2"). Objects created here carry the suffix ".Filtered.3" and are not referenced by any downstream analysis or figure.
+# Sensitivity check — not used for the published results. The block below applies an exploratory R² ≥ 0.3 threshold to the unfiltered mean RPI of each zone. It is retained to document the threshold sensitivity assessment only. All results reported in the manuscript use the R² ≥ 0.1 threshold ("RSQ.Threshold.1"), which is applied once, straight after each zone is cropped. Objects created here carry the suffix ".Filtered.3" and are not referenced by any downstream analysis or figure.
 
 # #  Set R² threshold
 RSQ.Threshold.3 <- 0.3  # Exploratory sensitivity threshold only; the published analysis uses 0.1 (see below)
@@ -4920,17 +4509,6 @@ Combined.RPI.Maps.After.Filtering <- tmap_arrange(
 )
 
 Combined.RPI.Maps.After.Filtering
-
-# 5. Use tmap_save() to export the plot to a file
-# Adjust the width and height to accommodate your legend
-#tmap_save(
-#  Combined.RPI.Maps.After.Filtering,
-#  filename = "Combined_RPI_Maps.png",
-#  width = 10,  # Adjust width as needed
-#  height = 10, # Adjust height as needed
-#  units = "in",
-#  dpi = 300   # Standard resolution for printing
-#)
 ```
 
 ```{r}
@@ -5263,18 +4841,6 @@ All.RPI.Rsquare.Filtered.1.Plots <- (Amboseli.Values.RPI.Rsquare.Filtered.1.Plot
   (Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1.Plot | Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1.Plot | Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1.Plot)
 
 All.RPI.Rsquare.Filtered.1.Plots
-```
-
-```{r}
-# Saving the above image
-#ggsave(
-#  "FigureS6Manuscript_RPI_Rsquare_Filtered_A4_landscape.tiff",
-#  plot = All.RPI.Rsquare.Filtered.1.Plots,
-#  width = 11.69,
-#  height = 8.27,
-#  dpi = 600,
-#  compression = "lzw"
-#)
 ```
 
 ```{r}
