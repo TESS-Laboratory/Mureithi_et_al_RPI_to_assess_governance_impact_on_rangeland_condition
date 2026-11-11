@@ -5,54 +5,47 @@ date: "2026-01-05"
 output: html_document
 ---
 
+```{r setup, include=FALSE}
+# Keep the knitted document readable: package start-up messages and warnings are not printed
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
 ```{r}
 # Load libraries
 
-# if (!require("pacman")) install.packages("pacman")
-
-pacman::p_load(here, sf, terra, tidyverse, tidyterra, colorspace, ggrepel, patchwork, tmap, trend, slider, forcats, viridis, viridisLite, scales, hexbin, ggh4x, scico, ggridges, truncnorm, zoo, cowplot, ggplotify, ggspatial, png, magick, ggtext, grid, shinyjs, kableExtra, colorblindcheck, plotly, dplyr, ggplot2, rstatix, mgcv, kableExtra, flextable)
+# Package versions are recorded in renv.lock. After cloning the repository, run renv::restore() once to install exactly those versions; the library() calls below then load them. (pacman::p_load() is no longer used, because it silently installs the newest version of any missing package and so bypasses renv.)
 
 # DATA HANDLING#
-# tidyverse -> for data manipulation, cleaning, and visualisation in a cohesive framework
-# forcats -> for managing factors (categorical variables)
-# slider -> for rolling or sliding window calculations
-# zoo -> for working with ordered observations, especially time-series data, with irregular time steps
+library(here)        # for building file paths from the project root (the folder holding the .Rproj file)
+library(tidyverse)   # for data manipulation, cleaning, and visualisation in a cohesive framework (dplyr, tidyr, purrr, ggplot2, forcats)
+library(zoo)         # for working with ordered observations = 5-year rolling means
 
 # SPATIAL DATA & MAPPING#
-# sf -> for handling vector spatial data (points, lines, polygons)
-# terra -> for handling and processing raster data
-# tidyterra -> for using tidyverse tools on terra objects
-# tmap -> for creating thematic maps
-# plotly → for creating interactive, web-based plots and dashboards that allow zooming, hovering, and dynamic exploration of data
-# kableExtra → for enhancing tables created with knitr::kable(), adding styling, formatting, and LaTeX/HTML features for publication-quality tables
+library(sf)          # for handling vector spatial data (points, lines, polygons)
+library(terra)       # for handling and processing raster data
+library(tidyterra)   # for using tidyverse tools on terra objects (geom_spatraster)
+library(tmap)        # for creating thematic maps
+library(ggspatial)   # for adding scale bars and north arrows to maps built with ggplot2
 
 # VISUALISATION#
-# viridis -> for perceptually uniform color palettes
-# viridisLite -> same use as above though I shall use this for R^2 (Temporal Performance raster)
-# scales -> for controlling plot scale formatting (e.g., number and date labels)
-# hexbin -> for visualizing point density with hexagonal bins
-# ggh4x -> for advanced ggplot2 features = facetted_pos_scales
-# scico -> for scientific color maps
-# colorspace -> for a wide variety of perceptually uniform color palettes
-# ggrepel -> for preventing text labels from overlapping
-# patchwork -> for combining multiple plots into one figure
-# ggridges -> for creating ridge plots (joy plots)
-# truncnorm -> for generating random numbers from a truncated normal distribution
-# cowplot -> for arranging multiple ggplot objects and converting other plot types into ggplot-compatible objects 
-# ggplotify -> for converting non-ggplot objects (like base R plots or tmap grobs) into ggplot objects
-# ggspatial → for extending ggplot2 with spatial features, adding basemaps, scale bars, and north arrows to maps built with geom_sf() and raster data
-# png -> for basic reading and writing of PNG files into raw pixel arrays
-# magick -> for professional-grade image processing, editing, and format conversion
-# ggtext → enhanced text rendering in ggplot2 using Markdown/HTML (e.g., bold, italics, styled labels)
-# colorblindcheck → for checking and simulating how plots and color palettes appear to people with different types of color vision deficiencies
-# mgcv -> for fitting generalized additive models (GAMs) to capture non-linear relationships in data, useful for analyzing complex ecological patterns and trends
-# kableExtra -> for enhancing tables created with knitr::kable()
-# flextable → for creating and customising flexible, publication‑quality tables
+library(viridis)     # for perceptually uniform, colour-blind-friendly colour palettes
+library(scales)      # for controlling plot scale formatting (e.g., number labels)
+library(hexbin)      # for visualising point density with hexagonal bins (needed by geom_hex)
+library(scico)       # for scientific colour maps
+library(patchwork)   # for combining multiple plots into one figure
+library(ggridges)    # for creating ridgeline plots
+library(grid)        # for units and image panels inside figures
+library(kableExtra)  # for enhancing tables created with knitr::kable()
+library(flextable)   # for creating publication-quality tables saved as Word documents
 
 # STATISTICAL ANALYSIS#
-#trend -> for analysing trends in time-series data = Theil-Sen slope
-# shinyjs → for adding JavaScript functionality (like hiding elements, disabling buttons, running scripts) inside Shiny apps without writing raw JavaScript
-# rstatix -> for tidy post-hoc tests
+library(trend)       # for analysing trends in time-series data = Theil-Sen slope
+```
+
+```{r}
+# Interactive (leaflet) maps are useful when running chunks one at a time in RStudio, but they make the knitted document very large and slow. Maps are therefore interactive in an interactive session and static when the document is knitted.
+
+Map.Mode <- if (interactive()) "view" else "plot"
 ```
 
 ```{r}
@@ -874,7 +867,7 @@ Amboseli.RPI.Crop <- crop(Amboseli.RPI.Mask, Amboseli)
 Amboseli.RPI.Mean <- mean(Amboseli.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Amboseli.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -894,7 +887,7 @@ TsavoEast.RPI.Crop <- crop(TsavoEast.RPI.Mask, TsavoEast)
 TsavoEast.RPI.Mean <- mean(TsavoEast.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoEast.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -914,7 +907,7 @@ TsavoWest.RPI.Crop <- crop(TsavoWest.RPI.Mask, TsavoWest)
 TsavoWest.RPI.Mean <- mean(TsavoWest.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoWest.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -934,7 +927,7 @@ AET.Conservancies.RPI.Crop <- crop(AET.Conservancies.RPI.Mask, AET.Conservancies
 AET.Conservancies.RPI.Mean <- mean(AET.Conservancies.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Conservancies.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -954,7 +947,7 @@ AET.Buffers.RPI.Crop <- crop(AET.Buffers.RPI.Mask, AET.Buffers)
 AET.Buffers.RPI.Mean <- mean(AET.Buffers.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Buffers.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -974,7 +967,7 @@ AET.AllZones.RPI.Crop <- crop(AET.AllZones.RPI.Mask, AET.AllZones)
 AET.AllZones.RPI.Mean <- mean(AET.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.AllZones.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Amboseli.AllZones Mean RPI", reverse = TRUE)) +
@@ -997,7 +990,7 @@ Tsavo.Ranches.RPI.Crop <- crop(Tsavo.Ranches.RPI.Mask, Tsavo.Ranches)
 Tsavo.Ranches.RPI.Mean <- mean(Tsavo.Ranches.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.Ranches.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -1017,7 +1010,7 @@ Tsavo.SettledAreas.RPI.Crop <- crop(Tsavo.SettledAreas.RPI.Mask, Tsavo.SettledAr
 Tsavo.SettledAreas.RPI.Mean <- mean(Tsavo.SettledAreas.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.SettledAreas.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
@@ -1037,7 +1030,7 @@ Tsavo.AllZones.RPI.Crop <- crop(Tsavo.AllZones.RPI.Mask, Tsavo.AllZones)
 Tsavo.AllZones.RPI.Mean <- mean(Tsavo.AllZones.RPI.Crop, na.rm = TRUE)
 
 # Visualise
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.AllZones.RPI.Mean) +
   tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
             col.legend = tm_legend(title = "Tsavo.AllZones Mean RPI", reverse = TRUE)) +
@@ -3372,7 +3365,7 @@ AET.Conservancies.Slope.Cells <- dplyr::left_join(AET.Conservancies.TheilSen, AE
 AET.Conservancies.Slope.Raster[AET.Conservancies.Slope.Cells$cell] <- AET.Conservancies.Slope.Cells$Slope
 
 # 4. Plot the raster
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Conservancies.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
@@ -3423,7 +3416,7 @@ AET.AllZones.Slope.Cells <- dplyr::left_join(AET.AllZones.TheilSen, AET.AllZones
 AET.AllZones.Slope.Raster[AET.AllZones.Slope.Cells$cell] <- AET.AllZones.Slope.Cells$Slope
 
 # 4. Plot the raster
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.AllZones.Slope.Raster) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
@@ -4493,7 +4486,7 @@ RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.3
 Amboseli.RPI.Mean.Filtered.3 <- mask(Amboseli.RPI.Mean, RSQ.Mask.Amboseli, maskvalues = FALSE)
 
 # 2. Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Amboseli.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4513,7 +4506,7 @@ RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.3
 TsavoEast.RPI.Mean.Filtered.3 <- mask(TsavoEast.RPI.Mean, RSQ.Mask.TsavoEast, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoEast.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4531,7 +4524,7 @@ RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.3
 TsavoWest.RPI.Mean.Filtered.3 <- mask(TsavoWest.RPI.Mean, RSQ.Mask.TsavoWest, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoWest.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4548,7 +4541,7 @@ RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.3
 Tsavo.Ranches.RPI.Mean.Filtered.3 <- mask(Tsavo.Ranches.RPI.Mean, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4566,7 +4559,7 @@ RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold
 Tsavo.SettledAreas.RPI.Mean.Filtered.3 <- mask(Tsavo.SettledAreas.RPI.Mean, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4584,7 +4577,7 @@ RSQ.Mask.Tsavo.AllZones <- RSQ.Resampled.Tsavo.AllZones >= RSQ.Threshold.3
 Tsavo.AllZones.RPI.Mean.Filtered.3 <- mask(Tsavo.AllZones.RPI.Mean, RSQ.Mask.Tsavo.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4602,7 +4595,7 @@ RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.3
 AET.Conservancies.RPI.Mean.Filtered.3 <- mask(AET.Conservancies.RPI.Mean, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Conservancies.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4620,7 +4613,7 @@ RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.3
 AET.Buffers.RPI.Mean.Filtered.3 <- mask(AET.Buffers.RPI.Mean, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Buffers.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4638,7 +4631,7 @@ RSQ.Mask.AET.AllZones <- RSQ.Resampled.AET.AllZones >= RSQ.Threshold.3
 AET.AllZones.RPI.Mean.Filtered.3 <- mask(AET.AllZones.RPI.Mean, RSQ.Mask.AET.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.AllZones.RPI.Mean.Filtered.3) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4651,7 +4644,7 @@ tm_shape(AET.AllZones.RPI.Mean.Filtered.3) +
 ```{r}
 ## Comparing the maps side by side
 
-tmap_mode("view")  # Sets plot to interactive mode
+tmap_mode(Map.Mode)  # Sets plot to interactive mode
 
 tmap_arrange(
   tm_shape(Amboseli.RPI.Mean.Filtered.3) +
@@ -4957,7 +4950,7 @@ RSQ.Mask.Amboseli <- RSQ.Resampled.Amboseli >= RSQ.Threshold.1
 Amboseli.RPI.Mean.Filtered.1 <- mask(Amboseli.RPI.Mean, RSQ.Mask.Amboseli, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Amboseli.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4977,7 +4970,7 @@ RSQ.Mask.TsavoEast <- RSQ.Resampled.TsavoEast >= RSQ.Threshold.1
 TsavoEast.RPI.Mean.Filtered.1 <- mask(TsavoEast.RPI.Mean, RSQ.Mask.TsavoEast, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -4997,7 +4990,7 @@ RSQ.Mask.TsavoWest <- RSQ.Resampled.TsavoWest >= RSQ.Threshold.1
 TsavoWest.RPI.Mean.Filtered.1 <- mask(TsavoWest.RPI.Mean, RSQ.Mask.TsavoWest, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(TsavoWest.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5017,7 +5010,7 @@ RSQ.Mask.Tsavo.Ranches <- RSQ.Resampled.Tsavo.Ranches >= RSQ.Threshold.1
 Tsavo.Ranches.RPI.Mean.Filtered.1 <- mask(Tsavo.Ranches.RPI.Mean, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5037,7 +5030,7 @@ RSQ.Mask.Tsavo.SettledAreas <- RSQ.Resampled.Tsavo.SettledAreas >= RSQ.Threshold
 Tsavo.SettledAreas.RPI.Mean.Filtered.1 <- mask(Tsavo.SettledAreas.RPI.Mean, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5057,7 +5050,7 @@ RSQ.Mask.Tsavo.AllZones <- RSQ.Resampled.Tsavo.AllZones >= RSQ.Threshold.1
 Tsavo.AllZones.RPI.Mean.Filtered.1 <- mask(Tsavo.AllZones.RPI.Mean, RSQ.Mask.Tsavo.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5078,7 +5071,7 @@ RSQ.Mask.AET.Conservancies <- RSQ.Resampled.AET.Conservancies >= RSQ.Threshold.1
 AET.Conservancies.RPI.Mean.Filtered.1 <- mask(AET.Conservancies.RPI.Mean, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5098,7 +5091,7 @@ RSQ.Mask.AET.Buffers <- RSQ.Resampled.AET.Buffers >= RSQ.Threshold.1
 AET.Buffers.RPI.Mean.Filtered.1 <- mask(AET.Buffers.RPI.Mean, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5118,7 +5111,7 @@ RSQ.Mask.AET.AllZones <- RSQ.Resampled.AET.AllZones >= RSQ.Threshold.1
 AET.AllZones.RPI.Mean.Filtered.1 <- mask(AET.AllZones.RPI.Mean, RSQ.Mask.AET.AllZones, maskvalues = FALSE)
 
 # Visualising the filtered result
-tmap_mode("view")
+tmap_mode(Map.Mode)
 tm_shape(AET.AllZones.RPI.Mean.Filtered.1) +
   tm_raster(
     col.scale = tm_scale_continuous(values = "viridis"), 
@@ -5214,7 +5207,7 @@ Combined.RPI.Maps.After.Filtering
 
 ```{r}
 # Viewing differently from leaflets
-tmap_mode("view")
+tmap_mode(Map.Mode)
 
 # Creating individual map panels
 Map.Amboseli.RPI.Mean.Filtered.1 <- tm_shape(Amboseli.RPI.Mean.Filtered.1) +
