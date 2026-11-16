@@ -144,13 +144,18 @@ stopifnot(all(c("S. Sudan", "Kenya") %in% Africa.Country.Boundaries$name))
 ```{r}
 #Focusing on Kenya
 
-Kenya.Admin.Boundary <- st_read(file.path(dir_borders, "kenya_admin_boundary_wgs84.shp"))
+# Kenya's national boundary comes from GADM version 4.1 (https://gadm.org), which anyone can download. The file is downloaded once into data/Country_Borders/GADM and read from there afterwards.
+dir_gadm <- file.path(dir_borders, "GADM")
+dir.create(dir_gadm, showWarnings = FALSE)
+
+Kenya.Admin.Boundary <- st_as_sf(geodata::gadm("KEN", level = 0, path = dir_gadm, version = "4.1"))
 ```
 
 ```{r}
 #Focusing on Boundaries within Kenya
 
-Kenya.Regional.Admin.Boundary <- st_read(file.path(dir_borders, "kenya_regional_admin1_boundary_wgs84.shp"))
+# The 47 counties, also from GADM version 4.1 (level 1)
+Kenya.Regional.Admin.Boundary <- st_as_sf(geodata::gadm("KEN", level = 1, path = dir_gadm, version = "4.1"))
 ```
 
 ```{r}
@@ -304,7 +309,7 @@ Rangeland.Counties <- c("Marsabit", "Isiolo", "Meru", "Tharaka-Nithi", "Embu",
                         "Samburu", "Baringo", "Laikipia", "Narok", "Kajiado")
 
 Kenya.Rangeland.Counties <- Kenya.Regional.Admin.Boundary %>% 
-  filter(ADM1_EN %in% Rangeland.Counties)
+  filter(NAME_1 %in% Rangeland.Counties)
 ```
 
 ```{r}
@@ -5180,7 +5185,7 @@ RPI.Ridgeline.Plot <- ggplot(RPI.Pixel.Means, aes(x = RPI, y = Area, fill = Area
     scale = 1.2,
     color = "black",
     linewidth = 0.25,
-    rel_min_height = 0.001
+    rel_min_height = 0
   ) +
 
   scale_fill_manual(values = zone_colours) +
@@ -5229,7 +5234,7 @@ TheilSen.Ridgeline.Plot <- ggplot(Zone.Pixel.Slopes, aes(x = Slope, y = Area, fi
     scale = 1.2,
     color = "black",
     linewidth = 0.25,
-    rel_min_height = 0.001
+    rel_min_height = 0
   ) +
 
   geom_vline(xintercept = 0, linetype = "dashed", color = "red", linewidth = 0.4) +
@@ -5713,7 +5718,7 @@ cat("R version used for this run:", R.version.string, "\n")
 Packages.Used <- tibble(
   Package = c("terra", "sf", "trend", "tidyverse", "zoo", "tidyterra", "tmap", "ggspatial",
               "ggplot2", "patchwork", "ggridges", "viridis", "scico", "scales", "hexbin", "flextable", "here",
-              "rnaturalearth"),
+              "rnaturalearth", "geodata"),
   Use = c("Raster processing (cropping, masking, extraction, zonal values)",
           "Vector data (governance zone polygons)",
           "Theil-Sen slopes (sens.slope)",
@@ -5731,7 +5736,8 @@ Packages.Used <- tibble(
           "Hexagonal binning",
           "Word tables",
           "File paths relative to the project root",
-          "Africa country outlines (Natural Earth, 1:50m)")
+          "Africa country outlines (Natural Earth, 1:50m)",
+          "Kenya national and county boundaries (GADM 4.1)")
 ) %>%
   mutate(Version = map_chr(Package, function(p) as.character(packageVersion(p)))) %>%
   select(Package, Version, Use)
@@ -5886,7 +5892,7 @@ RPI.Pixel.Means %>%
   knitr::kable(digits = 2)
 
 # Annual mean RPI of each zone: the statistics quoted zone by zone in the Results
-# Median, range (with the years in which the lowest and highest annual means occurred) and interquartile range of the 23 annual zone means; the number of years with an annual mean below 0.50; the range of the annual standard deviations; and the change between the first and last year
+# Median, range (with the years in which the lowest and highest annual means occurred) and interquartile range of the 23 annual zone means; the number of years with an annual mean below 0.50; and the range of the annual standard deviations. Single years are not compared with one another; the change over the study period is taken from the trend (see "Trend.Implied.Change" below)
 Annual.Zone.Summary <- All.Summary.Filtered %>%
   mutate(
     Year = as.integer(sub("rpi\\.", "", Layer)),
@@ -5903,10 +5909,7 @@ Annual.Zone.Summary <- All.Summary.Filtered %>%
     Q75_Annual_Mean = unname(quantile(Mean, 0.75)),
     Years_Below_0.50 = sum(Mean < 0.50),
     Min_Annual_SD = min(SD),
-    Max_Annual_SD = max(SD),
-    Mean_2000 = Mean[Year == 2000],
-    Mean_2022 = Mean[Year == 2022],
-    Percent_Change_2000_To_2022 = 100 * (Mean_2022 - Mean_2000) / Mean_2000
+    Max_Annual_SD = max(SD)
   )
 
 knitr::kable(Annual.Zone.Summary, digits = 2)
@@ -5955,6 +5958,18 @@ Zone.Slope.Summary <- Zone.Pixel.Slopes %>%
   )
 
 knitr::kable(Zone.Slope.Summary, digits = c(0, 0, 5, 5, 5, 2, 5))
+
+# Change implied by the trend over the study period
+# Single years are not compared (for example 2000 with 2022, a severe drought year). Instead, the mean pixel-level Theil-Sen slope is multiplied by the 22 years between the first and last hydrological year, and expressed as a percentage of the zone's median annual mean RPI.
+Trend.Implied.Change <- Zone.Slope.Summary %>%
+  select(Area, MeanSlope) %>%
+  left_join(Annual.Zone.Summary %>% select(Area, Median_Annual_Mean), by = "Area") %>%
+  mutate(
+    Change_Over_22_Years = MeanSlope * 22,
+    Percent_Of_Median_Annual_Mean = 100 * Change_Over_22_Years / Median_Annual_Mean
+  )
+
+knitr::kable(Trend.Implied.Change, digits = c(0, 5, 2, 3, 1))
 
 # Figure 3: pixels drawn in the end colours of panel A (slope beyond the limits of the colour scale) and pixels beyond the x-axis of panel C (slope beyond -0.03 or +0.03)
 cat("Pixels with |slope| >", max(Slope.Limits), "(end colours of Figure 3A):", sum(abs(Zone.Pixel.Slopes$Slope) > max(Slope.Limits)), "of", nrow(Zone.Pixel.Slopes),
