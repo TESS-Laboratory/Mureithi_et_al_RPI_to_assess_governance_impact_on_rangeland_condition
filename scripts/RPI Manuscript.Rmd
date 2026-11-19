@@ -33,7 +33,7 @@ library(rnaturalearthdata)  # holds the 1:50m Natural Earth data that ne_countri
 library(viridis)     # for perceptually uniform, colour-blind-friendly colour palettes
 library(scales)      # for controlling plot scale formatting (e.g., number labels)
 library(hexbin)      # for visualising point density with hexagonal bins (needed by geom_hex)
-library(scico)       # for scientific colour maps
+library(magick)      # for reading the photograph used in Figure 1B
 library(patchwork)   # for combining multiple plots into one figure
 library(ggridges)    # for creating ridgeline plots
 library(grid)        # for units and image panels inside figures
@@ -158,72 +158,6 @@ Kenya.Admin.Boundary <- st_as_sf(geodata::gadm("KEN", level = 0, path = dir_gadm
 Kenya.Regional.Admin.Boundary <- st_as_sf(geodata::gadm("KEN", level = 1, path = dir_gadm, version = "4.1"))
 ```
 
-```{r}
-# Plotting Africa
-tmap_mode("plot")
-
-Africa.Map <-
-  tm_shape(Africa.Country.Boundaries) +
-  tm_borders(col = "black", fill = "lightgrey", lwd = 1) +
-
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_polygons(
-    fill = "forestgreen",
-    col = "black",
-    lwd = 0.6) +
-
-  tm_compass(
-    position = c("left", "top"),
-    size = 1.5
-  ) +
-  
-  tm_scalebar(
-    position = c("left", "bottom"),
-    text.size = 0.7) +
-
-  tm_title("") +
-
-  tm_layout(
-    frame = FALSE,
-    asp = 0,
-    legend.show = FALSE,
-    outer.margins = c(0.02, 0.02, 0.05, 0.02)
-  )
-
-Africa.Map
-```
-
-```{r}
-# Plotting Kenya
-tmap_mode("plot")
-
-Kenya.Admin.Map <-
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "grey70", lwd = 0.5) +
-
-  tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_polygons(
-    fill = "forestgreen",
-    col = "black",
-    lwd = 0.6
-  ) +
-
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom")) +
-
-  tm_title("") +
-
-  tm_layout(
-    frame = FALSE,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    legend.text.size = 0.8,
-    legend.title.size = 0.9,
-    text.fontfamily = "Helvetica"
-  )
-
-Kenya.Admin.Map
-```
 
 ```{r}
 # Focusing on Kenya's Terrestrial Protected Areas
@@ -312,41 +246,6 @@ Kenya.Rangeland.Counties <- Kenya.Regional.Admin.Boundary %>%
   filter(NAME_1 %in% Rangeland.Counties)
 ```
 
-```{r}
-# Plotting the Rangeland Counties
-
-tmap_mode("plot")
-
-Kenya.Rangeland.Map <-
-  tm_shape(Kenya.Regional.Admin.Boundary) +
-  tm_borders(col = "grey70", lwd = 0.5) +
-
-  tm_shape(Kenya.Rangeland.Counties) +
-  tm_polygons(
-    fill = "lightgrey",
-    col = "black",
-    lwd = 0.6
-  ) +
-
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "black", lwd = 1.2) +
-
-  tm_compass(position = c("left", "bottom")) +
-  tm_scalebar(position = c("left", "bottom")) +
-
-  tm_title("Kenya's Rangeland Counties") +
-
-  tm_layout(
-    frame = FALSE,
-    legend.outside = TRUE,
-    legend.outside.position = "right",
-    legend.text.size = 0.8,
-    legend.title.size = 0.9,
-    text.fontfamily = "Helvetica"
-  )
-
-Kenya.Rangeland.Map
-```
 
 ```{r}
 # Importing RPI Datasets - Rasters (TIFs)
@@ -534,27 +433,6 @@ stopifnot(
 )
 ```
 
-```{r}
-# Visualising the Conservancies & Community Lands within AET
-
-ggplot() +
-  geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
-  geom_sf(data = AET.Buffers, aes(fill = "Amboseli Community Lands"), alpha = 0.5) +
-  geom_sf(data = AET.Conservancies, aes(fill = "Amboseli Conservancies"), alpha = 0.5) +
-  geom_sf(data = Amboseli, aes(fill = "Amboseli NP"), alpha = 0.5) +
-  scale_fill_manual(
-    name = "Land Use Types",
-    values = c(
-      "Amboseli Community Lands" = "orange",
-      "Amboseli Conservancies" = "maroon",
-      "Amboseli NP" = "darkgreen"
-    )
-  ) +
-  annotation_scale(location = "bl") +
-  annotation_north_arrow(location = "tl") +
-  theme_beautiful() +
-  theme(legend.position = "right")
-```
 
 ```{r}
 ## Visualising AET.Conservancies and AET.Buffers in one map to show Connectivity
@@ -609,29 +487,6 @@ AET.AllZones.Map <-
 AET.AllZones.Map
 ```
 
-```{r}
-# Visualising the Community Conservancies & Group Ranches within TCA
-
-ggplot() +
-  geom_sf(data = Kenya.Admin.Boundary, fill = "grey95", color = "black") +
-  geom_sf(data = Tsavo.Ranches, aes(fill = "Tsavo Ranches"), alpha = 0.5) +
-  geom_sf(data = Tsavo.SettledAreas, aes(fill = "Tsavo Settled Areas"), alpha = 0.5) +
-  geom_sf(data = TsavoEast, aes(fill = "Tsavo East"), alpha = 0.5) +
-  geom_sf(data = TsavoWest, aes(fill = "Tsavo West"), alpha = 0.5) +
-  scale_fill_manual(
-    name = "Land Use Types",
-    values = c(
-      "Tsavo Ranches" = "orange",
-      "Tsavo Settled Areas" = "maroon",
-      "Tsavo East" = "darkgreen",
-      "Tsavo West" = "forestgreen"
-    )
-  ) +
-  annotation_scale(location = "bl") +
-  annotation_north_arrow(location = "tl") +
-  theme_beautiful() +
-  theme(legend.position = "right")
-```
 
 ```{r}
 ## Visualising Tsavo.Ranches and Tsavo.SettledAreas in one map to show Connectivity
@@ -830,36 +685,6 @@ tm_shape(AET.Buffers.RPI.Mean) +
   tm_layout(legend.outside = TRUE)
 ```
 
-```{r}
-## Visualising AET.AllZones
-
-# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
-AET.AllZones.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.AllZones, snap = "out"), AET.AllZones, touches = FALSE)
-
-# Averaging across years for visualization (all pixels in the zone, before quality control)
-AET.AllZones.RPI.Mean <- mean(AET.AllZones.RPI.Crop.Unfiltered, na.rm = TRUE)
-
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
-RSQ.AET.AllZones <- crop(RSQ.Layer, AET.AllZones.RPI.Crop.Unfiltered)
-stopifnot(compareGeom(RSQ.AET.AllZones, AET.AllZones.RPI.Crop.Unfiltered))
-AET.AllZones.RPI.Crop <- mask(AET.AllZones.RPI.Crop.Unfiltered, RSQ.AET.AllZones >= RSQ.Threshold.1, maskvalues = FALSE)
-
-# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
-AET.AllZones.RPI.Mean.Filtered.1 <- mean(AET.AllZones.RPI.Crop, na.rm = TRUE)
-
-# Visualise
-tmap_mode(Map.Mode)
-tm_shape(AET.AllZones.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
-            col.legend = tm_legend(title = "Amboseli.AllZones Mean RPI", reverse = TRUE)) +
-  tm_shape(Amboseli.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
-            col.legend = tm_legend(title = "Amboseli Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_title("Spatial Distribution of Mean RPI in Amboseli and Surrounding Lands") +
-  tm_layout(legend.outside = TRUE)
-```
 
 ```{r}
 ## Visualising Tsavo.Ranches
@@ -917,137 +742,7 @@ tm_shape(Tsavo.SettledAreas.RPI.Mean) +
   tm_layout(legend.outside = TRUE)
 ```
 
-```{r}
-## Visualising Tsavo.AllZones
 
-# Crop to the zone, then keep only the pixels whose centre lies inside the boundary (touches = FALSE), the same rule that extract() applies later
-Tsavo.AllZones.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.AllZones, snap = "out"), Tsavo.AllZones, touches = FALSE)
-
-# Averaging across years for visualization (all pixels in the zone, before quality control)
-Tsavo.AllZones.RPI.Mean <- mean(Tsavo.AllZones.RPI.Crop.Unfiltered, na.rm = TRUE)
-
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
-RSQ.Tsavo.AllZones <- crop(RSQ.Layer, Tsavo.AllZones.RPI.Crop.Unfiltered)
-stopifnot(compareGeom(RSQ.Tsavo.AllZones, Tsavo.AllZones.RPI.Crop.Unfiltered))
-Tsavo.AllZones.RPI.Crop <- mask(Tsavo.AllZones.RPI.Crop.Unfiltered, RSQ.Tsavo.AllZones >= RSQ.Threshold.1, maskvalues = FALSE)
-
-# Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
-Tsavo.AllZones.RPI.Mean.Filtered.1 <- mean(Tsavo.AllZones.RPI.Crop, na.rm = TRUE)
-
-# Visualise
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.AllZones.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
-            col.legend = tm_legend(title = "Tsavo.AllZones Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoEast.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
-            col.legend = tm_legend(title = "Tsavo East Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoWest.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"), 
-            col.legend = tm_legend(title = "Tsavo West Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_title("Spatial Distribution of Mean RPI in Conservancies/Ranches & Settled Areas within Tsavos") +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-## Viewing Mean.RPI Maps for Primary Concern Areas
-# Creating individual map panels
-Map.Amboseli.RPI.Mean <- tm_shape(Amboseli.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Amboseli) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli")
-
-Map.TsavoEast.RPI.Mean <- tm_shape(TsavoEast.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoEast) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo East")
-
-Map.TsavoWest.RPI.Mean <- tm_shape(TsavoWest.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoWest) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo West")
-
-Map.AET.Conservancies.RPI.Mean <- tm_shape(AET.Conservancies.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli Conservancies")
-
-Map.AET.Buffers.RPI.Mean <- tm_shape(AET.Buffers.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli Community/Group Ranches")
-
-Map.AET.AllZones.RPI.Mean <- tm_shape(AET.AllZones.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli All Zones")
-
-Map.Tsavo.Ranches.RPI.Mean <- tm_shape(Tsavo.Ranches.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.Ranches) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Conservancies/Ranches surrounding Tsavos")
-
-Map.Tsavo.SettledAreas.RPI.Mean <- tm_shape(Tsavo.SettledAreas.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.SettledAreas) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Settled Areas surrounding Tsavos")
-
-Map.Tsavo.AllZones.RPI.Mean <- tm_shape(Tsavo.AllZones.RPI.Mean) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.AllZones) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo All Zones")
-
-# Combining into grid
-Combined.RPI.Maps.Before.Filtering <- tmap_arrange(
-  Map.Amboseli.RPI.Mean, 
-  Map.TsavoEast.RPI.Mean,
-  Map.TsavoWest.RPI.Mean, 
-  Map.AET.Conservancies.RPI.Mean, 
-  Map.AET.Buffers.RPI.Mean, 
-  Map.AET.AllZones.RPI.Mean,
-  Map.Tsavo.Ranches.RPI.Mean, 
-  Map.Tsavo.SettledAreas.RPI.Mean,
-  Map.Tsavo.AllZones.RPI.Mean, 
-  ncol = 3, nrow = 3
-)
-
-Combined.RPI.Maps.Before.Filtering
-```
-
-```{r}
-# Generate a palette colours for the study areas
-
-viridis_palette <- viridis(9) 
-viridis_palette
-
-```
-
-```{r}
-# Assigning specific colours to each of the study areas
-
-area_colors <- c(
-  "Amboseli" = "#440154FF",
-  "Tsavo East" = "#472D7BFF",
-  "Tsavo West" = "#3B528BFF",
-  "Tsavo Ranches" = "#2C728EFF",
-  "Tsavo Settled Areas" = "#21908CFF",
-  "Tsavo All Zones" = "#27AD81FF",
-  "AET Conservancies" = "#5DC863FF",
-  "AET Buffers" = "#AADC32FF",
-  "AET All Zones" = "#FDE725FF"
-)
-```
 
 ```{r}
 ## Extracting RPI for Amboseli NP
@@ -1149,25 +844,6 @@ Tsavo.SettledAreas.Summary <- data.frame(
 print(Tsavo.SettledAreas.Summary)
 ```
 
-```{r}
-## Extracting RPI for Tsavo.AllZones
-
-Tsavo.AllZones.RPI.Values.Full <- terra::extract(Tsavo.AllZones.RPI.Crop, Tsavo.AllZones, cells= TRUE)
-
-### Remove ID column (first column added by extract)
-Tsavo.AllZones.RPI.Values <- Tsavo.AllZones.RPI.Values.Full[, names(Tsavo.AllZones.RPI.Crop)]
-
-Tsavo.AllZones.Summary <- data.frame(
-  Layer = names(Tsavo.AllZones.RPI.Crop),
-  Mean = apply(Tsavo.AllZones.RPI.Values, 2, mean, na.rm = TRUE),
-  SD = apply(Tsavo.AllZones.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25 = apply(Tsavo.AllZones.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(Tsavo.AllZones.RPI.Values, 2, median, na.rm = TRUE),
-  Q75 = apply(Tsavo.AllZones.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-print(Tsavo.AllZones.Summary)
-```
 
 ```{r}
 ## Extracting RPI for AET.Conservancies
@@ -1209,25 +885,6 @@ AET.Buffers.Summary <- data.frame(
 print(AET.Buffers.Summary)
 ```
 
-```{r}
-## Extracting RPI for AET.AllZones
-
-AET.AllZones.RPI.Values.Full <- terra::extract(AET.AllZones.RPI.Crop, AET.AllZones, cells = TRUE)
-
-### Remove ID column (first column added by extract)
-AET.AllZones.RPI.Values <- AET.AllZones.RPI.Values.Full[, names(AET.AllZones.RPI.Crop)]
-
-AET.AllZones.Summary <- data.frame(
-  Layer = names(AET.AllZones.RPI.Crop),
-  Mean = apply(AET.AllZones.RPI.Values, 2, mean, na.rm = TRUE),
-  SD = apply(AET.AllZones.RPI.Values, 2, sd, na.rm = TRUE),
-  Q25 = apply(AET.AllZones.RPI.Values, 2, quantile, probs = 0.25, na.rm = TRUE),
-  Median = apply(AET.AllZones.RPI.Values, 2, median, na.rm = TRUE),
-  Q75 = apply(AET.AllZones.RPI.Values, 2, quantile, probs = 0.75, na.rm = TRUE)
-)
-
-print(AET.AllZones.Summary)
-```
 
 ```{r}
 # Visualising Extracted RPI Values
@@ -1263,19 +920,6 @@ ggplot(Amboseli.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Amboseli NP (using a Violin Plot)
-
-ggplot(Amboseli.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in Amboseli NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising TsavoEast NP
@@ -1307,19 +951,6 @@ ggplot(TsavoEast.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising TsavoEast NP (using a Violin Plot)
-
-ggplot(TsavoEast.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in TsavoEast NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising TsavoWest NP
@@ -1351,19 +982,6 @@ ggplot(TsavoWest.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising TsavoWest NP (using a Violin Plot)
-
-ggplot(TsavoWest.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in TsavoWest NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Tsavo.Ranches
@@ -1395,19 +1013,6 @@ ggplot(Tsavo.Ranches.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Tsavo Ranches (using a Violin Plot)
-
-ggplot(Tsavo.Ranches.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in Ranches surrounding Tsavos (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Tsavo.SettledAreas
@@ -1439,63 +1044,8 @@ ggplot(Tsavo.SettledAreas.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Tsavo.SettledAreas (using a Violin Plot)
 
-ggplot(Tsavo.SettledAreas.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in Settled Areas surrounding Tsavos (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
-```{r}
-## Visualising Tsavo.AllZones
-
-Tsavo.AllZones.RPI.Visual <- Tsavo.AllZones.RPI.Values %>%
-  mutate(ID = row_number()) %>%  # optional, to keep track of pixels
-  pivot_longer(
-    cols = -ID,                 # exclude ID column from pivoting
-    names_to = "Layer",
-    values_to = "RPI_value"
-  ) %>%
-  # Keep only layers starting with "rpi."
-  filter(grepl("^rpi\\.", Layer)) %>%
-  mutate(
-    Year = as.integer(sub("rpi\\.", "", Layer)),
-    Area = "Tsavo.AllZones"
-  ) %>%
-  filter(!is.na(Year) & !is.na(RPI_value)) %>%  # remove NA years or RPI values
-  select(ID, Area, Year, RPI_value)
-
-# Now plot
-ggplot(Tsavo.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_boxplot(fill = "lightblue", outlier.color = "red") +
-  labs(
-    title = "RPI Distribution Over Years in Tsavo.AllZones",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-## Visualising Tsavo.AllZones (using a Violin Plot)
-
-ggplot(Tsavo.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in Tsavo.AllZones (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising AET.Conservancies
@@ -1527,19 +1077,6 @@ ggplot(AET.Conservancies.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising AET.Conservancies (using a Violin Plot)
-
-ggplot(AET.Conservancies.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in AET.Conservancies (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising AET.Buffers
@@ -1571,85 +1108,8 @@ ggplot(AET.Buffers.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising AET.Buffers (using a Violin Plot)
 
-ggplot(AET.Buffers.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.color = "red", alpha = 0.5) +  # optional: overlay boxplot for summary stats
-  labs(
-    title = "RPI Distribution Over Years in AET.Buffers (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
-```{r}
-## Visualising AET.AllZones
-
-AET.AllZones.RPI.Visual <- AET.AllZones.RPI.Values %>%
-  mutate(ID = row_number()) %>%  # optional, to keep track of pixels
-  pivot_longer(
-    cols = -ID,                 # exclude ID column from pivoting
-    names_to = "Layer",
-    values_to = "RPI_value"
-  ) %>%
-  # Keep only layers starting with "rpi."
-  filter(grepl("^rpi\\.", Layer)) %>%
-  mutate(
-    Year = as.integer(sub("rpi\\.", "", Layer)),
-    Area = "AET.AllZones"
-  ) %>%
-  filter(!is.na(Year) & !is.na(RPI_value)) %>%  # remove NA years or RPI values
-  select(ID, Area, Year, RPI_value) ## I will need "ID" for Trend Analysis (Theil-Sen)
-
-# Now plot
-ggplot(AET.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_boxplot(fill = "lightblue", outlier.color = "red") +
-  labs(
-    title = "RPI Distribution Over Years in AET.AllZones",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-## Conversation on refining the Violin plots:
-
-# 1.Skepticism about RPI Fluctuations:
-# Do not fully trust year-to-year fluctuations in the (RPI).
-
-#2.Focus on Comparisons:
-# Emphasise comparisons in:
-# (i) Average performance
-# (ii) Trends over time
-# Analyse these comparisons across different spatial units and/or management periods.
-
-# 3. Signal vs. Noise:
-# Aim to focus on the real signal rather than the noise in the data.
-
-# 4. Outlier Classification:
-# Recommend including arguments against disabling "outlier" classification.
-# Suggest that there are insufficient grounds to treat the red dots differently.
-```
-
-```{r}
-## Visualising Amboseli NP
-
-ggplot(Amboseli.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Amboseli NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over Amboseli NP as a line 
@@ -1669,21 +1129,6 @@ ggplot(Amboseli.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising TsavoEast NP
-
-ggplot(TsavoEast.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Tsavo East NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over TsavoEast NP as a line 
@@ -1703,21 +1148,6 @@ ggplot(TsavoEast.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising TsavoWest NP
-
-ggplot(TsavoWest.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Tsavo West NP (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over TsavoWest NP as a line 
@@ -1737,21 +1167,6 @@ ggplot(TsavoWest.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Tsavo.Ranches
-
-ggplot(Tsavo.Ranches.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Tsavo.Ranches (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over Tsavo.Ranches as a line 
@@ -1771,21 +1186,6 @@ ggplot(Tsavo.Ranches.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Tsavo.SettledAreas
-
-ggplot(Tsavo.SettledAreas.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Tsavo.SettledAreas (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over Tsavo.SettledAreas as a line 
@@ -1805,55 +1205,6 @@ ggplot(Tsavo.SettledAreas.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising Tsavo.AllZones
-
-ggplot(Tsavo.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in Tsavo.AllZones (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-## Visualising Mean RPI over Tsavo.AllZones as a line 
-
-Tsavo.AllZones.Mean <- Tsavo.AllZones.RPI.Visual %>%
-  group_by(Year) %>%
-  summarise(Mean_RPI = mean(RPI_value, na.rm = TRUE))
-
-ggplot(Tsavo.AllZones.Mean, aes(x = Year, y = Mean_RPI)) +
-  geom_line(color = "darkgreen", linewidth = 0.8) +
-  geom_point(color = "black", fill = "purple", shape = 21, size = 2) +
-  labs(
-    title = "Mean RPI Over Time in Tsavo.AllZones",
-    x = "Year",
-    y = "Mean RPI"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-## Visualising AET.Conservancies
-
-ggplot(AET.Conservancies.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in AET.Conservancies (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over AET.Conservancies as a line 
@@ -1873,21 +1224,6 @@ ggplot(AET.Conservancies.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising AET.Buffers
-
-ggplot(AET.Buffers.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in AET.Buffers (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
 
 ```{r}
 ## Visualising Mean RPI over AET.Buffers as a line 
@@ -1907,167 +1243,6 @@ ggplot(AET.Buffers.Mean, aes(x = Year, y = Mean_RPI)) +
   theme_beautiful()
 ```
 
-```{r}
-## Visualising AET.AllZones
-
-ggplot(AET.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +  # removes red outlier dots
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) + #Added mean line to get the general pattern
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) + # Combined the mean line with points to make it easier to visualise
-  labs(
-    title = "RPI Distribution Over Years in AET.AllZones (Violin Plot)",
-    x = "Year",
-    y = "RPI Value"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-## Visualising Mean RPI over AET.AllZones as a line 
-
-AET.AllZones.Mean <- AET.AllZones.RPI.Visual %>%
-  group_by(Year) %>%
-  summarise(Mean_RPI = mean(RPI_value, na.rm = TRUE))
-
-ggplot(AET.AllZones.Mean, aes(x = Year, y = Mean_RPI)) +
-  geom_line(color = "darkgreen", linewidth = 0.8) +
-  geom_point(color = "black", fill = "purple", shape = 21, size = 2) +
-  labs(
-    title = "Mean RPI Over Time in AET.AllZones",
-    x = "Year",
-    y = "Mean RPI"
-  ) +
-  theme_beautiful()
-```
-
-```{r}
-# Creating each of the 9 individual plots and storing them in a variable
-
-Amboseli.Violin.Plot <- ggplot(Amboseli.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Amboseli NP") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-TsavoEast.Violin.Plot <- ggplot(TsavoEast.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Tsavo East NP") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-TsavoWest.Violin.Plot <- ggplot(TsavoWest.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Tsavo West NP") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-Tsavo.Ranches.Violin.Plot <- ggplot(Tsavo.Ranches.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Tsavo Ranches") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-Tsavo.SettledAreas.Violin.Plot <- ggplot(Tsavo.SettledAreas.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Tsavo Settled Areas") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-Tsavo.AllZones.Violin.Plot <- ggplot(Tsavo.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("Tsavo All Zones") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-AET.Conservancies.Violin.Plot <- ggplot(AET.Conservancies.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("AET Conservancies") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-AET.Buffers.Violin.Plot <- ggplot(AET.Buffers.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("AET Buffers") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-AET.AllZones.Violin.Plot <- ggplot(AET.AllZones.RPI.Visual, aes(x = factor(Year), y = RPI_value)) +
-  geom_violin(fill = "lightblue", color = "black", alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.4) +
-  stat_summary(fun = mean, geom = "line", aes(group = 1), color = "darkblue", linewidth = 0.6) +
-  stat_summary(fun = mean, geom = "point", shape = 21, fill = "purple", size = 2) +
-  labs(x = "Year", y = "RPI Value") +
-  ggtitle("AET All Zones") +
-  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Arrange plots in a 3x3 grid
-Combined.RPI.Violin.Plots <- (
-  Amboseli.Violin.Plot + TsavoEast.Violin.Plot + TsavoWest.Violin.Plot
-) / (
-  Tsavo.Ranches.Violin.Plot + Tsavo.SettledAreas.Violin.Plot + Tsavo.AllZones.Violin.Plot
-) / (
-  AET.Conservancies.Violin.Plot + AET.Buffers.Violin.Plot + AET.AllZones.Violin.Plot
-)
-
-# Rotate x-axis labels & control subplot theme
-Combined.RPI.Violin.Plots <- Combined.RPI.Violin.Plots &
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 9),
-    axis.text.y = element_text(size = 9),
-    axis.title = element_text(size = 11),
-    strip.text = element_text(size = 11)
-  )
-
-# Add title/subtitle/caption with smaller sizes
-Combined.RPI.Violin.Plots <- Combined.RPI.Violin.Plots +
-  plot_annotation(
-    title = "RPI Distribution Over Years by Zone (Violin Plots)",
-    subtitle = "Showing median, interquartile range, and mean trend line",
-    caption = "Each panel shows RPI values by year. Violin width represents distribution density.\nBoxplot overlay shows IQR, whiskers, and median; purple dots and lines show means.",
-    theme = theme(
-      plot.title = element_text(size = 16, hjust = 0.5, face = "bold"),
-      plot.subtitle = element_text(size = 12, hjust = 0.5),
-      plot.caption = element_text(size = 9, hjust = 0.5)
-    )
-  )
-
-# Adjust geoms globally (example if you use consistent geoms across plots)
-scale_geom_defaults <- function() {
-  update_geom_defaults("violin", list(size = 0.4))
-  update_geom_defaults("boxplot", list(size = 0.3))
-  update_geom_defaults("point", list(size = 1.5, colour = "purple"))
-  update_geom_defaults("line", list(size = 0.4, colour = "purple"))
-}
-scale_geom_defaults()
-
-# Print
-Combined.RPI.Violin.Plots
-```
 
 ```{r}
 # 5 year rolling mean Amboseli
@@ -2087,28 +1262,6 @@ ggplot(Amboseli.Mean, aes(x = Year)) +
 
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = Amboseli.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = Amboseli.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = Amboseli.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Amboseli RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean TsavoEast
@@ -2127,28 +1280,6 @@ ggplot(TsavoEast.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = TsavoEast.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = TsavoEast.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = TsavoEast.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Tsavo East RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean TsavoWest
@@ -2167,28 +1298,6 @@ ggplot(TsavoWest.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = TsavoWest.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = TsavoWest.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = TsavoWest.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Tsavo West RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean TsavoRanches
@@ -2207,28 +1316,6 @@ ggplot(Tsavo.Ranches.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = Tsavo.Ranches.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = Tsavo.Ranches.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = Tsavo.Ranches.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Tsavo Ranches RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean TsavoSettledAreas
@@ -2247,68 +1334,6 @@ ggplot(Tsavo.SettledAreas.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = Tsavo.SettledAreas.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = Tsavo.SettledAreas.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = Tsavo.SettledAreas.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Tsavo Settled Areas RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
-
-```{r}
-# 5 year rolling mean TsavoAllZones
-Tsavo.AllZones.Mean <- Tsavo.AllZones.RPI.Visual %>%
-  group_by(Year) %>%
-  summarise(Mean_RPI = mean(RPI_value, na.rm = TRUE)) %>%
-  arrange(Year) %>%
-  mutate(RollingMean5 = zoo::rollmean(Mean_RPI, k = 5, fill = NA, align = "center"))
-
-ggplot(Tsavo.AllZones.Mean, aes(x = Year)) +
-  geom_line(aes(y = Mean_RPI), color = "grey60", linewidth = 0.8) +
-  geom_line(aes(y = RollingMean5), color = "red", linewidth = 1.2) +
-  labs(
-    title = "Mean RPI with 5-Year Rolling Mean (Tsavo.AllZones)",
-    x = "Year", y = "Mean RPI"
-  ) + theme_minimal(base_size = 14)
-```
-
-```{r}
-ggplot() +
-  geom_violin(data = Tsavo.AllZones.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = Tsavo.AllZones.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = Tsavo.AllZones.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "Tsavo All Zones RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean AETConservancies
@@ -2327,28 +1352,6 @@ ggplot(AET.Conservancies.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = AET.Conservancies.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = AET.Conservancies.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = AET.Conservancies.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "AET Conservancies RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # 5 year rolling mean AETBuffers
@@ -2367,76 +1370,6 @@ ggplot(AET.Buffers.Mean, aes(x = Year)) +
   ) + theme_minimal(base_size = 14)
 ```
 
-```{r}
-ggplot() +
-  geom_violin(data = AET.Buffers.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = AET.Buffers.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = AET.Buffers.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "AET Buffers RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
-
-```{r}
-# 5 year rolling mean AETAllZones
-
-# Compute mean RPI per year
-AET.AllZones.Mean <- AET.AllZones.RPI.Visual %>%
-  group_by(Year) %>%
-  summarise(Mean_RPI = mean(RPI_value, na.rm = TRUE)) %>%
-  arrange(Year)
-
-# Add 5-year rolling mean
-AET.AllZones.Mean <- AET.AllZones.Mean %>%
-  mutate(RollingMean5 = rollmean(Mean_RPI, k = 5, fill = NA, align = "center"))
-
-# Plot with rolling mean line
-ggplot(AET.AllZones.Mean, aes(x = Year)) +
-  geom_line(aes(y = Mean_RPI), color = "grey60", linewidth = 0.8) +  # raw yearly mean
-  geom_line(aes(y = RollingMean5), color = "red", linewidth = 1.2) + # 5-year rolling mean
-  labs(
-    title = "Mean RPI with 5-Year Rolling Mean (AET.AllZones)",
-    x = "Year",
-    y = "Mean RPI"
-  ) +
-  theme_minimal(base_size = 14)
-```
-
-```{r}
-ggplot() +
-  geom_violin(data = AET.AllZones.RPI.Visual,
-              aes(x = Year, y = RPI_value, group = Year, fill = "Distribution"),
-              color = "black", alpha = 0.5, width = 0.8) +
-  geom_line(data = AET.AllZones.Mean,
-            aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-            linewidth = 1.2) +
-  geom_point(data = AET.AllZones.Mean,
-             aes(x = Year, y = RollingMean5, color = "5-Year Rolling Mean"),
-             size = 2) +
-  labs(
-    title = "AET All Zones RPI Distribution with 5-Year Rolling Mean",
-    x = "Year",
-    y = "RPI Value",
-    fill = "Legend",
-    color = "Legend"
-  ) +
-  scale_fill_manual(values = c("Distribution" = "lightblue")) +
-  scale_color_manual(values = c("5-Year Rolling Mean" = "darkblue")) +
-  theme_beautiful()
-```
 
 ```{r}
 # Binding all the above & Removing "All Zones" at source
@@ -2749,41 +1682,6 @@ Tsavo.SettledAreas.SummaryTrend <- Tsavo.SettledAreas.TheilSen %>%
   )
 ```
 
-```{r}
-## Theil-Sen across Tsavo.AllZones
-
-# Sorting data by "Year" & "ID"
-Tsavo.AllZones.RPI.Visual.Arranged <- Tsavo.AllZones.RPI.Visual %>% arrange(ID, Year)
-
-# Split data by pixel ID
-Tsavo.AllZones.Pixel.List <- Tsavo.AllZones.RPI.Visual.Arranged %>% group_split(ID)
-
-# Apply sens.slope to each pixel group
-Tsavo.AllZones.TheilSen <- map_dfr(Tsavo.AllZones.Pixel.List, function(df) {
-  if (sum(!is.na(df$RPI_value)) >= 3) {
-    slope <- tryCatch(
-      sens.slope(df$RPI_value)$estimates,
-      error = function(e) NA_real_
-    )
-  } else {
-    slope <- NA_real_
-  }
-  tibble(ID = unique(df$ID), Slope = slope)
-})
-
-# Joining slope results back with area info
-Tsavo.AllZones.TheilSen <- Tsavo.AllZones.TheilSen %>%
-  mutate(Area = "Tsavo.AllZones")
-
-# Getting overall summary per area
-Tsavo.AllZones.SummaryTrend <- Tsavo.AllZones.TheilSen %>%
-  summarise(
-    MeanSlope = mean(Slope, na.rm = TRUE),
-    MedianSlope = median(Slope, na.rm = TRUE),
-    SD = sd(Slope, na.rm = TRUE),
-    N = sum(!is.na(Slope))
-  )
-```
 
 ```{r}
 ## Theil-Sen across AET.Conservancies
@@ -2857,210 +1755,8 @@ AET.Buffers.SummaryTrend <- AET.Buffers.TheilSen %>%
   )
 ```
 
-```{r}
-## Theil-Sen across AET.AllZones
-
-# Sorting data by "Year" & "ID"
-AET.AllZones.RPI.Visual.Arranged <- AET.AllZones.RPI.Visual %>% arrange(ID, Year)
-
-# Split data by pixel ID
-AET.AllZones.Pixel.List <- AET.AllZones.RPI.Visual.Arranged %>% group_split(ID)
-
-# Apply sens.slope to each pixel group
-AET.AllZones.TheilSen <- map_dfr(AET.AllZones.Pixel.List, function(df) {
-  if (sum(!is.na(df$RPI_value)) >= 3) {
-    slope <- tryCatch(
-      sens.slope(df$RPI_value)$estimates,
-      error = function(e) NA_real_
-    )
-  } else {
-    slope <- NA_real_
-  }
-  tibble(ID = unique(df$ID), Slope = slope)
-})
-
-# Joining slope results back with area info
-AET.AllZones.TheilSen <- AET.AllZones.TheilSen %>%
-  mutate(Area = "AET.AllZones")
-
-# Getting overall summary per area
-AET.AllZones.SummaryTrend <- AET.AllZones.TheilSen %>%
-  summarise(
-    MeanSlope = mean(Slope, na.rm = TRUE),
-    MedianSlope = median(Slope, na.rm = TRUE),
-    SD = sd(Slope, na.rm = TRUE),
-    N = sum(!is.na(Slope))
-  )
-```
-
-```{r}
-# Visualising MeanSlope across study area
-
-All.Pixel.Slopes <- bind_rows(
-  Amboseli.TheilSen, TsavoEast.TheilSen, 
-  TsavoWest.TheilSen, Tsavo.Ranches.TheilSen,
-  Tsavo.SettledAreas.TheilSen, Tsavo.AllZones.TheilSen,
-  AET.Conservancies.TheilSen,AET.Buffers.TheilSen, 
-  AET.AllZones.TheilSen)
 
 
-All.Trends.Summary <- All.Pixel.Slopes %>%
-  group_by(Area) %>%
-  summarise(
-    MeanSlope = mean(Slope, na.rm = TRUE),
-    MedianSlope = median(Slope, na.rm = TRUE),
-    SD = sd(Slope, na.rm = TRUE),
-    N = sum(!is.na(Slope)),
-    .groups = "drop"
-  )
-## All.Trends.Summary summarises the overall direction and strength of change in RPI for each area over the full time series.
-
-Mean.Slope.Plot <- ggplot(All.Trends.Summary, aes(x = reorder(Area, MeanSlope), y = MeanSlope)) +
-  
-  geom_errorbar(aes(ymin = MeanSlope - SD, ymax = MeanSlope + SD),
-                width = 0.2, color = "darkgrey") +
-  geom_point(aes(color = "Mean Slope"), size = 3, fill = "steelblue", shape = 21) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
-  labs(
-    title = "Mean RPI Trend (Theil–Sen) by Area with Standard Deviation",
-    x = "Area",
-    y = "Mean Slope",
-    color = "Legend"
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-Mean.Slope.Plot
-```
-
-```{r}
-# Re-defining the custom color palette
-areas_colours_names <- c(
-  "Amboseli" = "#440154FF",
-  "AET.Buffers" = "#AADC32FF",
-  "AET.Conservancies" = "#5DC863FF",
-  "AET.AllZones" = "#FDE725FF",
-  "TsavoEast" = "#472D7BFF",
-  "TsavoWest" = "#3B528BFF",
-  "Tsavo.Ranches" = "#2C728EFF",
-  "Tsavo.SettledAreas" = "#21908CFF",
-  "Tsavo.AllZones" = "#27AD81FF"
-)
-
-area_labels <- c(
-  "Amboseli" = "Amboseli NP",
-  "AET.Buffers" = "Amboseli Community/Group Ranches",
-  "AET.AllZones" = "Amboseli All Zones",
-  "AET.Conservancies" = "Amboseli Conservancies",
-  "TsavoWest" = "Tsavo West NP",
-  "TsavoEast" = "Tsavo East NP",
-  "Tsavo.Ranches" = "Tsavo Conservancies/Ranches",
-  "Tsavo.SettledAreas" = "Tsavo Settled Areas",
-  "Tsavo.AllZones" = "Tsavo All Zones"
-)
-
-# Combining all correctly labeled data frames
-All.Pixel.Slopes <- bind_rows(
-  Amboseli.TheilSen, TsavoEast.TheilSen,  
-  TsavoWest.TheilSen, Tsavo.Ranches.TheilSen,
-  Tsavo.SettledAreas.TheilSen, Tsavo.AllZones.TheilSen,
-  AET.Conservancies.TheilSen, AET.Buffers.TheilSen,  
-  AET.AllZones.TheilSen
-)
-
-# Reorder areas by mean slope for a logical plot order
-Mean.Slope.Order <- All.Pixel.Slopes %>%
-  group_by(Area) %>%
-  summarise(MeanSlopeArea = mean(Slope, na.rm = TRUE)) %>%
-  arrange(desc(MeanSlopeArea)) %>%
-  pull(Area)
-
-# Apply the ordered factor levels to the data frame 
-All.Pixel.Slopes$Area <- factor(All.Pixel.Slopes$Area, levels = Mean.Slope.Order)
-
-# Ridgeline plot using assigned colors 
-Ridgeline.Plot <- ggplot(All.Pixel.Slopes, aes(x = Slope, y = Area, fill = Area)) +
-  geom_density_ridges(
-    scale = 3,  
-    rel_min_height = 0.01,
-    color = "black"
-  ) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "red", size = 1) +
-  
-  scale_fill_manual(
-    values = areas_colours_names,   
-    labels = area_labels,           
-    name = "Study Area"
-  ) +
-  
-  scale_y_discrete(labels = area_labels) +  
-  
-  labs(
-    title = "Distribution of Theil–Sen Slopes per Area",
-    x = "Slope",
-    y = "Area"
-  ) +
-  
-  theme_ridges(font_size = 14, grid = TRUE) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "none"
-  )
-
-Ridgeline.Plot
-```
-
-```{r}
-# This plot visualizes the overall long-term trend in RPI for eight different areas based on a robust statistical analysis. Each dot represents the mean RPI trend (Theil-Sen slope) for all pixels within a specific area. A positive mean slope (above the red dashed line at zero) indicates an overall increasing RPI trend for that area, while a negative mean slope (below the line) indicates an overall decreasing trend. The error bars extend one standard deviation above and below the mean, representing the variability of trends among the individual pixels within each area. For example, the wide error bars for "TsavoEast" show that while its overall trend is positive, there's a significant amount of variation in RPI trends at the pixel level.
-```
-
-```{r}
-## Visualising Violin Plot to compare across the study area
-
-All.Pixel.Slopes.Plot <- ggplot(All.Pixel.Slopes, aes(x = Area, y = Slope, fill = Area)) +
-  
-  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
-  
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5) +
-  
-  stat_summary(fun = mean, geom = "point", shape = 21, size = 3, fill = "black") +
-  
-  facet_wrap(
-    ~ Area,
-    ncol = 3,
-    scales = "free_y",
-    labeller = labeller(Area = area_labels)   # 👈 THIS is the key
-  ) +
-  
-  labs(
-    title = "Distribution of RPI Trends (Theil–Sen Slopes) by Area",
-    x = "Area",
-    y = "Slope"
-  ) +
-  
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    strip.text = element_text(face = "bold"),
-    legend.position = "none",
-    axis.text.x = element_blank()
-  )
-
-All.Pixel.Slopes.Plot
-```
-
-```{r}
-# This plot, titled "Distribution of RPI Trends (Theil–Sen Slopes) by Area", visually summarises the long-term trend in RPI for each of the study areas. The plot uses a Theil–Sen slope as a robust, non-parametric measure of change, where a positive slope indicates an increasing trend and a negative slope indicates a decreasing trend.
-
-# Each panel represents a different study area, and within each panel, a violin plot shows the full distribution of RPI trends for every single pixel in that area. The width of the violin corresponds to the density of the data, so a wider section means more pixels have that particular slope. A boxplot is overlaid on each violin, with a central line indicating the median slope, and the box representing the interquartile range (the middle 50% of slopes).  The black dot within each violin shows the mean slope for that area.
-
-# The dashed red line at zero serves as a critical reference point. Slopes falling to the right of this line indicate an overall positive (increasing) RPI trend, while slopes to the left indicate a negative (decreasing) trend. This visualization allows for a comprehensive comparison of not just the average trend across areas, but also the spread and variability of those trends, providing a more detailed picture of the RPI changes than a simple bar chart.
-```
-
-```{r}
-# Creating Raster Maps of Theil-Sen Slopes
-```
 
 ```{r}
 ## Amboseli Raster Map of Theil-Sen Slopes
@@ -3188,31 +1884,6 @@ tm_shape(Tsavo.SettledAreas.Slope.Raster) +
   tm_layout(legend.outside = TRUE)
 ```
 
-```{r}
-## Tsavo.AllZones Raster Map of Theil-Sen Slopes
-
-# 1. I shall use the original raster as a template using only 1 layer for structure
-Tsavo.AllZones.Slope.Raster <- terra::rast(Tsavo.AllZones.RPI.Crop[[1]])
-terra::values(Tsavo.AllZones.Slope.Raster) <- NA  # blank it out
-
-# 2. I shall then link slope values to cell numbers
-Tsavo.AllZones.Cell.Map <- data.frame(ID = 1:nrow(Tsavo.AllZones.RPI.Values.Full), cell = Tsavo.AllZones.RPI.Values.Full$cell)
-
-# Merging slopes with cells
-Tsavo.AllZones.Slope.Cells <- dplyr::left_join(Tsavo.AllZones.TheilSen, Tsavo.AllZones.Cell.Map, by = "ID")
-
-# 3. Populate slope values into raster cells
-Tsavo.AllZones.Slope.Raster[Tsavo.AllZones.Slope.Cells$cell] <- Tsavo.AllZones.Slope.Cells$Slope
-
-# 4. Plot the raster
-tm_shape(Tsavo.AllZones.Slope.Raster) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Tsavo All Zones Theil–Sen Slope", reverse = TRUE)
-  ) +
-  tm_title("Spatial Distribution of RPI Trends — Tsavo All Zones") +
-  tm_layout(legend.outside = TRUE)
-```
 
 ```{r}
 ## AET.Conservancies Raster Map of Theil-Sen Slopes
@@ -3265,105 +1936,6 @@ tm_shape(AET.Buffers.Slope.Raster) +
   tm_layout(legend.outside = TRUE)
 ```
 
-```{r}
-## AET.AllZones Raster Map of Theil-Sen Slopes
-
-# 1. I shall use the original raster as a template using only 1 layer for structure
-AET.AllZones.Slope.Raster <- terra::rast(AET.AllZones.RPI.Crop[[1]])
-terra::values(AET.AllZones.Slope.Raster) <- NA  # blank it out
-
-# 2. I shall then link slope values to cell numbers
-AET.AllZones.Cell.Map <- data.frame(ID = 1:nrow(AET.AllZones.RPI.Values.Full), cell = AET.AllZones.RPI.Values.Full$cell)
-
-# Merging slopes with cells
-AET.AllZones.Slope.Cells <- dplyr::left_join(AET.AllZones.TheilSen, AET.AllZones.Cell.Map, by = "ID")
-
-# 3. Populate slope values into raster cells
-AET.AllZones.Slope.Raster[AET.AllZones.Slope.Cells$cell] <- AET.AllZones.Slope.Cells$Slope
-
-# 4. Plot the raster
-tmap_mode(Map.Mode)
-tm_shape(AET.AllZones.Slope.Raster) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Amboseli All Zones Theil–Sen Slope", reverse = TRUE)
-  ) +
-  tm_shape(Amboseli.Slope.Raster) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "brewer.pu_or", midpoint = 0),
-    col.legend = tm_legend(title = "Amboseli All Zones Theil–Sen Slope", reverse = TRUE)) +
-  tm_title("Spatial Distribution of Theil-Sen Slope — Amboseli All Zones") +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Further Analysis
-```
-
-```{r}
-## Grouping Study Area Information
-
-Study.Area <- tibble::tibble(
-  Area = c("TsavoEast", "TsavoWest", "Amboseli", 
-           "Tsavo.Ranches","Tsavo.SettledAreas", "Tsavo.AllZones",
-           "AET.Conservancies", "AET.Buffers", "AET.AllZones"),
-  ProtectionType = c("NationalPark", "NationalPark", "NationalPark", 
-                     "Ranches", "CommunityLand", "MixedUse", 
-                     "Conservancies", "CommunityLand", "MixedUse"))
-```
-
-```{r}
-## Joining Governance Metadata to Pixel Level Slope Data
-
-All.Pixel.Slopes <- All.Pixel.Slopes %>%
-  left_join(Study.Area, by = "Area")
-
-## Visualising Theil-Sen Slope Trends by Protection Type
-
-ggplot(All.Pixel.Slopes, aes(x = ProtectionType, y = Slope, fill = ProtectionType)) +
-  geom_violin(trim = FALSE, alpha = 0.7) +
-  geom_boxplot(width = 0.1, outlier.shape = NA, alpha = 0.5, color = "black") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
-  labs(
-    title = "Distribution of RPI Trends by Governance Type",
-    x = "Governance Category",
-    y = "Theil–Sen Slope"
-  ) +
-  scale_fill_brewer(palette = "Set2") +
-  theme_beautiful()
-```
-
-```{r}
-## Checking out Summary Statistics by Protection Type
-
-Governance.Summary <- All.Pixel.Slopes %>%
-  group_by(ProtectionType) %>%
-  summarise(
-    MeanSlope = mean(Slope, na.rm = TRUE),
-    MedianSlope = median(Slope, na.rm = TRUE),
-    SD = sd(Slope, na.rm = TRUE),
-    N = sum(!is.na(Slope)),
-    .groups = "drop"
-  )
-
-print(Governance.Summary)
-```
-
-```{r}
-## Results explanation
-
-# CommunityLand = On average, RPI is declining in community lands (negative slopes).
-
-# MixedUse = Slight decline, smaller than community lands.
-
-# NationalPark = On average, RPI is increasing inside parks.
-
-# Ranches = Small but positive increase, between mixed use and parks.
-```
-
-```{r}
-# Temporal Trends across Years
-```
 
 ```{r}
 ## Yearly summary data
@@ -3438,7 +2010,7 @@ Combined.Trends <- Annual.RPI.Visual.Trends %>%
   mutate(Area = factor(Area, levels = area_order_panels))
 
 # Theil–Sen line for each zone
-# The line drawn in each panel is the Theil–Sen slope of that zone's annual mean RPI series (the 23 points shown in the panel). The intercept is the median of (MeanRPI - Slope * Year), so the line runs through the middle of the series. It is not an ordinary straight-line (lm) fit. This zone-level slope is not the same number as the mean of the pixel-level Theil–Sen slopes reported in the text ("All.Trends.Summary"); both are printed side by side in "Numbers reported in the manuscript".
+# The line drawn in each panel is the Theil–Sen slope of that zone's annual mean RPI series (the 23 points shown in the panel). The intercept is the median of (MeanRPI - Slope * Year), so the line runs through the middle of the series. It is not an ordinary straight-line (lm) fit. This zone-level slope is not the same number as the mean of the pixel-level Theil–Sen slopes reported in the text ("Zone.Slope.Summary"); both are printed side by side in "Numbers reported in the manuscript".
 Zone.TheilSen.Lines <- Annual.RPI.Visual.Trends %>%
   group_by(Area) %>%
   arrange(Year, .by_group = TRUE) %>%
@@ -3531,79 +2103,6 @@ ggsave(
 )
 ```
 
-```{r}
-# Mapping Per-Pixel Slope 
-# Setting the tmap mode to "plot" for static output tmap_mode("plot") 
-# Arranging the maps in a grid 
-Combined.Slope.Maps <- tmap_arrange(
-  tm_shape(Amboseli.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Amboseli NP"),
-  
-  tm_shape(TsavoEast.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo East NP"),
-  
-  tm_shape(TsavoWest.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo West NP"), 
-  
-  tm_shape(AET.Conservancies.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Amboseli Conservancies"), 
-  
-  tm_shape(AET.Buffers.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Amboseli Community/Group Ranches"), 
-  
-  tm_shape(AET.AllZones.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Amboseli All Zones"), 
-  
-  tm_shape(Tsavo.Ranches.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo Ranches"), 
-  
-  tm_shape(Tsavo.SettledAreas.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo Settled Areas"), 
-  
-  tm_shape(Tsavo.AllZones.Slope.Raster) +
-    tm_raster(
-      col.scale = tm_scale_continuous(values = "pu_or", midpoint = 0),
-      col.legend = tm_legend(title = "Slope", reverse = TRUE)) +
-    tm_title("Tsavo All Zones"),
-  
-  ncol = 3, nrow = 3 # The plots will be arranged into a 3x3 grid 
-)
-
-# Displaying the plot 
-Combined.Slope.Maps
-```
-
-```{r}
-# Check line for the combination of maps of "Combined Slope Raster - line 3255, & "Distribution of Theil Sen Slope per Area" - line 2656, in MANUSCRIPT section
-```
-
-```{r}
-# Temporal Performance Overview
-```
 
 ```{r}
 ## Clipping Temporal Performance to Kenya Admin Boundary
@@ -3619,1250 +2118,6 @@ Temporal.Performance.Kenya <- crop(Temporal.Performance, Kenya.Admin.Boundary.Ve
 Temporal.Performance.Kenya <- mask(Temporal.Performance.Kenya, Kenya.Admin.Boundary.Vect, touches = FALSE)
 ```
 
-```{r}
-##  Plotting Temporal Performance clipped to Kenya's Administrative Boundary
-
-ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya) +
-  facet_wrap(~lyr, ncol = 3) +
-  scale_fill_gradientn(
-    colours = c("lightblue", "limegreen", "yellow", "red"),
-    na.value = "grey90"
-  ) +
-  geom_sf(data = Kenya.Admin.Boundary, fill = NA, color = "black", linewidth = 0.3) +
-  labs(
-    title = "Temporal Performance over Kenya",
-    subtitle = "MAE, RMSE, and R² metrics",
-    fill = "Performance"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position = "bottom",
-    strip.text = element_text(face = "bold", size = 12),
-    plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5)
-  )
-```
-
-```{r}
-# Each metric (MAE, RMSE, R²) has different units/scales → so they shouldn’t share the same colour scale.
-
-# My current gradient (blue → green → yellow → red) works for error metrics (MAE, RMSE) but is misleading for R² (bounded between 0–1).
-
-# The “R² map” looks blank because most values are between 0 and 1, and this colour scale was probably tuned for much larger values.
-
-#MAE, the mean absolute error between predicted GPP and actual GPP.
-# R2, the proportion of GPP variance explained by each method.
-# Rppt, the correlation between the resulting values of each index and precipitation, the most important climatic driver of GPP.
-# average root mean squared error (RMSE)
-
-# Problem: ggplot2 only allows one scale per aesthetic.To get different colour scales for each facet, I am using "facetted_pos_scales" from libraries ggplot2 + ggforce & "facet_wrap_scales" from library ggh4x.
-```
-
-```{r}
-# Shared Kenya border layer
-Kenya.Border <- geom_sf(data = Kenya.Admin.Boundary, 
-                        fill = NA, color = "black", linewidth = 0.3)
-
-# MAE plot with a vertical legend
-Plot.MAE <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$mae) +
-  scale_fill_scico(palette = "roma", name = "MAE", na.value = "grey90") +
-  Kenya.Border +
-  labs(title = "MAE") +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom") + # Move legend to the side
-  guides(fill = guide_colorbar(direction = "vertical"))
-
-# RMSE plot with a vertical legend
-Plot.RMSE <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$rmse) +
-  scale_fill_scico(palette = "vik", name = "RMSE", na.value = "grey90") +
-  Kenya.Border +
-  labs(title = "RMSE") +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom") +
-  guides(fill = guide_colorbar(direction = "vertical"))
-
-# R² plot with a vertical legend
-Plot.Rsqd <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$rsq) +
-  scale_fill_scico(palette = "bam", name = expression(R^2), 
-                   limits = c(0, 1), na.value = "grey90") +
-  Kenya.Border +
-  labs(title = expression(R^2)) +
-  theme_minimal(base_size = 13) +
-  theme(legend.position = "bottom") +
-  guides(fill = guide_colorbar(direction = "vertical"))
-
-# Combining with patchwork
-Combined.Temporal.Performance.Plot <- (Plot.MAE | Plot.RMSE | Plot.Rsqd) #+
-#  plot_annotation(
-#    title = "Temporal Performance over Kenya",
-#    subtitle = "Mean Absolute Error (MAE), Root Mean Squared Error (RMSE), and R²"
-#  )
-
-Combined.Temporal.Performance.Plot
-```
-
-```{r}
-# Tweaking the above map
-library(ggplot2)
-library(patchwork)
-library(scico)
-library(tidyterra)
-
-# Kenya border
-Kenya.Border <- geom_sf(
-  data = Kenya.Admin.Boundary,
-  fill = NA,
-  color = "black",
-  linewidth = 0.4
-)
-
-# MAE
-Plot.MAE <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$mae) +
-  scale_fill_scico(
-    palette = "lajolla",
-    name = "MAE",
-    na.value = "grey90"
-  ) +
-  Kenya.Border +
-  coord_sf(expand = FALSE) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "right",
-    panel.grid = element_blank(),
-    plot.title = element_blank()
-  )
-
-# RMSE
-Plot.RMSE <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$rmse) +
-  scale_fill_scico(
-    palette = "batlow",
-    name = "RMSE",
-    na.value = "grey90"
-  ) +
-  Kenya.Border +
-  coord_sf(expand = FALSE) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "right",
-    panel.grid = element_blank(),
-    plot.title = element_blank()
-  )
-
-# R²
-Plot.Rsqd <- ggplot() +
-  geom_spatraster(data = Temporal.Performance.Kenya$rsq) +
-  scale_fill_scico(
-    palette = "bam",
-    name = expression(R^2),
-    limits = c(0, 1),
-    na.value = "grey90"
-  ) +
-  Kenya.Border +
-  coord_sf(expand = FALSE) +
-  theme_minimal(base_size = 13) +
-  theme(
-    legend.position = "right",
-    panel.grid = element_blank(),
-    plot.title = element_blank()
-  )
-
-# Combine
-Combined.Temporal.Performance.Plot <-
-  (Plot.MAE | Plot.RMSE | Plot.Rsqd) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(
-    legend.position = "right",
-    plot.margin = margin(0, 0, 0, 0)
-  )
-
-Combined.Temporal.Performance.Plot
-```
-
-```{r}
-# Modifying the MAE, RSME AND R^2
-
-# names(Temporal.Performance.Kenya) <- c("mae","rmse","rsq")
-
-# 1. MAE
-Map.MAE <- tm_shape(Temporal.Performance.Kenya[["mae"]]) +
-  tm_raster(
-  col.scale = tm_scale_intervals(values = "scico.roma", style = "quantile", n = 7, midpoint = NA),
-  col_alpha = 0.8,
-  col.legend = tm_legend(title = "MAE")
-) +
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "black", lwd = 0.5) +
-  tm_title("Mean Absolute Error") +
-  tm_layout(legend.outside = TRUE) +
-  tm_view(basemap.server = c(
-    "Esri.WorldImagery",
-    "OpenStreetMap",
-    "Esri.WorldGrayCanvas",
-    "Esri.WorldTopoMap")
-    )
-
-# 2. RMSE
-Map.RMSE <- tm_shape(Temporal.Performance.Kenya[["rmse"]]) +
-  tm_raster(
-    col.scale = tm_scale_intervals(values = "scico.vik", style = "quantile", n = 7, midpoint = NA),
-    col_alpha = 0.8,
-    col.legend = tm_legend(title = "RMSE")
-  ) +
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "black", lwd = 0.5) +
-  tm_title("Root Mean Squared Error") +
-  tm_layout(legend.outside = TRUE) +
-  tm_view(basemap.server = c(
-    "Esri.WorldImagery",
-    "OpenStreetMap",
-    "Esri.WorldGrayCanvas",
-    "Esri.WorldTopoMap")
-    )
-
-# 3. R²
-Map.Rsqd <- tm_shape(Temporal.Performance.Kenya[["rsq"]]) +
-  tm_raster(
-    col.scale = tm_scale_intervals(values = "scico.bam", style = "quantile", n = 7, midpoint = NA),
-    col_alpha = 0.8,
-    col.legend = tm_legend(title = expression(R^2))
-  ) +
-  tm_shape(Kenya.Admin.Boundary) +
-  tm_borders(col = "black", lwd = 0.5) +
-  tm_title(expression(R^2)) +
-  tm_layout(legend.outside = TRUE) +
-  tm_view(basemap.server = c(
-    "Esri.WorldImagery",
-    "OpenStreetMap",
-    "Esri.WorldGrayCanvas",
-    "Esri.WorldTopoMap")
-    )
-
-# Assign the arranged map to an object
-Combined.Temporal.Performance.TMap <- tmap_arrange(Map.MAE, Map.RMSE, Map.Rsqd, ncol = 3)
-Combined.Temporal.Performance.TMap
-```
-
-```{r}
-## R² values for each zone
-
-# The R² layer was cropped to each zone when the zone was first processed ("RSQ.<Zone>"). The R² and RPI layers share one grid, so cropping returns exactly the same cells as the zonal RPI rasters and no resampling is needed. (Bilinear resampling would blend neighbouring R² values and can drop pixels next to gaps.) The checks below confirm that every pair matches in extent, resolution and CRS.
-
-stopifnot(
-  compareGeom(RSQ.Amboseli, Amboseli.RPI.Mean),
-  compareGeom(RSQ.TsavoEast, TsavoEast.RPI.Mean),
-  compareGeom(RSQ.TsavoWest, TsavoWest.RPI.Mean),
-  compareGeom(RSQ.Tsavo.Ranches, Tsavo.Ranches.RPI.Mean),
-  compareGeom(RSQ.Tsavo.SettledAreas, Tsavo.SettledAreas.RPI.Mean),
-  compareGeom(RSQ.Tsavo.AllZones, Tsavo.AllZones.RPI.Mean),
-  compareGeom(RSQ.AET.Conservancies, AET.Conservancies.RPI.Mean),
-  compareGeom(RSQ.AET.Buffers, AET.Buffers.RPI.Mean),
-  compareGeom(RSQ.AET.AllZones, AET.AllZones.RPI.Mean)
-)
-```
-
-```{r}
-# Sensitivity check — not used for the published results. The block below applies an exploratory R² ≥ 0.3 threshold to the unfiltered mean RPI of each zone. It is retained to document the threshold sensitivity assessment only. All results reported in the manuscript use the R² ≥ 0.1 threshold ("RSQ.Threshold.1"), which is applied once, straight after each zone is cropped. Objects created here carry the suffix ".Filtered.3" and are not referenced by any downstream analysis or figure.
-
-# #  Set R² threshold
-RSQ.Threshold.3 <- 0.3  # Exploratory sensitivity threshold only; the published analysis uses 0.1 (see below)
-
-# 1. Creating mask for pixels with R² >= threshold
-RSQ.Mask.Amboseli <- RSQ.Amboseli >= RSQ.Threshold.3
-
-# 2. Applying the mask to the RPI mean raster
-Amboseli.RPI.Mean.Filtered.3 <- mask(Amboseli.RPI.Mean, RSQ.Mask.Amboseli, maskvalues = FALSE)
-
-# 2. Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Amboseli.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(Amboseli) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Repeating the masking process for other areas
-
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.TsavoEast <- RSQ.TsavoEast >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-TsavoEast.RPI.Mean.Filtered.3 <- mask(TsavoEast.RPI.Mean, RSQ.Mask.TsavoEast, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(TsavoEast.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(TsavoEast) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.TsavoWest <- RSQ.TsavoWest >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-TsavoWest.RPI.Mean.Filtered.3 <- mask(TsavoWest.RPI.Mean, RSQ.Mask.TsavoWest, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(TsavoWest.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(TsavoWest) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.Ranches <- RSQ.Tsavo.Ranches >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-Tsavo.Ranches.RPI.Mean.Filtered.3 <- mask(Tsavo.Ranches.RPI.Mean, RSQ.Mask.Tsavo.Ranches, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(Tsavo.Ranches) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.SettledAreas <- RSQ.Tsavo.SettledAreas >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-Tsavo.SettledAreas.RPI.Mean.Filtered.3 <- mask(Tsavo.SettledAreas.RPI.Mean, RSQ.Mask.Tsavo.SettledAreas, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(Tsavo.SettledAreas) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.Tsavo.AllZones <- RSQ.Tsavo.AllZones >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-Tsavo.AllZones.RPI.Mean.Filtered.3 <- mask(Tsavo.AllZones.RPI.Mean, RSQ.Mask.Tsavo.AllZones, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(Tsavo.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.Conservancies <- RSQ.AET.Conservancies >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-AET.Conservancies.RPI.Mean.Filtered.3 <- mask(AET.Conservancies.RPI.Mean, RSQ.Mask.AET.Conservancies, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.Conservancies.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(AET.Conservancies) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.Buffers <- RSQ.AET.Buffers >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-AET.Buffers.RPI.Mean.Filtered.3 <- mask(AET.Buffers.RPI.Mean, RSQ.Mask.AET.Buffers, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.Buffers.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(AET.Buffers) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating mask for pixels with R² >= threshold
-RSQ.Mask.AET.AllZones <- RSQ.AET.AllZones >= RSQ.Threshold.3
-
-# Applying the mask to the RPI mean raster
-AET.AllZones.RPI.Mean.Filtered.3 <- mask(AET.AllZones.RPI.Mean, RSQ.Mask.AET.AllZones, maskvalues = FALSE)
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.AllZones.RPI.Mean.Filtered.3) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.3)", reverse = TRUE)) +
-  tm_shape(AET.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-## Comparing the maps side by side
-
-tmap_mode(Map.Mode)  # Sets plot to interactive mode
-
-tmap_arrange(
-  tm_shape(Amboseli.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "Amboseli Mean RPI (R² ≥ 0.3)")), 
-  
-  tm_shape(TsavoEast.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "Tsavo East Mean RPI (R² ≥ 0.3)")), 
-  
-  tm_shape(TsavoWest.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "Tsavo West Mean RPI (R² ≥ 0.3)")), 
-  
-  tm_shape(AET.AllZones.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "Amboseli All Zones Mean RPI (R² ≥ 0.3)")), 
-  
-  tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.3) +
-    tm_raster(col.legend = tm_legend(title = "Tsavo All Zones Mean RPI (R² ≥ 0.3)")), 
-  ncol = 2
-)
-```
-
-```{r}
-# # Test Statistics for Filtered (0.3 R^2 threshold) RPI Maps
-```
-
-```{r}
-# 1. Amboseli
-
-# Extract values from both rasters into a data.frame
-Amboseli.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.3, RSQ.Amboseli), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Amboseli.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 2. TsavoEast
-
-# Extract values from both rasters into a data.frame
-TsavoEast.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.3, RSQ.TsavoEast), na.rm = TRUE)
-
-# Rename for clarity
-colnames(TsavoEast.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. TsavoWest
-
-# Extract values from both rasters into a data.frame
-TsavoWest.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.3, RSQ.TsavoWest), na.rm = TRUE)
-
-# Rename for clarity
-colnames(TsavoWest.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.Ranches
-
-# Extract values from both rasters into a data.frame
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.3, RSQ.Tsavo.Ranches), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.SettledAreas
-
-# Extract values from both rasters into a data.frame
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.3, RSQ.Tsavo.SettledAreas), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.AllZones
-
-# Extract values from both rasters into a data.frame
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.3, RSQ.Tsavo.AllZones), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 4. AET.Conservancies
-
-# Extract values from both rasters into a data.frame
-AET.Conservancies.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.3, RSQ.AET.Conservancies), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 5. AET.Buffers
-
-# Extract values from both rasters into a data.frame
-AET.Buffers.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.3, RSQ.AET.Buffers), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 6. AET.AllZones
-
-# Extract values from both rasters into a data.frame
-AET.AllZones.Values.RPI.Rsquare.Filtered.3 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.3, RSQ.AET.AllZones), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.AllZones.Values.RPI.Rsquare.Filtered.3) <- c("RPI", "RSQ")
-```
-
-```{r}
-# #Plotting the R² and RPI values for each area
-```
-
-```{r}
-# 1. Amboseli 
-
-Amboseli.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(Amboseli.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Amboseli",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Amboseli.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 2. TsavoEast
-
-TsavoEast.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(TsavoEast.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Tsavo East",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-TsavoEast.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 3. TsavoWest
-
-TsavoWest.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(TsavoWest.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Tsavo West",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-TsavoWest.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 3. Tsavo.Ranches
-
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Tsavo Ranches",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 3. Tsavo.SettledAreas
-
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Tsavo's Settled Areas",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 3. Tsavo.AllZones
-
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Ranches & Settled Lands in Tsavos",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 4. AET.Conservancies
-
-AET.Conservancies.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(AET.Conservancies.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Amboseli surrounding Conservancies",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.Conservancies.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 5. AET.Buffers
-
-AET.Buffers.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(AET.Buffers.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Amboseli surrounding Community lands",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.Buffers.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# 6. AET.AllZones
-
-AET.AllZones.Values.RPI.Rsquare.Filtered.3.Plot <- ggplot(AET.AllZones.Values.RPI.Rsquare.Filtered.3, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R²: Amboseli Surrounding Lands",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.AllZones.Values.RPI.Rsquare.Filtered.3.Plot
-```
-
-```{r}
-# # Combining all the plots together
-
-All.RPI.Rsquare.Filtered.3.Plots <- 
-  (Amboseli.Values.RPI.Rsquare.Filtered.3.Plot | TsavoEast.Values.RPI.Rsquare.Filtered.3.Plot | TsavoWest.Values.RPI.Rsquare.Filtered.3.Plot) /
-  (AET.Conservancies.Values.RPI.Rsquare.Filtered.3.Plot | AET.Buffers.Values.RPI.Rsquare.Filtered.3.Plot | AET.AllZones.Values.RPI.Rsquare.Filtered.3.Plot) /
-  (Tsavo.Ranches.Values.RPI.Rsquare.Filtered.3.Plot | Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.3.Plot | Tsavo.AllZones.Values.RPI.Rsquare.Filtered.3.Plot)
-
-# Show the combined plot
-All.RPI.Rsquare.Filtered.3.Plots
-```
-
-```{r}
-# Published quality-control threshold (R² ≥ 0.1)
-
-# The published threshold ("RSQ.Threshold.1") is set and applied once, straight after each zone is cropped (see "Visualising RPI for each Area" above). The mean-RPI maps, the yearly zone means and the Theil–Sen slopes reported in the manuscript therefore all use the same retained pixels. Objects with the suffix ".Filtered.1" hold the mean RPI of those retained pixels; the maps below show them zone by zone.
-```
-
-```{r}
-# 1. Amboseli
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Amboseli.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(Amboseli) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 2. Tsavo East
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(TsavoEast) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 3. Tsavo West
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(TsavoWest.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(TsavoWest) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 3. Tsavo.Ranches
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(Tsavo.Ranches) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 3. Tsavo.SettledAreas
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(Tsavo.SettledAreas) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 3. Tsavo.AllZones
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(Tsavo.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-
-```{r}
-#4. Amboseli Surrounding Conservancies
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(AET.Conservancies) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 5. Amboseli Surrounding Grazelands
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(AET.Buffers) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# 6. Amboseli Surrounding Lands
-
-# Visualising the filtered result
-tmap_mode(Map.Mode)
-tm_shape(AET.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(
-    col.scale = tm_scale_continuous(values = "viridis"), 
-    col.legend = tm_legend(title = "Mean RPI (Filtered by R² ≥ 0.1)", reverse = TRUE)) +
-  tm_shape(AET.AllZones) +
-  tm_borders(col = "white", lwd = 2) +
-  tm_layout(legend.outside = TRUE)
-```
-
-```{r}
-# Creating individual map panels
-# 1. Set tmap options
-tmap_mode("plot")
-tmap_options(component.autoscale = FALSE)
-
-# 2. Calculate a global RPI range for consistent coloring
-global_rpi_range <- range(c(
-  values(Amboseli.RPI.Mean.Filtered.1),
-  values(TsavoEast.RPI.Mean.Filtered.1),
-  values(TsavoWest.RPI.Mean.Filtered.1),
-  values(Tsavo.Ranches.RPI.Mean.Filtered.1),
-  values(Tsavo.SettledAreas.RPI.Mean.Filtered.1),
-  values(Tsavo.AllZones.RPI.Mean.Filtered.1),
-  values(AET.Conservancies.RPI.Mean.Filtered.1),
-  values(AET.Buffers.RPI.Mean.Filtered.1),
-  values(AET.AllZones.RPI.Mean.Filtered.1)
-), na.rm = TRUE)
-
-# 3. Simplify the individual maps
-Map.Amboseli.RPI <- tm_shape(Amboseli.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.TsavoEast.RPI <- tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.TsavoWest.RPI <- tm_shape(TsavoWest.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.Tsavo.Ranches.RPI <- tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.Tsavo.SettledAreas.RPI <- tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.Tsavo.AllZones.RPI <- tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.AET.Conservancies.RPI <- tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.AET.Buffers.RPI <- tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(show = FALSE))
-
-Map.AET.AllZones.RPI <- tm_shape(AET.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis", limits = global_rpi_range),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE))
-
-# 4. Combine and add common elements
-Combined.RPI.Maps.After.Filtering <- tmap_arrange(
-  Map.Amboseli.RPI + tm_shape(Amboseli) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli"),
-  Map.TsavoEast.RPI + tm_shape(TsavoEast) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo East"),
-  Map.TsavoWest.RPI + tm_shape(TsavoWest) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo West"),
-  Map.Tsavo.Ranches.RPI + tm_shape(Tsavo.Ranches) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo Ranches"),
-  Map.Tsavo.SettledAreas.RPI + tm_shape(Tsavo.SettledAreas) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo Settled Areas"),
-  Map.Tsavo.AllZones.RPI + tm_shape(Tsavo.AllZones) + tm_borders(col = "white", lwd = 1.5) + tm_title("Tsavo All Zones"),
-  Map.AET.Conservancies.RPI + tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli Conservancies"),
-  Map.AET.Buffers.RPI + tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli Communitylands"),
-  Map.AET.AllZones.RPI + tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) + tm_title("Amboseli All Zones"),
-  ncol = 3, nrow = 3
-)
-
-Combined.RPI.Maps.After.Filtering
-```
-
-```{r}
-# Viewing differently from leaflets
-tmap_mode(Map.Mode)
-
-# Creating individual map panels
-Map.Amboseli.RPI.Mean.Filtered.1 <- tm_shape(Amboseli.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Amboseli) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli")
-
-Map.TsavoEast.RPI.Mean.Filtered.1 <- tm_shape(TsavoEast.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoEast) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo East")
-
-Map.TsavoWest.RPI.Mean.Filtered.1 <- tm_shape(TsavoWest.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(TsavoWest) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo West")
-
-Map.Tsavo.AllZones.RPI.Mean.Filtered.1 <- tm_shape(Tsavo.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.AllZones) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo All Zones")
-
-Map.Tsavo.Ranches.RPI.Mean.Filtered.1 <- tm_shape(Tsavo.Ranches.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.Ranches) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo Ranches")
-
-Map.Tsavo.SettledAreas.RPI.Mean.Filtered.1 <- tm_shape(Tsavo.SettledAreas.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(Tsavo.SettledAreas) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Tsavo Settled Areas")
-
-Map.AET.Conservancies.RPI.Mean.Filtered.1 <- tm_shape(AET.Conservancies.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.Conservancies) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli Conservancies")
-
-Map.AET.Buffers.RPI.Mean.Filtered.1 <- tm_shape(AET.Buffers.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.Buffers) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli Community Lands")
-
-Map.AET.AllZones.RPI.Mean.Filtered.1 <- tm_shape(AET.AllZones.RPI.Mean.Filtered.1) +
-  tm_raster(col.scale = tm_scale_continuous(values = "viridis"),
-            col.legend = tm_legend(title = "Mean RPI", reverse = TRUE)) +
-  tm_shape(AET.AllZones) + tm_borders(col = "white", lwd = 1.5) +
-  tm_title("Amboseli All Zones")
-
-# Combining into grid
-tmap_arrange(Map.Amboseli.RPI.Mean.Filtered.1, 
-             Map.TsavoEast.RPI.Mean.Filtered.1,
-             Map.TsavoWest.RPI.Mean.Filtered.1,
-             Map.Tsavo.Ranches.RPI.Mean.Filtered.1,
-             Map.Tsavo.SettledAreas.RPI.Mean.Filtered.1,
-             Map.Tsavo.AllZones.RPI.Mean.Filtered.1,
-             Map.AET.Conservancies.RPI.Mean.Filtered.1, 
-             Map.AET.Buffers.RPI.Mean.Filtered.1, 
-             Map.AET.AllZones.RPI.Mean.Filtered.1, 
-             ncol = 3, nrow = 3)
-```
-
-```{r}
-# # Test Statistics for Filtered (0.1 R^2 threshold) RPI Maps
-```
-
-```{r}
-# 1. Amboseli
-
-# Extract values from both rasters into a data.frame
-Amboseli.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Amboseli.RPI.Mean.Filtered.1, RSQ.Amboseli), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Amboseli.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 2. TsavoEast
-
-# Extract values from both rasters into a data.frame
-TsavoEast.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoEast.RPI.Mean.Filtered.1, RSQ.TsavoEast), na.rm = TRUE)
-
-# Rename for clarity
-colnames(TsavoEast.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. TsavoWest
-
-# Extract values from both rasters into a data.frame
-TsavoWest.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(TsavoWest.RPI.Mean.Filtered.1, RSQ.TsavoWest), na.rm = TRUE)
-
-# Rename for clarity
-colnames(TsavoWest.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.Ranches
-
-# Extract values from both rasters into a data.frame
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.Ranches.RPI.Mean.Filtered.1, RSQ.Tsavo.Ranches), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.SettledAreas
-
-# Extract values from both rasters into a data.frame
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.SettledAreas.RPI.Mean.Filtered.1, RSQ.Tsavo.SettledAreas), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 3. Tsavo.AllZones
-
-# Extract values from both rasters into a data.frame
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(Tsavo.AllZones.RPI.Mean.Filtered.1, RSQ.Tsavo.AllZones), na.rm = TRUE)
-
-# Rename for clarity
-colnames(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 4. AET.Conservancies
-
-# Extract values from both rasters into a data.frame
-AET.Conservancies.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Conservancies.RPI.Mean.Filtered.1, RSQ.AET.Conservancies), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.Conservancies.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 5. AET.Buffers
-
-# Extract values from both rasters into a data.frame
-AET.Buffers.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.Buffers.RPI.Mean.Filtered.1, RSQ.AET.Buffers), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.Buffers.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# 6. AET.AllZones
-
-# Extract values from both rasters into a data.frame
-AET.AllZones.Values.RPI.Rsquare.Filtered.1 <- as.data.frame(c(AET.AllZones.RPI.Mean.Filtered.1, RSQ.AET.AllZones), na.rm = TRUE)
-
-# Rename for clarity
-colnames(AET.AllZones.Values.RPI.Rsquare.Filtered.1) <- c("RPI", "RSQ")
-```
-
-```{r}
-# #Plotting the R² and RPI values for each area
-```
-
-```{r}
-# 1. Amboseli 
-
-Amboseli.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(Amboseli.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli NP",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Amboseli.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 2. TsavoEast
-
-TsavoEast.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(TsavoEast.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo East NP",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-TsavoEast.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 3. TsavoWest
-
-TsavoWest.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(TsavoWest.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo West NP",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-TsavoWest.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 3. Tsavo.Ranches
-
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo Ranches",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 3. Tsavo.SettledAreas
-
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo Settled Areas",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 3. Tsavo.AllZones
-
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Tsavo All Zones",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 4. AET.Conservancies
-
-AET.Conservancies.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(AET.Conservancies.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli surrounding Conservancies",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.Conservancies.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 5. AET.Buffers
-
-AET.Buffers.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(AET.Buffers.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli surrounding Community Lands",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.Buffers.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# 6. AET.AllZones
-
-AET.AllZones.Values.RPI.Rsquare.Filtered.1.Plot <- ggplot(AET.AllZones.Values.RPI.Rsquare.Filtered.1, aes(x = RSQ, y = RPI)) +
-  geom_hex(bins = 40) +  # increase bins for more granularity
-  scale_fill_viridis_c(option = "D", trans = "log10", name = "Density") +  # log scale helps distinguish dense areas
-  labs(
-    title = "RPI vs R² (R² ≥ 0.1): Amboseli Surrounding Lands",
-    x = expression(R^2 ~ "(Model Performance)"),
-    y = "Mean RPI"
-  ) +
-  theme_beautiful() +
-  theme(legend.position = "right")
-
-AET.AllZones.Values.RPI.Rsquare.Filtered.1.Plot
-```
-
-```{r}
-# Assign the combined plot to a variable
-All.RPI.Rsquare.Filtered.1.Plots <- (Amboseli.Values.RPI.Rsquare.Filtered.1.Plot | TsavoEast.Values.RPI.Rsquare.Filtered.1.Plot | TsavoWest.Values.RPI.Rsquare.Filtered.1.Plot) /
-  (AET.Conservancies.Values.RPI.Rsquare.Filtered.1.Plot | AET.Buffers.Values.RPI.Rsquare.Filtered.1.Plot | AET.AllZones.Values.RPI.Rsquare.Filtered.1.Plot) /
-  (Tsavo.Ranches.Values.RPI.Rsquare.Filtered.1.Plot | Tsavo.SettledAreas.Values.RPI.Rsquare.Filtered.1.Plot | Tsavo.AllZones.Values.RPI.Rsquare.Filtered.1.Plot)
-
-All.RPI.Rsquare.Filtered.1.Plots
-```
-
-```{r}
-# RPI Summary Statistics before and after filtering (threshold of 0.1)
-```
 
 ```{r}
 # Yearly zone summaries before and after the R² filter
@@ -4941,6 +2196,15 @@ Tsavo.Settled.Values <- extract_area_values("Tsavo Settled Areas")
 
 ```{r}
 # Shared objects for the figures
+
+# Tables S1 and S3 are saved as Word documents in the same house style: a line above and below the header row and one below the last row, no internal grid lines, and numbers right-aligned so that they can be compared at a glance.
+flextable_fix <- function(ft) {
+  ft %>%
+    theme_booktabs() %>%
+    align(j = 2:length(ft$col_keys), align = "right", part = "all") %>%
+    align(j = 1, align = "left", part = "all") %>%
+    autofit()
+}
 
 # The seven zones in the order used throughout the paper, with their colours
 zone_colours <- c(
@@ -5155,9 +2419,8 @@ Pixel.Retention.Flex <- Pixel.Retention.Table %>%
     `% retained` = Percent_Retained
   ) %>%
   flextable() %>%
-  set_caption("Number of RPI pixels in each governance zone before and after the R² ≥ 0.1 quality-control filter") %>%
-  theme_booktabs() %>%
-  autofit()
+  # No caption row inside the table: the caption is written in the Supplementary Information itself.
+  flextable_fix()
 
 save_as_docx(Pixel.Retention.Flex, path = here::here("plots", "Table_S3_pixels_retained_after_R2_filter.docx"))
 ```
@@ -5420,7 +2683,7 @@ ggsave(
 
 performance_map <- function(layer, legend_title, limits, breaks, labels) {
   ggplot() +
-    geom_sf(data = Kenya.Admin.Boundary, fill = "grey90", colour = NA) +
+    geom_sf(data = Kenya.Admin.Boundary, fill = "grey70", colour = NA) +
     geom_spatraster(data = layer, maxcell = 2e6) +
     geom_sf(data = Kenya.Admin.Boundary, fill = NA, colour = "black", linewidth = 0.2) +
     scale_fill_viridis_c(
@@ -5495,7 +2758,7 @@ RSQ.Kenya <- mask(crop(RSQ.Layer, Kenya.Admin.Boundary), Kenya.Admin.Boundary, t
 Kenya.Values.RPI.Rsquare <- as.data.frame(c(RPI.Mean.Kenya, RSQ.Kenya), na.rm = TRUE)
 colnames(Kenya.Values.RPI.Rsquare) <- c("RPI", "RSQ")
 
-# (A) Where the excluded pixels are. Pixels are classed as retained (R² ≥ 0.1) or excluded (R² < 0.1), the same rule as the filter. Kenya is drawn in dark grey underneath, so areas outside the RPI v2 product show as dark grey.
+# (A) Where the excluded pixels are. Pixels are classed as retained (R² ≥ 0.1) or excluded (R² < 0.1), the same rule as the filter. Kenya is drawn in grey underneath, so areas outside the RPI v2 product show as grey, the same grey used in Figure S2.
 Kenya.QC.Class <- classify(
   RSQ.Kenya,
   rcl = matrix(c(-Inf, RSQ.Threshold.1, 1,
@@ -5505,11 +2768,11 @@ Kenya.QC.Class <- classify(
 levels(Kenya.QC.Class) <- data.frame(id = c(0, 1), class = c("Retained", "Excluded"))
 
 Kenya.Plot.Rsq.Low <- ggplot() +
-  geom_sf(data = Kenya.Admin.Boundary, fill = "grey45", colour = NA) +
+  geom_sf(data = Kenya.Admin.Boundary, fill = "grey70", colour = NA) +
   geom_spatraster(data = Kenya.QC.Class, maxcell = Inf) +
   scale_fill_manual(
     name = NULL,
-    values = c("Retained" = "grey88", "Excluded" = "#D55E00"),
+        values = c("Retained" = "#C6DBEF", "Excluded" = "#D55E00"),   # pale blue, so that grey means "outside the RPI v2 product" in both Figure S2 and Figure S3A
     labels = c("Retained" = expression(R^2 >= 0.1 ~ "(retained)"), "Excluded" = expression(R^2 < 0.1 ~ "(excluded)")),
     na.value = "transparent",
     na.translate = FALSE
@@ -5520,7 +2783,7 @@ Kenya.Plot.Rsq.Low <- ggplot() +
   theme_map +
   theme(legend.position = "bottom", legend.direction = "vertical")
 
-# (B) Mean RPI against R². A few extreme pixels stretch the R² axis to about -39, which hides the threshold, so the axis starts at -2. The pixels left off the axis are counted in "Numbers reported in the manuscript".
+# (B) Mean RPI against R². A few extreme pixels stretch the R² axis down to the Kenya-wide minimum (see Kenya.Performance.Summary), which hides the threshold, so the axis starts at -2. The pixels left off the axis are counted in "Numbers reported in the manuscript".
 Kenya.RSQ.Axis.Minimum <- -2
 
 Kenya.RPI.Rsquare.Plot <- ggplot(
@@ -5593,7 +2856,11 @@ Figure.S4 <- ggplot() +
   map_scale_bar("bl") +
   map_north_arrow("tl") +
   theme_map +
-  theme(legend.position = "right")
+  theme(
+    legend.position = "inside",
+    legend.position.inside = c(0.02, 0.14),   # lower left, just above the scale bar
+    legend.justification = c(0, 0)
+  )
 
 Figure.S4
 
@@ -5601,7 +2868,7 @@ ggsave(
   here::here("plots", "Figure_S4_mean_RPI_map_study_area.png"),
   plot = Figure.S4,
   width = 16,
-  height = 12.5,
+  height = 14,
   units = "cm",
   dpi = 600,
   bg = "white"
@@ -5668,15 +2935,14 @@ ggsave(
 
 # Compute proportion with RPI > 1 per area, from the mean RPI of the retained pixels
 RPI.Above1.Table <- RPI.Pixel.Means %>%
-  mutate(Area = as.character(Area)) %>%
+  mutate(Area = factor(as.character(Area), levels = names(zone_colours))) %>%
   group_by(Area) %>%
   summarise(
     Total_Pixels = n(),
     Pixels_Above_1 = sum(RPI > 1, na.rm = TRUE),
-    Proportion = round(Pixels_Above_1 / Total_Pixels, 4),
-    Percentage = round(Proportion * 100, 2)
+    Percentage = round(100 * Pixels_Above_1 / Total_Pixels, 1)
   ) %>%
-  arrange(desc(Percentage))
+  arrange(Area)   # the fixed zone order used throughout the paper, with Tsavo Settled Areas (shown for context only) last
 
 RPI.Above1.Table
 ```
@@ -5687,16 +2953,14 @@ RPI.Above1.Table
 RPI.Above1.Flex <- RPI.Above1.Table %>%
   select(Area, Total_Pixels, Pixels_Above_1, Percentage) %>%
   rename(
-    `Study Area` = Area,
-    `Total Pixels` = Total_Pixels,
+    `Governance zone` = Area,
+    `Pixels retained (R² ≥ 0.1)` = Total_Pixels,
     `Pixels with RPI > 1` = Pixels_Above_1,
     `% with RPI > 1` = Percentage
   ) %>%
   flextable() %>%
-  set_caption("Proportion of Each Study Area with Mean RPI Greater Than 1") %>%
-  theme_booktabs() %>%
-  autofit()
-
+  flextable_fix()
+  # No caption row inside the table: the caption is written in the Supplementary Information itself.
 RPI.Above1.Flex
 
 # Save as Word document, alongside the figures
@@ -5717,7 +2981,7 @@ cat("R version used for this run:", R.version.string, "\n")
 # Packages used by this document, with the versions used for this run (the same versions are recorded in renv.lock)
 Packages.Used <- tibble(
   Package = c("terra", "sf", "trend", "tidyverse", "zoo", "tidyterra", "tmap", "ggspatial",
-              "ggplot2", "patchwork", "ggridges", "viridis", "scico", "scales", "hexbin", "flextable", "here",
+              "ggplot2", "patchwork", "ggridges", "viridis", "magick", "scales", "hexbin", "flextable", "here",
               "rnaturalearth", "geodata"),
   Use = c("Raster processing (cropping, masking, extraction, zonal values)",
           "Vector data (governance zone polygons)",
@@ -5937,7 +3201,7 @@ bind_rows(
 ) %>%
   knitr::kable(digits = 4)
 
-# Pixel-level slopes in each zone: number of pixels, mean, median and standard deviation of the slopes, and how many standard deviations the mean lies from zero. The last column is the Theil-Sen slope of the zone's annual mean RPI series, which is the line drawn in Figure 4.
+# Pixel-level slopes in each zone: number of pixels, and the mean, median and standard deviation of the slopes. The standard deviation describes how much the trend varies from pixel to pixel within the zone (its heterogeneity); it is not a measure of uncertainty in the zone's trend. The last column is the Theil-Sen slope of the zone's annual mean RPI series, which is the line drawn in Figure 4.
 Zone.Slope.Summary <- Zone.Pixel.Slopes %>%
   mutate(Area = factor(as.character(Area), levels = names(zone_colours))) %>%
   group_by(Area) %>%
@@ -5945,8 +3209,7 @@ Zone.Slope.Summary <- Zone.Pixel.Slopes %>%
     N_Pixels = n(),
     MeanSlope = mean(Slope),
     MedianSlope = median(Slope),
-    SD = sd(Slope),
-    Mean_In_SD_From_Zero = MeanSlope / SD
+    SD = sd(Slope)
   ) %>%
   left_join(
     Zone.TheilSen.Lines %>%
@@ -5957,7 +3220,7 @@ Zone.Slope.Summary <- Zone.Pixel.Slopes %>%
     by = "Area"
   )
 
-knitr::kable(Zone.Slope.Summary, digits = c(0, 0, 5, 5, 5, 2, 5))
+knitr::kable(Zone.Slope.Summary, digits = c(0, 0, 5, 5, 5, 5))
 
 # Change implied by the trend over the study period
 # Single years are not compared (for example 2000 with 2022, a severe drought year). Instead, the mean pixel-level Theil-Sen slope is multiplied by the 22 years between the first and last hydrological year, and expressed as a percentage of the zone's median annual mean RPI.
@@ -5971,6 +3234,20 @@ Trend.Implied.Change <- Zone.Slope.Summary %>%
 
 knitr::kable(Trend.Implied.Change, digits = c(0, 5, 2, 3, 1))
 
+# Direction of the pixel-level trends in each zone: the percentages quoted in the caption of Figure 3
+Zone.Pixel.Slopes %>%
+  mutate(Area = factor(as.character(Area), levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(
+    Pixels = n(),
+    Pct_Negative = 100 * mean(Slope < 0),
+    Pct_Positive = 100 * mean(Slope > 0),
+    Pct_Within_0.005 = 100 * mean(abs(Slope) <= 0.005)
+  ) %>%
+  knitr::kable(digits = 1)
+
+cat("All pixels shown in Figure 3: within \u00b10.005 RPI yr-1:", round(100 * mean(abs(Zone.Pixel.Slopes$Slope) <= 0.005), 1), "%\n")
+
 # Figure 3: pixels drawn in the end colours of panel A (slope beyond the limits of the colour scale) and pixels beyond the x-axis of panel C (slope beyond -0.03 or +0.03)
 cat("Pixels with |slope| >", max(Slope.Limits), "(end colours of Figure 3A):", sum(abs(Zone.Pixel.Slopes$Slope) > max(Slope.Limits)), "of", nrow(Zone.Pixel.Slopes),
     "(", round(100 * mean(abs(Zone.Pixel.Slopes$Slope) > max(Slope.Limits)), 2), "%)\n")
@@ -5979,6 +3256,51 @@ cat("Pixels with |slope| > 0.03 (beyond the x-axis of Figure 3C):", sum(abs(Zone
 ```
 
 ```{r}
+
+```{r}
+## Sensitivity of the results to the R² threshold (Supplementary Information robustness check)
+
+# The published analysis keeps pixels whose temporal R² is at least 0.1. The block below repeats the zonal summaries for the stricter threshold of 0.3, using the same pixels and the same slopes, so that the effect of the choice can be reported in the Supplementary Information.
+RSQ.Threshold.3 <- 0.3
+
+# Mean RPI and retention at each threshold, from the paired pixel values of every zone
+Threshold.Sensitivity.RPI <- RSQ.Pixel.Values %>%
+  mutate(Area = factor(Area, levels = names(zone_colours))) %>%
+  group_by(Area) %>%
+  summarise(
+    Pixels_Before = n(),
+    Percent_Retained_0.1 = 100 * mean(RSQ >= RSQ.Threshold.1),
+    Percent_Retained_0.3 = 100 * mean(RSQ >= RSQ.Threshold.3),
+    Mean_RPI_0.1 = mean(RPI[RSQ >= RSQ.Threshold.1]),
+    Mean_RPI_0.3 = mean(RPI[RSQ >= RSQ.Threshold.3])
+  )
+
+knitr::kable(Threshold.Sensitivity.RPI, digits = c(0, 0, 1, 1, 3, 3))
+
+# The same for the pixel-level Theil-Sen slopes. Each pixel's slope is paired with its R², so the stricter threshold simply selects a subset of the slopes already calculated.
+Slope.With.RSQ <- bind_rows(
+  as.data.frame(c(Amboseli.Slope.Raster, RSQ.Amboseli), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Amboseli NP"),
+  as.data.frame(c(AET.Conservancies.Slope.Raster, RSQ.AET.Conservancies), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Amboseli Conservancies"),
+  as.data.frame(c(AET.Buffers.Slope.Raster, RSQ.AET.Buffers), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Amboseli Community/Group Ranches"),
+  as.data.frame(c(TsavoEast.Slope.Raster, RSQ.TsavoEast), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Tsavo East NP"),
+  as.data.frame(c(TsavoWest.Slope.Raster, RSQ.TsavoWest), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Tsavo West NP"),
+  as.data.frame(c(Tsavo.Ranches.Slope.Raster, RSQ.Tsavo.Ranches), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Tsavo Conservancies/Ranches"),
+  as.data.frame(c(Tsavo.SettledAreas.Slope.Raster, RSQ.Tsavo.SettledAreas), na.rm = TRUE) %>% setNames(c("Slope", "RSQ")) %>% mutate(Area = "Tsavo Settled Areas")
+) %>%
+  mutate(Area = factor(Area, levels = names(zone_colours)))
+
+Threshold.Sensitivity.Slopes <- Slope.With.RSQ %>%
+  group_by(Area) %>%
+  summarise(
+    Pixels_0.1 = sum(RSQ >= RSQ.Threshold.1),
+    MeanSlope_0.1 = mean(Slope[RSQ >= RSQ.Threshold.1]),
+    Pixels_0.3 = sum(RSQ >= RSQ.Threshold.3),
+    MeanSlope_0.3 = mean(Slope[RSQ >= RSQ.Threshold.3]),
+    Difference = MeanSlope_0.3 - MeanSlope_0.1
+  )
+
+knitr::kable(Threshold.Sensitivity.Slopes, digits = c(0, 0, 5, 0, 5, 5))
+```
 ## Full record of the R session used for this run
 
 sessionInfo()

@@ -93,7 +93,8 @@ The analysis was run in R 4.4.1. The main packages and the versions used are lis
 | ggridges | 0.5.7 | Ridgeline plots |
 | ggspatial | 1.1.9 | Scale bars and north arrows |
 | tmap | 4.1 | Thematic maps |
-| viridis, scico | 0.6.5, 1.5.0 | Colour palettes |
+| viridis | 0.6.5 | Colour palettes |
+| magick | 2.8.5 | Reads the photograph used in Figure 1B |
 | flextable | 0.9.11 | Word tables |
 | here | 1.0.2 | File paths relative to the project root |
 | geodata | 0.6-9 | Kenya national and county boundaries (GADM 4.1) |
