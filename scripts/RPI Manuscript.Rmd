@@ -3256,8 +3256,6 @@ cat("Pixels with |slope| > 0.03 (beyond the x-axis of Figure 3C):", sum(abs(Zone
 ```
 
 ```{r}
-
-```{r}
 ## Sensitivity of the results to the R² threshold (Supplementary Information robustness check)
 
 # The published analysis keeps pixels whose temporal R² is at least 0.1. The block below repeats the zonal summaries for the stricter threshold of 0.3, using the same pixels and the same slopes, so that the effect of the choice can be reported in the Supplementary Information.
