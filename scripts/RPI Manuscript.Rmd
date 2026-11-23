@@ -3301,5 +3301,5 @@ knitr::kable(Threshold.Sensitivity.Slopes, digits = c(0, 0, 5, 0, 5, 5))
 ```
 ## Full record of the R session used for this run
 
-sessionInfo()
+sessionInfo() 
 ```
