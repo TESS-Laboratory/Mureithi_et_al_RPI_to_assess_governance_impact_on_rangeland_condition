@@ -34,6 +34,7 @@ library(viridis)     # for perceptually uniform, colour-blind-friendly colour pa
 library(scales)      # for controlling plot scale formatting (e.g., number labels)
 library(hexbin)      # for visualising point density with hexagonal bins (needed by geom_hex)
 library(magick)      # for reading the photograph used in Figure 1B
+library(svglite)     # writes the vector (SVG) copy of every figure
 library(patchwork)   # for combining multiple plots into one figure
 library(ggridges)    # for creating ridgeline plots
 library(grid)        # for units and image panels inside figures
@@ -54,7 +55,7 @@ Map.Mode <- if (interactive()) "view" else "plot"
 # All inputs are read relative to the project root, which "here" resolves from the .Rproj file. No absolute paths are used, so the analysis runs unchanged on any machine once data/ is populated as described in the README.
 
 dir_data    <- here::here("data")
-dir_rpi <- file.path(dir_data, "RPI Datasets (GuyLomax)")
+dir_rpi <- file.path(dir_data, "RPI Datasets (GuyLomax)", "2026Datasets")
 dir_borders <- file.path(dir_data, "Country_Borders")
 dir_wdpa    <- file.path(dir_data, "WDPA_Amboseli_Tsavo", "National Parks&Reserves")
 dir_amb     <- file.path(dir_data, "Amboseli_Conservation_Areas")
@@ -232,6 +233,15 @@ tmap_save(
   units = "cm",
   dpi = 600
 )
+
+tmap_save(
+  Kenya.ProtectedAreas.Map,
+  filename = here::here("plots", "Figure_S1_Kenya_protected_areas.svg"),
+  width = 16,
+  height = 13,
+  units = "cm",
+  dpi = 600
+)
 ```
 
 ```{r}
@@ -250,14 +260,15 @@ Kenya.Rangeland.Counties <- Kenya.Regional.Admin.Boundary %>%
 ```{r}
 # Importing RPI Datasets - Rasters (TIFs)
 
-Actual.GPP <- rast(file.path(dir_rpi, "actual_gpp_ea_v2.tif"))
+# The product is distributed as a single raster holding four layers for each hydrological year: observed GPP, predicted GPP, potential GPP and RPI. The three layer sets used here are taken out by name.
+RPI.Product <- rast(file.path(dir_rpi, "rpi_rast_v2.tif"))
 
-Potential.GPP <- rast(file.path(dir_rpi, "potential_gpp_ea_v2.tif"))
-
-RPI <- rast(file.path(dir_rpi, "rpi_ea_v2.tif"))
+RPI <- RPI.Product[[grep("^rpi\\.", names(RPI.Product))]]
+Actual.GPP <- RPI.Product[[grep("^GPP\\.", names(RPI.Product))]]
+Potential.GPP <- RPI.Product[[grep("^potential_gpp_predicted\\.", names(RPI.Product))]]
 
 # The RPI v2 series covers 23 hydrological years (September 2000 to August 2023). Layers are named by the start year of each hydrological year (rpi.2000 to rpi.2022).
-stopifnot(nlyr(RPI) == 23)
+stopifnot(nlyr(RPI) == 23, nlyr(Actual.GPP) == 23, nlyr(Potential.GPP) == 23)
 ```
 
 ```{r}
@@ -265,7 +276,8 @@ stopifnot(nlyr(RPI) == 23)
 
 # These are imported here, before any zone is processed, so that the R² quality-control filter can be applied once, straight after each zone is cropped. Every later step (yearly zone means, Theil-Sen slopes, figures and tables) then uses the same retained pixels.
 
-Temporal.Performance <- rast(file.path(dir_rpi, "rpi_ea_temporal_performance.tif"))
+# The record ships temporal performance layers for three approaches: RPI v1 (Lomax et al. 2025), RPI v2 (the product used here) and RESTREND. We read the v2 layers, which belong to the product analysed in this study.
+Temporal.Performance <- rast(file.path(dir_rpi, "temporal_performance_v2.tif"))
 
 ## Extract R² layer
 RSQ.Layer <- Temporal.Performance[["rsq"]]
@@ -554,10 +566,10 @@ Amboseli.RPI.Crop.Unfiltered <- mask(crop(RPI, Amboseli, snap = "out"), Amboseli
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 Amboseli.RPI.Mean <- mean(Amboseli.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.Amboseli <- crop(RSQ.Layer, Amboseli.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.Amboseli, Amboseli.RPI.Crop.Unfiltered))
-Amboseli.RPI.Crop <- mask(Amboseli.RPI.Crop.Unfiltered, RSQ.Amboseli >= RSQ.Threshold.1, maskvalues = FALSE)
+Amboseli.RPI.Crop <- mask(Amboseli.RPI.Crop.Unfiltered, RSQ.Amboseli >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 Amboseli.RPI.Mean.Filtered.1 <- mean(Amboseli.RPI.Crop, na.rm = TRUE)
@@ -582,10 +594,10 @@ TsavoEast.RPI.Crop.Unfiltered <- mask(crop(RPI, TsavoEast, snap = "out"), TsavoE
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 TsavoEast.RPI.Mean <- mean(TsavoEast.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.TsavoEast <- crop(RSQ.Layer, TsavoEast.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.TsavoEast, TsavoEast.RPI.Crop.Unfiltered))
-TsavoEast.RPI.Crop <- mask(TsavoEast.RPI.Crop.Unfiltered, RSQ.TsavoEast >= RSQ.Threshold.1, maskvalues = FALSE)
+TsavoEast.RPI.Crop <- mask(TsavoEast.RPI.Crop.Unfiltered, RSQ.TsavoEast >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 TsavoEast.RPI.Mean.Filtered.1 <- mean(TsavoEast.RPI.Crop, na.rm = TRUE)
@@ -610,10 +622,10 @@ TsavoWest.RPI.Crop.Unfiltered <- mask(crop(RPI, TsavoWest, snap = "out"), TsavoW
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 TsavoWest.RPI.Mean <- mean(TsavoWest.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.TsavoWest <- crop(RSQ.Layer, TsavoWest.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.TsavoWest, TsavoWest.RPI.Crop.Unfiltered))
-TsavoWest.RPI.Crop <- mask(TsavoWest.RPI.Crop.Unfiltered, RSQ.TsavoWest >= RSQ.Threshold.1, maskvalues = FALSE)
+TsavoWest.RPI.Crop <- mask(TsavoWest.RPI.Crop.Unfiltered, RSQ.TsavoWest >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 TsavoWest.RPI.Mean.Filtered.1 <- mean(TsavoWest.RPI.Crop, na.rm = TRUE)
@@ -638,10 +650,10 @@ AET.Conservancies.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.Conservancies, snap 
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 AET.Conservancies.RPI.Mean <- mean(AET.Conservancies.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.AET.Conservancies <- crop(RSQ.Layer, AET.Conservancies.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.AET.Conservancies, AET.Conservancies.RPI.Crop.Unfiltered))
-AET.Conservancies.RPI.Crop <- mask(AET.Conservancies.RPI.Crop.Unfiltered, RSQ.AET.Conservancies >= RSQ.Threshold.1, maskvalues = FALSE)
+AET.Conservancies.RPI.Crop <- mask(AET.Conservancies.RPI.Crop.Unfiltered, RSQ.AET.Conservancies >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 AET.Conservancies.RPI.Mean.Filtered.1 <- mean(AET.Conservancies.RPI.Crop, na.rm = TRUE)
@@ -666,10 +678,10 @@ AET.Buffers.RPI.Crop.Unfiltered <- mask(crop(RPI, AET.Buffers, snap = "out"), AE
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 AET.Buffers.RPI.Mean <- mean(AET.Buffers.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.AET.Buffers <- crop(RSQ.Layer, AET.Buffers.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.AET.Buffers, AET.Buffers.RPI.Crop.Unfiltered))
-AET.Buffers.RPI.Crop <- mask(AET.Buffers.RPI.Crop.Unfiltered, RSQ.AET.Buffers >= RSQ.Threshold.1, maskvalues = FALSE)
+AET.Buffers.RPI.Crop <- mask(AET.Buffers.RPI.Crop.Unfiltered, RSQ.AET.Buffers >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 AET.Buffers.RPI.Mean.Filtered.1 <- mean(AET.Buffers.RPI.Crop, na.rm = TRUE)
@@ -695,10 +707,10 @@ Tsavo.Ranches.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.Ranches, snap = "out")
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 Tsavo.Ranches.RPI.Mean <- mean(Tsavo.Ranches.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.Tsavo.Ranches <- crop(RSQ.Layer, Tsavo.Ranches.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.Tsavo.Ranches, Tsavo.Ranches.RPI.Crop.Unfiltered))
-Tsavo.Ranches.RPI.Crop <- mask(Tsavo.Ranches.RPI.Crop.Unfiltered, RSQ.Tsavo.Ranches >= RSQ.Threshold.1, maskvalues = FALSE)
+Tsavo.Ranches.RPI.Crop <- mask(Tsavo.Ranches.RPI.Crop.Unfiltered, RSQ.Tsavo.Ranches >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 Tsavo.Ranches.RPI.Mean.Filtered.1 <- mean(Tsavo.Ranches.RPI.Crop, na.rm = TRUE)
@@ -723,10 +735,10 @@ Tsavo.SettledAreas.RPI.Crop.Unfiltered <- mask(crop(RPI, Tsavo.SettledAreas, sna
 # Averaging across years for visualization (all pixels in the zone, before quality control)
 Tsavo.SettledAreas.RPI.Mean <- mean(Tsavo.SettledAreas.RPI.Crop.Unfiltered, na.rm = TRUE)
 
-# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1
+# Quality control: crop the R² layer to the same cells (same grid, so no resampling) and drop pixels with R² < 0.1. A pixel whose R² is missing cannot be judged, so it is dropped as well (maskvalues = c(FALSE, NA)); the product leaves R² missing for some pixels that do carry RPI values.
 RSQ.Tsavo.SettledAreas <- crop(RSQ.Layer, Tsavo.SettledAreas.RPI.Crop.Unfiltered)
 stopifnot(compareGeom(RSQ.Tsavo.SettledAreas, Tsavo.SettledAreas.RPI.Crop.Unfiltered))
-Tsavo.SettledAreas.RPI.Crop <- mask(Tsavo.SettledAreas.RPI.Crop.Unfiltered, RSQ.Tsavo.SettledAreas >= RSQ.Threshold.1, maskvalues = FALSE)
+Tsavo.SettledAreas.RPI.Crop <- mask(Tsavo.SettledAreas.RPI.Crop.Unfiltered, RSQ.Tsavo.SettledAreas >= RSQ.Threshold.1, maskvalues = c(FALSE, NA))
 
 # Mean RPI of the retained pixels (R² ≥ 0.1), used for all results reported in the manuscript
 Tsavo.SettledAreas.RPI.Mean.Filtered.1 <- mean(Tsavo.SettledAreas.RPI.Crop, na.rm = TRUE)
@@ -1495,6 +1507,16 @@ ggsave(
   dpi = 600,
   bg = "white"
 )
+
+ggsave(
+  here::here("plots", "Figure_S5_annual_RPI_distributions.svg"),
+  plot = RPI.Distribution.Areas.Plot,
+  width = 16,
+  height = 20,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
@@ -2101,6 +2123,16 @@ ggsave(
   dpi = 600,
   bg = "white"
 )
+
+ggsave(
+  here::here("plots", "Figure_4_annual_mean_RPI_time_series.svg"),
+  plot = Combined.Trends.Plot,
+  width = 16,
+  height = 13,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 
@@ -2365,6 +2397,9 @@ Zone.Pixel.Slopes <- bind_rows(
 # Number of pixels with a value in a raster
 count_pixels <- function(r) sum(!is.na(values(r)))
 
+# Number of pixels that the quality control can judge: the product gives both a mean RPI and an R² for them. A few pixels carry an RPI value but no R² value, and they are counted here, and reported below, as pixels the filter removes.
+count_assessable <- function(mean_rpi, rsq) sum(!is.na(values(mean_rpi)) & !is.na(values(rsq)))
+
 Pixel.Retention.Table <- tibble(
   Area = names(zone_colours),
   Pixels_Before = c(
@@ -2387,14 +2422,26 @@ Pixel.Retention.Table <- tibble(
   )
 )
 
+# Pixels the product covers but leaves without an R² value: quality control cannot judge them, so they are removed with the pixels that fail the threshold
+Pixel.Retention.Table <- Pixel.Retention.Table %>%
+  mutate(Pixels_Without_RSQ = Pixels_Before - c(
+    count_assessable(Amboseli.RPI.Mean, RSQ.Amboseli),
+    count_assessable(AET.Conservancies.RPI.Mean, RSQ.AET.Conservancies),
+    count_assessable(AET.Buffers.RPI.Mean, RSQ.AET.Buffers),
+    count_assessable(TsavoEast.RPI.Mean, RSQ.TsavoEast),
+    count_assessable(TsavoWest.RPI.Mean, RSQ.TsavoWest),
+    count_assessable(Tsavo.Ranches.RPI.Mean, RSQ.Tsavo.Ranches),
+    count_assessable(Tsavo.SettledAreas.RPI.Mean, RSQ.Tsavo.SettledAreas)
+  ), .after = Pixels_Before)
+
 # Totals for the six focal governance zones (Tsavo Settled Areas are shown for context only) and for all seven zones
 Pixel.Retention.Table <- bind_rows(
   Pixel.Retention.Table,
   Pixel.Retention.Table %>%
     filter(Area != "Tsavo Settled Areas") %>%
-    summarise(Area = "Six focal zones combined", Pixels_Before = sum(Pixels_Before), Pixels_After = sum(Pixels_After)),
+    summarise(Area = "Six focal zones combined", Pixels_Before = sum(Pixels_Before), Pixels_Without_RSQ = sum(Pixels_Without_RSQ), Pixels_After = sum(Pixels_After)),
   Pixel.Retention.Table %>%
-    summarise(Area = "All seven zones combined", Pixels_Before = sum(Pixels_Before), Pixels_After = sum(Pixels_After))
+    summarise(Area = "All seven zones combined", Pixels_Before = sum(Pixels_Before), Pixels_Without_RSQ = sum(Pixels_Without_RSQ), Pixels_After = sum(Pixels_After))
 ) %>%
   mutate(
     Pixels_Removed = Pixels_Before - Pixels_After,
@@ -2403,9 +2450,11 @@ Pixel.Retention.Table <- bind_rows(
 
 Pixel.Retention.Table
 
+# Pixels the product gives an RPI value for but no R² value, so quality control cannot judge them
+
 # Check: the same counts are obtained from the paired RPI and R² values
 stopifnot(
-  all(Pixel.Retention.Table$Pixels_Before[1:7] == as.integer(table(factor(RSQ.Pixel.Values$Area, levels = names(zone_colours))))),
+  all((Pixel.Retention.Table$Pixels_Before - Pixel.Retention.Table$Pixels_Without_RSQ)[1:7] == as.integer(table(factor(RSQ.Pixel.Values$Area, levels = names(zone_colours))))),
   all(Pixel.Retention.Table$Pixels_After[1:7] == as.integer(table(factor(RPI.Pixel.Means$Area, levels = names(zone_colours)))))
 )
 
@@ -2414,6 +2463,7 @@ Pixel.Retention.Flex <- Pixel.Retention.Table %>%
   rename(
     `Governance zone` = Area,
     `Pixels before filtering` = Pixels_Before,
+    `Pixels without an R² value` = Pixels_Without_RSQ,
     `Pixels retained (R² ≥ 0.1)` = Pixels_After,
     `Pixels removed` = Pixels_Removed,
     `% retained` = Percent_Retained
@@ -2591,6 +2641,16 @@ ggsave(
   dpi = 600,
   bg = "white"
 )
+
+ggsave(
+  here::here("plots", "Figure_1_study_area_governance_zones.svg"),
+  plot = Figure.1,
+  width = 16,
+  height = 16,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
@@ -2623,6 +2683,16 @@ Figure.2
 
 ggsave(
   here::here("plots", "Figure_2_mean_RPI_by_governance_zone.png"),
+  plot = Figure.2,
+  width = 16,
+  height = 20.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  here::here("plots", "Figure_2_mean_RPI_by_governance_zone.svg"),
   plot = Figure.2,
   width = 16,
   height = 20.5,
@@ -2667,6 +2737,16 @@ Figure.3
 
 ggsave(
   here::here("plots", "Figure_3_RPI_trends_by_governance_zone.png"),
+  plot = Figure.3,
+  width = 16,
+  height = 20.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  here::here("plots", "Figure_3_RPI_trends_by_governance_zone.svg"),
   plot = Figure.3,
   width = 16,
   height = 20.5,
@@ -2735,6 +2815,16 @@ Figure.S2
 
 ggsave(
   here::here("plots", "Figure_S2_model_performance_Kenya.png"),
+  plot = Figure.S2,
+  width = 16,
+  height = 8.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  here::here("plots", "Figure_S2_model_performance_Kenya.svg"),
   plot = Figure.S2,
   width = 16,
   height = 8.5,
@@ -2828,6 +2918,16 @@ ggsave(
   dpi = 600,
   bg = "white"
 )
+
+ggsave(
+  here::here("plots", "Figure_S3_R2_threshold_Kenya.svg"),
+  plot = Figure.S3,
+  width = 16,
+  height = 9.5,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
@@ -2866,6 +2966,16 @@ Figure.S4
 
 ggsave(
   here::here("plots", "Figure_S4_mean_RPI_map_study_area.png"),
+  plot = Figure.S4,
+  width = 16,
+  height = 14,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
+
+ggsave(
+  here::here("plots", "Figure_S4_mean_RPI_map_study_area.svg"),
   plot = Figure.S4,
   width = 16,
   height = 14,
@@ -2928,6 +3038,16 @@ ggsave(
   dpi = 600,
   bg = "white"
 )
+
+ggsave(
+  here::here("plots", "Figure_S6_R2_by_governance_zone.svg"),
+  plot = Figure.S6,
+  width = 16,
+  height = 9,
+  units = "cm",
+  dpi = 600,
+  bg = "white"
+)
 ```
 
 ```{r}
@@ -2981,7 +3101,7 @@ cat("R version used for this run:", R.version.string, "\n")
 # Packages used by this document, with the versions used for this run (the same versions are recorded in renv.lock)
 Packages.Used <- tibble(
   Package = c("terra", "sf", "trend", "tidyverse", "zoo", "tidyterra", "tmap", "ggspatial",
-              "ggplot2", "patchwork", "ggridges", "viridis", "magick", "scales", "hexbin", "flextable", "here",
+              "ggplot2", "patchwork", "ggridges", "viridis", "magick", "svglite", "scales", "hexbin", "flextable", "here",
               "rnaturalearth", "geodata"),
   Use = c("Raster processing (cropping, masking, extraction, zonal values)",
           "Vector data (governance zone polygons)",
@@ -2995,7 +3115,8 @@ Packages.Used <- tibble(
           "Multi-panel figures",
           "Ridgeline plots",
           "Colour palettes",
-          "Colour palettes",
+          "Reads the photograph used in Figure 1B",
+          "Writes the vector (SVG) copy of each figure",
           "Axis and legend labels",
           "Hexagonal binning",
           "Word tables",
@@ -3189,6 +3310,21 @@ cat("Pixels with mean RPI > 1.5 (beyond the x-axis of Figure 2C):", sum(RPI.Pixe
 # Figure S5: pixel-years above the y-axis limit of 1.5
 cat("Pixel-years with annual RPI > 1.5 (above the y-axis of Figure S5):", sum(All.RPI.Visual.Areas$RPI_value > 1.5), "of", nrow(All.RPI.Visual.Areas),
     "(", round(100 * mean(All.RPI.Visual.Areas$RPI_value > 1.5), 2), "%)\n")
+
+# Figure S4: pixels inside each Tsavo park with no value in the RPI v2 product (the rectangular blank blocks on the map)
+count_gaps <- function(zone, name) {
+  rpi <- terra::extract(RPI, zone, cells = TRUE, ID = FALSE)
+  gpp <- terra::extract(c(Actual.GPP, Potential.GPP), zone, ID = FALSE)
+  keep <- !duplicated(rpi$cell)
+  no_rpi <- rowSums(!is.na(rpi[keep, names(RPI)])) == 0
+  no_gpp <- rowSums(!is.na(gpp[keep, ])) == 0
+  tibble(Area = name, Pixels = sum(keep), No_RPI = sum(no_rpi),
+         Percent = 100 * mean(no_rpi), No_RPI_or_GPP = sum(no_rpi & no_gpp))
+}
+
+# Check: Pixels minus No_RPI is the zone's "Pixels before filtering" in Table S3
+knitr::kable(bind_rows(count_gaps(TsavoWest, "Tsavo West NP"),
+                       count_gaps(TsavoEast, "Tsavo East NP")), digits = 1)
 ```
 
 ```{r}
@@ -3298,8 +3434,40 @@ Threshold.Sensitivity.Slopes <- Slope.With.RSQ %>%
   )
 
 knitr::kable(Threshold.Sensitivity.Slopes, digits = c(0, 0, 5, 0, 5, 5))
-```
-## Full record of the R session used for this run
 
-sessionInfo() 
+# TABLE S4: the two sensitivity summaries joined, saved as a Word document for the Supplementary Information
+Threshold.Sensitivity.Table <- Threshold.Sensitivity.RPI %>%
+  select(Area, Pixels_Before, Percent_Retained_0.1, Percent_Retained_0.3, Mean_RPI_0.1, Mean_RPI_0.3) %>%
+  left_join(Threshold.Sensitivity.Slopes %>% select(Area, MeanSlope_0.1, MeanSlope_0.3), by = "Area") %>%
+  mutate(
+    Direction_Unchanged = sign(MeanSlope_0.1) == sign(MeanSlope_0.3),
+    across(c(Percent_Retained_0.1, Percent_Retained_0.3), ~ round(.x, 1)),
+    across(c(Mean_RPI_0.1, Mean_RPI_0.3), ~ round(.x, 3)),
+    across(c(MeanSlope_0.1, MeanSlope_0.3), ~ round(.x, 5))
+  )
+
+knitr::kable(Threshold.Sensitivity.Table)
+
+Threshold.Sensitivity.Flex <- Threshold.Sensitivity.Table %>%
+  select(-Direction_Unchanged) %>%
+  rename(
+    `Governance zone` = Area,
+    `Pixels before filtering` = Pixels_Before,
+    `% retained (R² ≥ 0.1)` = Percent_Retained_0.1,
+    `% retained (R² ≥ 0.3)` = Percent_Retained_0.3,
+    `Mean RPI (R² ≥ 0.1)` = Mean_RPI_0.1,
+    `Mean RPI (R² ≥ 0.3)` = Mean_RPI_0.3,
+    `Mean slope (R² ≥ 0.1)` = MeanSlope_0.1,
+    `Mean slope (R² ≥ 0.3)` = MeanSlope_0.3
+  ) %>%
+  flextable() %>%
+  # No caption row inside the table: the caption is written in the Supplementary Information itself.
+  flextable_fix()
+
+save_as_docx(Threshold.Sensitivity.Flex, path = here::here("plots", "Table_S4_threshold_sensitivity.docx"))
+```
+```{r}
+# Full record of the R session used for this run
+
+sessionInfo()
 ```
