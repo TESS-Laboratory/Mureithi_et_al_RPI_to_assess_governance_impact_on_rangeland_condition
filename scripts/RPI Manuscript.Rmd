@@ -3466,6 +3466,7 @@ Threshold.Sensitivity.Flex <- Threshold.Sensitivity.Table %>%
 
 save_as_docx(Threshold.Sensitivity.Flex, path = here::here("plots", "Table_S4_threshold_sensitivity.docx"))
 ```
+
 ```{r}
 # Full record of the R session used for this run 
 
